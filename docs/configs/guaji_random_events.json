@@ -1,0 +1,1499 @@
+{
+  "meta": {
+    "project": "末世行商",
+    "file_type": "event_config",
+    "version": "0.1.0",
+    "source": "guaji_random_events.md",
+    "description": "随机事件配置 JSON，供程序/数值/文案共用。"
+  },
+  "schema": {
+    "event": {
+      "event_id": "string",
+      "event_name": "string",
+      "phase": "early | mid | late | all",
+      "pool": "road | trade | encounter | danger | bond | lore | special",
+      "scene": "drive | settlement | camp | resource_point | route_node | radio",
+      "weight": "number",
+      "cooldown_run": "number",
+      "trigger_tags": [
+        "string"
+      ],
+      "required_flags": [
+        "string"
+      ],
+      "forbidden_flags": [
+        "string"
+      ],
+      "choice_set_id": "string",
+      "result_set_id": "string",
+      "next_event_id": "string | null",
+      "summary": "string",
+      "remark": "string"
+    },
+    "choice": {
+      "choice_set_id": "string",
+      "choice_id": "string",
+      "choice_text": "string",
+      "show_condition": [
+        "string"
+      ],
+      "result_key": "string"
+    },
+    "result": {
+      "result_key": "string",
+      "ops": [
+        "string"
+      ],
+      "reward_desc": "string",
+      "risk_desc": "string",
+      "set_flags": [
+        "string"
+      ],
+      "clear_flags": [
+        "string"
+      ]
+    }
+  },
+  "enums": {
+    "phase": [
+      "early",
+      "mid",
+      "late",
+      "all"
+    ],
+    "pool": [
+      "road",
+      "trade",
+      "encounter",
+      "danger",
+      "bond",
+      "lore",
+      "special"
+    ],
+    "scene": [
+      "drive",
+      "settlement",
+      "camp",
+      "resource_point",
+      "route_node",
+      "radio"
+    ]
+  },
+  "common_trigger_tags": [
+    "route_safe",
+    "route_normal",
+    "route_danger",
+    "route_black_market",
+    "route_rain",
+    "route_night",
+    "route_winter",
+    "route_summer",
+    "arrive_settlement",
+    "cargo_food",
+    "cargo_culture",
+    "cargo_fresh",
+    "cargo_heavy",
+    "has_radar",
+    "has_weapon",
+    "has_cold_storage",
+    "goodwill_tower_2",
+    "goodwill_greenhouse_2",
+    "goodwill_academy_1",
+    "taoxia_arc_mid",
+    "linli_arc_mid",
+    "high_reputation",
+    "before_finale"
+  ],
+  "common_ops": [
+    "add_credit:x",
+    "add_fuel:x",
+    "add_goods:type:count",
+    "lose_goods:type:count",
+    "add_goodwill:faction:value",
+    "add_relation:value",
+    "add_time:min",
+    "add_damage:value",
+    "repair_damage:value",
+    "unlock_route:route_id",
+    "unlock_clue:clue_id",
+    "unlock_event:event_id",
+    "set_flag:flag_id",
+    "start_combat:combat_id",
+    "spawn_order:order_id"
+  ],
+  "events": [
+    {
+      "event_id": "EVT_001",
+      "event_name": "路边罐头箱",
+      "phase": "early",
+      "pool": "road",
+      "scene": "route_node",
+      "weight": 100,
+      "cooldown_run": 2,
+      "trigger_tags": ["route_safe"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_001",
+      "result_set_id": "RS_EVT_001",
+      "next_event_id": null,
+      "summary": "基础拾取教学事件",
+      "remark": "小收益小风险"
+    },
+    {
+      "event_id": "EVT_002",
+      "event_name": "油表误差",
+      "phase": "early",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 75,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_safe"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_002",
+      "result_set_id": "RS_EVT_002",
+      "next_event_id": null,
+      "summary": "燃料与故障判断",
+      "remark": "林砾倾向事件"
+    },
+    {
+      "event_id": "EVT_003",
+      "event_name": "好心搭车人",
+      "phase": "early",
+      "pool": "encounter",
+      "scene": "settlement",
+      "weight": 80,
+      "cooldown_run": 2,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_003",
+      "result_set_id": "RS_EVT_003",
+      "next_event_id": null,
+      "summary": "居民温情与好感教学",
+      "remark": "前期低风险"
+    },
+    {
+      "event_id": "EVT_004",
+      "event_name": "便宜得反常的电池",
+      "phase": "early",
+      "pool": "trade",
+      "scene": "settlement",
+      "weight": 70,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_black_market"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_004",
+      "result_set_id": "RS_EVT_004",
+      "next_event_id": null,
+      "summary": "黑市试货事件",
+      "remark": "价格判断"
+    },
+    {
+      "event_id": "EVT_005",
+      "event_name": "路标被挪动了",
+      "phase": "early",
+      "pool": "road",
+      "scene": "route_node",
+      "weight": 85,
+      "cooldown_run": 2,
+      "trigger_tags": ["route_normal"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_005",
+      "result_set_id": "RS_EVT_005",
+      "next_event_id": null,
+      "summary": "路线分叉判断",
+      "remark": "有雷达收益更稳"
+    },
+    {
+      "event_id": "EVT_006",
+      "event_name": "窗边纸条",
+      "phase": "early",
+      "pool": "bond",
+      "scene": "camp",
+      "weight": 65,
+      "cooldown_run": 2,
+      "trigger_tags": ["route_normal"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_006",
+      "result_set_id": "RS_EVT_006",
+      "next_event_id": null,
+      "summary": "轻关系增温",
+      "remark": "可提高后续剧情权重"
+    },
+    {
+      "event_id": "EVT_007",
+      "event_name": "旧收音机杂音",
+      "phase": "early",
+      "pool": "lore",
+      "scene": "radio",
+      "weight": 60,
+      "cooldown_run": 2,
+      "trigger_tags": ["route_normal"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_007",
+      "result_set_id": "RS_EVT_007",
+      "next_event_id": null,
+      "summary": "广播碎片事件",
+      "remark": "鸣砂前置氛围"
+    },
+    {
+      "event_id": "EVT_008",
+      "event_name": "水泵紧急件",
+      "phase": "early",
+      "pool": "trade",
+      "scene": "settlement",
+      "weight": 80,
+      "cooldown_run": 2,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_008",
+      "result_set_id": "RS_EVT_008",
+      "next_event_id": null,
+      "summary": "插单与调度教学",
+      "remark": "温室前期核心事件"
+    },
+    {
+      "event_id": "EVT_009",
+      "event_name": "小型掠夺试探",
+      "phase": "early",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 70,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_009",
+      "result_set_id": "RS_EVT_009",
+      "next_event_id": null,
+      "summary": "车载迎击教学事件",
+      "remark": "可接战斗系统"
+    },
+    {
+      "event_id": "EVT_010",
+      "event_name": "货箱里的玩偶",
+      "phase": "early",
+      "pool": "bond",
+      "scene": "drive",
+      "weight": 55,
+      "cooldown_run": 4,
+      "trigger_tags": ["cargo_food"],
+      "required_flags": [],
+      "forbidden_flags": ["flag_doll_resolved"],
+      "choice_set_id": "CH_EVT_010",
+      "result_set_id": "RS_EVT_010",
+      "next_event_id": "EVT_023",
+      "summary": "玩偶链起点",
+      "remark": "关键链式事件"
+    },
+    {
+      "event_id": "EVT_011",
+      "event_name": "塔台求购胶卷",
+      "phase": "early",
+      "pool": "trade",
+      "scene": "settlement",
+      "weight": 60,
+      "cooldown_run": 2,
+      "trigger_tags": ["cargo_culture"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_011",
+      "result_set_id": "RS_EVT_011",
+      "next_event_id": null,
+      "summary": "文化品套利",
+      "remark": "塔台 / 书院抉择"
+    },
+    {
+      "event_id": "EVT_012",
+      "event_name": "轮胎陷泥",
+      "phase": "early",
+      "pool": "road",
+      "scene": "route_node",
+      "weight": 78,
+      "cooldown_run": 2,
+      "trigger_tags": ["route_rain"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_012",
+      "result_set_id": "RS_EVT_012",
+      "next_event_id": null,
+      "summary": "雨路通行事件",
+      "remark": "耐久与耗时权衡"
+    },
+    {
+      "event_id": "EVT_013",
+      "event_name": "多给了一张票据",
+      "phase": "early",
+      "pool": "encounter",
+      "scene": "settlement",
+      "weight": 62,
+      "cooldown_run": 2,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_013",
+      "result_set_id": "RS_EVT_013",
+      "next_event_id": "EVT_020",
+      "summary": "小道德事件",
+      "remark": "可接票据线"
+    },
+    {
+      "event_id": "EVT_014",
+      "event_name": "夜里没睡好",
+      "phase": "early",
+      "pool": "bond",
+      "scene": "camp",
+      "weight": 58,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_normal"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_014",
+      "result_set_id": "RS_EVT_014",
+      "next_event_id": null,
+      "summary": "疲劳与休息教学",
+      "remark": "状态系统入口"
+    },
+    {
+      "event_id": "EVT_015",
+      "event_name": "便携灯泡坏了",
+      "phase": "early",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 66,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_night"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_015",
+      "result_set_id": "RS_EVT_015",
+      "next_event_id": null,
+      "summary": "夜路资源选择",
+      "remark": "电池消耗"
+    },
+    {
+      "event_id": "EVT_016",
+      "event_name": "黑市假药",
+      "phase": "mid",
+      "pool": "trade",
+      "scene": "settlement",
+      "weight": 65,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_black_market"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_016",
+      "result_set_id": "RS_EVT_016",
+      "next_event_id": null,
+      "summary": "中期黑市骗局",
+      "remark": "好感可降低风险"
+    },
+    {
+      "event_id": "EVT_017",
+      "event_name": "维修手册缺页",
+      "phase": "mid",
+      "pool": "lore",
+      "scene": "resource_point",
+      "weight": 45,
+      "cooldown_run": 4,
+      "trigger_tags": ["route_normal"],
+      "required_flags": ["linli_arc_mid"],
+      "forbidden_flags": ["flag_manual_complete"],
+      "choice_set_id": "CH_EVT_017",
+      "result_set_id": "RS_EVT_017",
+      "next_event_id": "EVT_040",
+      "summary": "林砾个人线节点",
+      "remark": "链式剧情"
+    },
+    {
+      "event_id": "EVT_018",
+      "event_name": "失踪的送信员",
+      "phase": "mid",
+      "pool": "encounter",
+      "scene": "route_node",
+      "weight": 55,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_normal"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_018",
+      "result_set_id": "RS_EVT_018",
+      "next_event_id": null,
+      "summary": "救援 / 物资抉择",
+      "remark": "中期支线"
+    },
+    {
+      "event_id": "EVT_019",
+      "event_name": "热浪中的生鲜",
+      "phase": "mid",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 72,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_summer", "cargo_fresh"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_019",
+      "result_set_id": "RS_EVT_019",
+      "next_event_id": null,
+      "summary": "生鲜保鲜考验",
+      "remark": "冷藏模块联动"
+    },
+    {
+      "event_id": "EVT_020",
+      "event_name": "夜市传闻",
+      "phase": "mid",
+      "pool": "lore",
+      "scene": "settlement",
+      "weight": 48,
+      "cooldown_run": 4,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["taoxia_arc_mid"],
+      "forbidden_flags": ["flag_night_market_found"],
+      "choice_set_id": "CH_EVT_020",
+      "result_set_id": "RS_EVT_020",
+      "next_event_id": "EVT_039",
+      "summary": "陶夏个人线节点",
+      "remark": "夜市链"
+    },
+    {
+      "event_id": "EVT_021",
+      "event_name": "误闯静默区",
+      "phase": "mid",
+      "pool": "road",
+      "scene": "route_node",
+      "weight": 52,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_021",
+      "result_set_id": "RS_EVT_021",
+      "next_event_id": null,
+      "summary": "风险与隐藏收益",
+      "remark": "探索偏好"
+    },
+    {
+      "event_id": "EVT_022",
+      "event_name": "塔台的秘密电报",
+      "phase": "mid",
+      "pool": "lore",
+      "scene": "settlement",
+      "weight": 40,
+      "cooldown_run": 5,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["goodwill_tower_2"],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_022",
+      "result_set_id": "RS_EVT_022",
+      "next_event_id": "EVT_033",
+      "summary": "韩策秘密线",
+      "remark": "主线中段前置"
+    },
+    {
+      "event_id": "EVT_023",
+      "event_name": "围墙外的孩子们",
+      "phase": "mid",
+      "pool": "encounter",
+      "scene": "settlement",
+      "weight": 55,
+      "cooldown_run": 3,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_023",
+      "result_set_id": "RS_EVT_023",
+      "next_event_id": null,
+      "summary": "温柔型送礼事件",
+      "remark": "可承接玩偶链"
+    },
+    {
+      "event_id": "EVT_024",
+      "event_name": "货舱异响",
+      "phase": "mid",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 70,
+      "cooldown_run": 3,
+      "trigger_tags": ["cargo_heavy"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_024",
+      "result_set_id": "RS_EVT_024",
+      "next_event_id": null,
+      "summary": "高载重风险",
+      "remark": "单车经营感"
+    },
+    {
+      "event_id": "EVT_025",
+      "event_name": "假地图与真入口",
+      "phase": "mid",
+      "pool": "road",
+      "scene": "route_node",
+      "weight": 46,
+      "cooldown_run": 4,
+      "trigger_tags": ["route_black_market"],
+      "required_flags": ["flag_map_fragments_2"],
+      "forbidden_flags": ["flag_lost_route_found"],
+      "choice_set_id": "CH_EVT_025",
+      "result_set_id": "RS_EVT_025",
+      "next_event_id": "EVT_048",
+      "summary": "隐藏路线链节点",
+      "remark": "高价值支线"
+    },
+    {
+      "event_id": "EVT_026",
+      "event_name": "钟声提前响起",
+      "phase": "mid",
+      "pool": "lore",
+      "scene": "settlement",
+      "weight": 44,
+      "cooldown_run": 4,
+      "trigger_tags": ["route_night"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_026",
+      "result_set_id": "RS_EVT_026",
+      "next_event_id": null,
+      "summary": "书院神秘氛围",
+      "remark": "可挂额外剧情"
+    },
+    {
+      "event_id": "EVT_027",
+      "event_name": "旧高速残桥",
+      "phase": "mid",
+      "pool": "road",
+      "scene": "route_node",
+      "weight": 63,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_027",
+      "result_set_id": "RS_EVT_027",
+      "next_event_id": null,
+      "summary": "过桥风险计算",
+      "remark": "零件消耗点"
+    },
+    {
+      "event_id": "EVT_028",
+      "event_name": "沈禾的加急口信",
+      "phase": "mid",
+      "pool": "encounter",
+      "scene": "settlement",
+      "weight": 58,
+      "cooldown_run": 4,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["goodwill_greenhouse_2"],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_028",
+      "result_set_id": "RS_EVT_028",
+      "next_event_id": null,
+      "summary": "价值观型委托",
+      "remark": "温室线关键选择"
+    },
+    {
+      "event_id": "EVT_029",
+      "event_name": "陶夏的冲动交易",
+      "phase": "mid",
+      "pool": "bond",
+      "scene": "settlement",
+      "weight": 50,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_black_market"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_029",
+      "result_set_id": "RS_EVT_029",
+      "next_event_id": "EVT_020",
+      "summary": "陶夏直觉事件",
+      "remark": "小概率高回报"
+    },
+    {
+      "event_id": "EVT_030",
+      "event_name": "林砾的过度保守",
+      "phase": "mid",
+      "pool": "bond",
+      "scene": "route_node",
+      "weight": 52,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_030",
+      "result_set_id": "RS_EVT_030",
+      "next_event_id": null,
+      "summary": "双主角分歧事件",
+      "remark": "关系塑形"
+    },
+    {
+      "event_id": "EVT_031",
+      "event_name": "黑雨将至",
+      "phase": "late",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 45,
+      "cooldown_run": 5,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_031",
+      "result_set_id": "RS_EVT_031",
+      "next_event_id": null,
+      "summary": "后期天气灾害",
+      "remark": "强风险控制"
+    },
+    {
+      "event_id": "EVT_032",
+      "event_name": "失控搬运机",
+      "phase": "late",
+      "pool": "danger",
+      "scene": "resource_point",
+      "weight": 48,
+      "cooldown_run": 4,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_032",
+      "result_set_id": "RS_EVT_032",
+      "next_event_id": null,
+      "summary": "资源点战斗事件",
+      "remark": "可挂探索战"
+    },
+    {
+      "event_id": "EVT_033",
+      "event_name": "鸣砂的特别播报",
+      "phase": "late",
+      "pool": "special",
+      "scene": "radio",
+      "weight": 28,
+      "cooldown_run": 6,
+      "trigger_tags": ["route_normal"],
+      "required_flags": ["flag_secret_telegram_done"],
+      "forbidden_flags": ["flag_radio_target_done"],
+      "choice_set_id": "CH_EVT_033",
+      "result_set_id": "RS_EVT_033",
+      "next_event_id": "EVT_034",
+      "summary": "后期主线引导",
+      "remark": "重要广播链"
+    },
+    {
+      "event_id": "EVT_034",
+      "event_name": "高塔方向的光",
+      "phase": "late",
+      "pool": "special",
+      "scene": "route_node",
+      "weight": 26,
+      "cooldown_run": 6,
+      "trigger_tags": ["route_danger"],
+      "required_flags": ["flag_radio_target_done"],
+      "forbidden_flags": ["flag_tower_beacon_seen"],
+      "choice_set_id": "CH_EVT_034",
+      "result_set_id": "RS_EVT_034",
+      "next_event_id": "EVT_050",
+      "summary": "终局前氛围节点",
+      "remark": "高塔线"
+    },
+    {
+      "event_id": "EVT_035",
+      "event_name": "伍拾七的旧账",
+      "phase": "late",
+      "pool": "encounter",
+      "scene": "settlement",
+      "weight": 36,
+      "cooldown_run": 5,
+      "trigger_tags": ["route_black_market"],
+      "required_flags": ["flag_57_goodwill_high"],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_035",
+      "result_set_id": "RS_EVT_035",
+      "next_event_id": null,
+      "summary": "黑市核心权限事件",
+      "remark": "后期个人线"
+    },
+    {
+      "event_id": "EVT_036",
+      "event_name": "塔台断电",
+      "phase": "late",
+      "pool": "special",
+      "scene": "settlement",
+      "weight": 30,
+      "cooldown_run": 6,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["high_reputation"],
+      "forbidden_flags": ["flag_tower_blackout_done"],
+      "choice_set_id": "CH_EVT_036",
+      "result_set_id": "RS_EVT_036",
+      "next_event_id": null,
+      "summary": "大型公共危机",
+      "remark": "联盟感建立"
+    },
+    {
+      "event_id": "EVT_037",
+      "event_name": "书院失火档案",
+      "phase": "late",
+      "pool": "lore",
+      "scene": "settlement",
+      "weight": 32,
+      "cooldown_run": 5,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["goodwill_academy_1"],
+      "forbidden_flags": ["flag_archive_fire_done"],
+      "choice_set_id": "CH_EVT_037",
+      "result_set_id": "RS_EVT_037",
+      "next_event_id": null,
+      "summary": "核心档案抢救",
+      "remark": "世界观回报高"
+    },
+    {
+      "event_id": "EVT_038",
+      "event_name": "温室疫病苗头",
+      "phase": "late",
+      "pool": "danger",
+      "scene": "settlement",
+      "weight": 34,
+      "cooldown_run": 5,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["flag_greenhouse_arc_mid"],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_038",
+      "result_set_id": "RS_EVT_038",
+      "next_event_id": null,
+      "summary": "聚落危机处理",
+      "remark": "农业线高权重"
+    },
+    {
+      "event_id": "EVT_039",
+      "event_name": "孟回的最后一张地图",
+      "phase": "late",
+      "pool": "special",
+      "scene": "settlement",
+      "weight": 24,
+      "cooldown_run": 6,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["flag_night_market_found"],
+      "forbidden_flags": ["flag_last_map_bought"],
+      "choice_set_id": "CH_EVT_039",
+      "result_set_id": "RS_EVT_039",
+      "next_event_id": "EVT_048",
+      "summary": "隐藏终局捷径线",
+      "remark": "夜市链回收"
+    },
+    {
+      "event_id": "EVT_040",
+      "event_name": "引擎的异常共振",
+      "phase": "late",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 42,
+      "cooldown_run": 5,
+      "trigger_tags": ["cargo_heavy"],
+      "required_flags": ["flag_manual_page_found"],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_040",
+      "result_set_id": "RS_EVT_040",
+      "next_event_id": null,
+      "summary": "货车寿命感事件",
+      "remark": "林砾线后段"
+    },
+    {
+      "event_id": "EVT_041",
+      "event_name": "白述的试探",
+      "phase": "mid",
+      "pool": "lore",
+      "scene": "settlement",
+      "weight": 50,
+      "cooldown_run": 4,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["goodwill_academy_1"],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_041",
+      "result_set_id": "RS_EVT_041",
+      "next_event_id": null,
+      "summary": "价值观对话",
+      "remark": "可改结局权重"
+    },
+    {
+      "event_id": "EVT_042",
+      "event_name": "车窗上的霜花",
+      "phase": "early",
+      "pool": "bond",
+      "scene": "camp",
+      "weight": 42,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_winter"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_042",
+      "result_set_id": "RS_EVT_042",
+      "next_event_id": null,
+      "summary": "纯氛围关系事件",
+      "remark": "冬季版贴贴"
+    },
+    {
+      "event_id": "EVT_043",
+      "event_name": "路边旧广告牌",
+      "phase": "early",
+      "pool": "lore",
+      "scene": "route_node",
+      "weight": 48,
+      "cooldown_run": 2,
+      "trigger_tags": ["route_normal"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_043",
+      "result_set_id": "RS_EVT_043",
+      "next_event_id": null,
+      "summary": "旧文明碎片",
+      "remark": "低强度世界观"
+    },
+    {
+      "event_id": "EVT_044",
+      "event_name": "货损索赔",
+      "phase": "mid",
+      "pool": "trade",
+      "scene": "settlement",
+      "weight": 57,
+      "cooldown_run": 3,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_044",
+      "result_set_id": "RS_EVT_044",
+      "next_event_id": null,
+      "summary": "交付结算摩擦",
+      "remark": "议价与信誉联动"
+    },
+    {
+      "event_id": "EVT_045",
+      "event_name": "暂时同行的护卫",
+      "phase": "mid",
+      "pool": "encounter",
+      "scene": "route_node",
+      "weight": 53,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_045",
+      "result_set_id": "RS_EVT_045",
+      "next_event_id": null,
+      "summary": "花钱买稳妥",
+      "remark": "高风险路线缓冲"
+    },
+    {
+      "event_id": "EVT_046",
+      "event_name": "齿团偷吃货物",
+      "phase": "mid",
+      "pool": "bond",
+      "scene": "drive",
+      "weight": 35,
+      "cooldown_run": 4,
+      "trigger_tags": ["route_normal"],
+      "required_flags": ["flag_pet_unlocked"],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_046",
+      "result_set_id": "RS_EVT_046",
+      "next_event_id": null,
+      "summary": "宠物轻事件",
+      "remark": "DLC / 拓展可开"
+    },
+    {
+      "event_id": "EVT_047",
+      "event_name": "聚落联合求援",
+      "phase": "late",
+      "pool": "special",
+      "scene": "settlement",
+      "weight": 25,
+      "cooldown_run": 6,
+      "trigger_tags": ["arrive_settlement"],
+      "required_flags": ["high_reputation", "before_finale"],
+      "forbidden_flags": ["flag_dual_help_done"],
+      "choice_set_id": "CH_EVT_047",
+      "result_set_id": "RS_EVT_047",
+      "next_event_id": null,
+      "summary": "后期大型抉择",
+      "remark": "双聚落关系分流"
+    },
+    {
+      "event_id": "EVT_048",
+      "event_name": "失落商路的起点",
+      "phase": "late",
+      "pool": "special",
+      "scene": "route_node",
+      "weight": 22,
+      "cooldown_run": 6,
+      "trigger_tags": ["route_danger"],
+      "required_flags": ["flag_hidden_route_ready"],
+      "forbidden_flags": ["flag_lost_route_found"],
+      "choice_set_id": "CH_EVT_048",
+      "result_set_id": "RS_EVT_048",
+      "next_event_id": "EVT_050",
+      "summary": "终局商路入口",
+      "remark": "高价值链"
+    },
+    {
+      "event_id": "EVT_049",
+      "event_name": "她们想留下吗",
+      "phase": "late",
+      "pool": "bond",
+      "scene": "camp",
+      "weight": 24,
+      "cooldown_run": 6,
+      "trigger_tags": ["route_normal"],
+      "required_flags": ["before_finale"],
+      "forbidden_flags": ["flag_end_talk_done"],
+      "choice_set_id": "CH_EVT_049",
+      "result_set_id": "RS_EVT_049",
+      "next_event_id": null,
+      "summary": "结局倾向对话",
+      "remark": "关系终局分流"
+    },
+    {
+      "event_id": "EVT_050",
+      "event_name": "云海高塔的门",
+      "phase": "late",
+      "pool": "special",
+      "scene": "route_node",
+      "weight": 15,
+      "cooldown_run": 99,
+      "trigger_tags": ["route_danger"],
+      "required_flags": ["flag_tower_beacon_seen", "flag_lost_route_found"],
+      "forbidden_flags": ["flag_final_gate_opened"],
+      "choice_set_id": "CH_EVT_050",
+      "result_set_id": "RS_EVT_050",
+      "next_event_id": null,
+      "summary": "终局总开关事件",
+      "remark": "只触发一次"
+    }
+  ],
+  "choice_sets": {
+    "CH_EVT_009": [
+      {
+        "choice_set_id": "CH_EVT_009",
+        "choice_id": "A",
+        "choice_text": "加速甩开",
+        "show_condition": [],
+        "result_key": "RES_EVT_009_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_009",
+        "choice_id": "B",
+        "choice_text": "停车威慑",
+        "show_condition": ["has_weapon"],
+        "result_key": "RES_EVT_009_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_009",
+        "choice_id": "C",
+        "choice_text": "绕路撤离",
+        "show_condition": [],
+        "result_key": "RES_EVT_009_C"
+      }
+    ],
+    "CH_EVT_020": [
+      {
+        "choice_set_id": "CH_EVT_020",
+        "choice_id": "A",
+        "choice_text": "深入打听",
+        "show_condition": [],
+        "result_key": "RES_EVT_020_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_020",
+        "choice_id": "B",
+        "choice_text": "当作玩笑",
+        "show_condition": [],
+        "result_key": "RES_EVT_020_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_020",
+        "choice_id": "C",
+        "choice_text": "先记在账本里",
+        "show_condition": [],
+        "result_key": "RES_EVT_020_C"
+      }
+    ],
+    "CH_EVT_001": [
+      {
+        "choice_set_id": "CH_EVT_001",
+        "choice_id": "A",
+        "choice_text": "打开检查",
+        "show_condition": [],
+        "result_key": "RES_EVT_001_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_001",
+        "choice_id": "B",
+        "choice_text": "谨慎绕过",
+        "show_condition": [],
+        "result_key": "RES_EVT_001_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_001",
+        "choice_id": "C",
+        "choice_text": "让林砾检查再决定",
+        "show_condition": [],
+        "result_key": "RES_EVT_001_C"
+      }
+    ],
+    "CH_EVT_003": [
+      {
+        "choice_set_id": "CH_EVT_003",
+        "choice_id": "A",
+        "choice_text": "让他上车",
+        "show_condition": [],
+        "result_key": "RES_EVT_003_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_003",
+        "choice_id": "B",
+        "choice_text": "给些物资就好",
+        "show_condition": [],
+        "result_key": "RES_EVT_003_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_003",
+        "choice_id": "C",
+        "choice_text": "婉言拒绝",
+        "show_condition": [],
+        "result_key": "RES_EVT_003_C"
+      }
+    ],
+    "CH_EVT_005": [
+      {
+        "choice_set_id": "CH_EVT_005",
+        "choice_id": "A",
+        "choice_text": "按路标指示走",
+        "show_condition": [],
+        "result_key": "RES_EVT_005_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_005",
+        "choice_id": "B",
+        "choice_text": "凭经验绕行",
+        "show_condition": [],
+        "result_key": "RES_EVT_005_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_005",
+        "choice_id": "C",
+        "choice_text": "用雷达扫描确认",
+        "show_condition": ["has_radar"],
+        "result_key": "RES_EVT_005_C"
+      }
+    ],
+    "CH_EVT_006": [
+      {
+        "choice_set_id": "CH_EVT_006",
+        "choice_id": "A",
+        "choice_text": "一起读纸条",
+        "show_condition": [],
+        "result_key": "RES_EVT_006_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_006",
+        "choice_id": "B",
+        "choice_text": "收起来以后再看",
+        "show_condition": [],
+        "result_key": "RES_EVT_006_B"
+      }
+    ],
+    "CH_EVT_007": [
+      {
+        "choice_set_id": "CH_EVT_007",
+        "choice_id": "A",
+        "choice_text": "尝试调频回应",
+        "show_condition": [],
+        "result_key": "RES_EVT_007_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_007",
+        "choice_id": "B",
+        "choice_text": "记录频率备用",
+        "show_condition": [],
+        "result_key": "RES_EVT_007_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_007",
+        "choice_id": "C",
+        "choice_text": "关掉收音机",
+        "show_condition": [],
+        "result_key": "RES_EVT_007_C"
+      }
+    ],
+    "CH_EVT_008": [
+      {
+        "choice_set_id": "CH_EVT_008",
+        "choice_id": "A",
+        "choice_text": "接下急单",
+        "show_condition": [],
+        "result_key": "RES_EVT_008_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_008",
+        "choice_id": "B",
+        "choice_text": "趁机抬价",
+        "show_condition": [],
+        "result_key": "RES_EVT_008_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_008",
+        "choice_id": "C",
+        "choice_text": "推掉不管",
+        "show_condition": [],
+        "result_key": "RES_EVT_008_C"
+      }
+    ],
+    "CH_EVT_010": [
+      {
+        "choice_set_id": "CH_EVT_010",
+        "choice_id": "A",
+        "choice_text": "捡起来交给林砾",
+        "show_condition": [],
+        "result_key": "RES_EVT_010_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_010",
+        "choice_id": "B",
+        "choice_text": "放回货箱不管",
+        "show_condition": [],
+        "result_key": "RES_EVT_010_B"
+      }
+    ],
+    "CH_EVT_014": [
+      {
+        "choice_set_id": "CH_EVT_014",
+        "choice_id": "A",
+        "choice_text": "多休息一会儿",
+        "show_condition": [],
+        "result_key": "RES_EVT_014_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_014",
+        "choice_id": "B",
+        "choice_text": "强撑着出发",
+        "show_condition": [],
+        "result_key": "RES_EVT_014_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_014",
+        "choice_id": "C",
+        "choice_text": "让陶夏先开一段",
+        "show_condition": [],
+        "result_key": "RES_EVT_014_C"
+      }
+    ]
+  },
+  "result_sets": {
+    "RS_EVT_009": [
+      {
+        "result_key": "RES_EVT_009_A",
+        "ops": ["add_fuel:-8", "add_time:3"],
+        "reward_desc": "快速脱离",
+        "risk_desc": "少量燃料损耗",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_009_B",
+        "ops": ["start_combat:ambush_light", "add_relation:1"],
+        "reward_desc": "若车顶机枪成型则能立威",
+        "risk_desc": "若武装不足可能掉货",
+        "set_flags": ["combat_intro_done"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_009_C",
+        "ops": ["add_time:10"],
+        "reward_desc": "最稳定",
+        "risk_desc": "错过窗口",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_020": [
+      {
+        "result_key": "RES_EVT_020_A",
+        "ops": ["unlock_clue:night_market_1", "set_flag:flag_night_market_rumor"],
+        "reward_desc": "获得夜市线索",
+        "risk_desc": "无直接收益",
+        "set_flags": ["flag_night_market_rumor"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_020_B",
+        "ops": ["add_time:0"],
+        "reward_desc": "不影响当前节奏",
+        "risk_desc": "错失支线推进",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_020_C",
+        "ops": ["add_relation:1"],
+        "reward_desc": "延后推进但保留线索感",
+        "risk_desc": "收益较慢",
+        "set_flags": ["flag_night_market_note"],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_001": [
+      {
+        "result_key": "RES_EVT_001_A",
+        "ops": ["add_credit:20", "add_fuel:5"],
+        "reward_desc": "找到少量信用点和燃料补给",
+        "risk_desc": "可能有陷阱但这次安全",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_001_B",
+        "ops": [],
+        "reward_desc": "安全无虞",
+        "risk_desc": "错失补给",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_001_C",
+        "ops": ["add_credit:25", "add_time:2", "add_relation_linli:1"],
+        "reward_desc": "林砾仔细检查后收获更多",
+        "risk_desc": "花了些时间",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_003": [
+      {
+        "result_key": "RES_EVT_003_A",
+        "ops": ["add_credit:15", "add_goodwill:3"],
+        "reward_desc": "旅人感激，分享了一些物资",
+        "risk_desc": "无",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_003_B",
+        "ops": ["add_credit:-5", "add_goodwill:1"],
+        "reward_desc": "保持善意但不冒险",
+        "risk_desc": "少量物资消耗",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_003_C",
+        "ops": [],
+        "reward_desc": "不耽误行程",
+        "risk_desc": "无好感收益",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_005": [
+      {
+        "result_key": "RES_EVT_005_A",
+        "ops": ["add_durability:-10"],
+        "reward_desc": "按指示前进",
+        "risk_desc": "路标可能被恶意挪动，底盘受损",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_005_B",
+        "ops": ["add_fuel:-5", "add_time:5"],
+        "reward_desc": "避开潜在陷阱",
+        "risk_desc": "多消耗燃料和时间",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_005_C",
+        "ops": ["add_time:2"],
+        "reward_desc": "雷达精确判断正确路线",
+        "risk_desc": "仅消耗少量时间",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_006": [
+      {
+        "result_key": "RES_EVT_006_A",
+        "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
+        "reward_desc": "两人短暂分享温馨时光",
+        "risk_desc": "无",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_006_B",
+        "ops": ["add_relation_linli:1"],
+        "reward_desc": "林砾注意到了你的细心",
+        "risk_desc": "无",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_007": [
+      {
+        "result_key": "RES_EVT_007_A",
+        "ops": ["add_credit:10", "set_flag:flag_radio_contact"],
+        "reward_desc": "获得物资点位置信息",
+        "risk_desc": "无",
+        "set_flags": ["flag_radio_contact"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_007_B",
+        "ops": ["set_flag:flag_radio_frequency_noted"],
+        "reward_desc": "记下频率以备后用",
+        "risk_desc": "无直接收益",
+        "set_flags": ["flag_radio_frequency_noted"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_007_C",
+        "ops": [],
+        "reward_desc": "不受干扰",
+        "risk_desc": "错失线索",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_008": [
+      {
+        "result_key": "RES_EVT_008_A",
+        "ops": ["spawn_order:pump_urgent", "add_goodwill:greenhouse:5"],
+        "reward_desc": "温室好感大涨",
+        "risk_desc": "占用运力",
+        "set_flags": ["flag_pump_order_taken"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_008_B",
+        "ops": ["add_credit:30", "add_goodwill:greenhouse:-2"],
+        "reward_desc": "丰厚利润",
+        "risk_desc": "温室好感下降",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_008_C",
+        "ops": [],
+        "reward_desc": "不影响行程",
+        "risk_desc": "错失温室关系",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_010": [
+      {
+        "result_key": "RES_EVT_010_A",
+        "ops": ["set_flag:flag_doll_found", "add_relation_linli:2"],
+        "reward_desc": "林砾默默收好，神情复杂",
+        "risk_desc": "无",
+        "set_flags": ["flag_doll_found"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_010_B",
+        "ops": ["set_flag:flag_doll_found"],
+        "reward_desc": "玩偶留在货箱",
+        "risk_desc": "错过关系增温机会",
+        "set_flags": ["flag_doll_found"],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_014": [
+      {
+        "result_key": "RES_EVT_014_A",
+        "ops": ["add_time:5", "add_fuel:3"],
+        "reward_desc": "充分休息恢复精力",
+        "risk_desc": "耽误行程",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_014_B",
+        "ops": ["add_damage:5"],
+        "reward_desc": "不耽误时间",
+        "risk_desc": "疲劳驾驶有车损风险",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_014_C",
+        "ops": ["add_relation_taoxia:2", "add_time:3"],
+        "reward_desc": "陶夏很高兴能帮忙",
+        "risk_desc": "稍慢但安全",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ]
+  },
+  "chains": [
+    {
+      "chain_name": "玩偶线",
+      "start": "EVT_010",
+      "middle": ["EVT_023"],
+      "end": null,
+      "description": "偏温情与聚落居民回馈"
+    },
+    {
+      "chain_name": "林砾手册线",
+      "start": "EVT_017",
+      "middle": ["EVT_040"],
+      "end": null,
+      "description": "林砾个人成长与货车生命感"
+    },
+    {
+      "chain_name": "夜市线",
+      "start": "EVT_020",
+      "middle": ["EVT_039"],
+      "end": null,
+      "description": "陶夏个人线与隐藏交易点"
+    },
+    {
+      "chain_name": "地图碎片线",
+      "start": "EVT_025",
+      "middle": ["EVT_048"],
+      "end": "EVT_050",
+      "description": "商路隐藏线与终局线路"
+    },
+    {
+      "chain_name": "鸣砂广播线",
+      "start": "EVT_022",
+      "middle": ["EVT_033"],
+      "end": "EVT_034",
+      "description": "主线广播导引"
+    }
+  ],
+  "runtime_notes": {
+    "weight_calc_order": [
+      "基础权重",
+      "阶段过滤",
+      "场景过滤",
+      "tag/flag 过滤",
+      "动态修正"
+    ],
+    "dynamic_modifiers": [
+      "聚落好感",
+      "角色关系",
+      "车辆模块",
+      "季节",
+      "路线熟练度"
+    ],
+    "dedupe_rule": "同一 pool 在连续 2 次跑商内尽量不重复",
+    "combat_bridge": {
+      "start_combat:ambush_light": "进入车载迎击",
+      "start_combat:resource_small": "进入探索战"
+    },
+    "localization_note": "前端正文建议独立到 event_text 或本地化表，不与数值配置混写。"
+  }
+}
