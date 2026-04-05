@@ -6,6 +6,7 @@ local Flow         = require("core/flow")
 local Graph        = require("map/world_graph")
 local OrderBook    = require("economy/order_book")
 local RoutePlanner = require("map/route_planner")
+local Goods        = require("economy/goods")
 
 local M = {}
 
@@ -37,6 +38,30 @@ local mapMode = {
 ---@type table|nil
 local routePanel_ = nil
 
+-- 探索区域面板引用
+---@type table|nil
+local explorePanel_ = nil
+-- 折叠状态
+local exploreCollapsed_ = {
+    unknown = false,  -- 默认展开
+    known   = false,  -- 默认展开
+}
+
+-- 边类型 & 危险等级显示
+local EDGE_TYPE_LABEL = { main_road = "公路", path = "小径", shortcut = "捷径" }
+local DANGER_LABEL_MAP = { safe = "低", normal = "中", danger = "高" }
+local DANGER_COLOR    = {
+    safe   = Theme.colors.success,
+    normal = Theme.colors.accent,
+    danger = Theme.colors.danger,
+}
+
+-- 节点类型中文
+local NODE_TYPE_LABEL = {
+    settlement = "聚落", resource = "资源点", transit = "中转站",
+    hazard = "危险区", story = "遗迹",
+}
+
 -- ============================================================
 -- 常量
 -- ============================================================
@@ -52,7 +77,7 @@ local NODE_ICON = {
     hazard     = "⚠",  story    = "📡",
 }
 local EDGE_LABEL  = { main_road = "主干道", path = "小径", shortcut = "捷径" }
-local DANGER_STR  = { low = "低", normal = "中", high = "高" }
+local DANGER_STR  = { safe = "低", normal = "中", danger = "高" }
 
 -- ============================================================
 -- 地图相机 & 输入状态（页面级，非全局）
@@ -100,6 +125,17 @@ local enterManualPlan    -- (targetId)
 local exitToBase         -- ()
 local switchStrategy     -- (strat)
 local rebuildPanel       -- ()
+local rebuildExplorePanel -- ()
+
+--- 获取旅行中的有效规划起点（下一到达节点），非旅行返回 current_location
+local function getEffectiveOrigin()
+    if state_ and Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+       and state_.flow.route_plan then
+        return RoutePlanner.get_next_arrival_node(state_.flow.route_plan)
+            or state_.map.current_location
+    end
+    return state_ and state_.map.current_location or nil
+end
 
 -- ============================================================
 -- 坐标转换
@@ -208,7 +244,7 @@ local function drawEdges(nvg, known)
                 fc(nvg, Theme.colors.text_dim)
                 nvgText(nvg, mx, my, e.travel_time_sec .. "s", nil)
 
-                if e.danger_level == "high" then
+                if e.danger == "danger" then
                     fc(nvg, Theme.colors.danger)
                     nvgFontSize(nvg, 12)
                     nvgText(nvg, mx, my - 14, "⚠", nil)
@@ -419,6 +455,121 @@ local function drawRoutePath(nvg, plan, colorKey)
     end
 end
 
+-- ============================================================
+-- 绘制：活跃旅行路线（已走过灰色 + 剩余亮色 + 卡车位置）
+-- ============================================================
+local function drawActiveRoute(nvg, plan, time)
+    if not plan or not plan.segments or #plan.segments == 0 then return end
+    if not plan.path or #plan.path < 2 then return end
+
+    local segIdx = plan.segment_index or 0
+    if segIdx == 0 then return end
+
+    -- 1. 已走过的段（灰色）
+    for i = 1, math.min(segIdx - 1, #plan.path - 1) do
+        local n1 = Graph.get_node(plan.path[i])
+        local n2 = Graph.get_node(plan.path[i + 1])
+        if n1 and n2 then
+            local x1, y1 = w2s(n1.x, n1.y)
+            local x2, y2 = w2s(n2.x, n2.y)
+            nvgBeginPath(nvg)
+            nvgMoveTo(nvg, x1, y1)
+            nvgLineTo(nvg, x2, y2)
+            sc(nvg, Theme.colors.map_route_done)
+            nvgStrokeWidth(nvg, 3)
+            nvgStroke(nvg)
+        end
+    end
+
+    -- 2. 当前段及剩余段（亮色 + 发光）
+    local startSeg = math.max(segIdx, 1)
+    for i = startSeg, #plan.path - 1 do
+        local n1 = Graph.get_node(plan.path[i])
+        local n2 = Graph.get_node(plan.path[i + 1])
+        if n1 and n2 then
+            local x1, y1 = w2s(n1.x, n1.y)
+            local x2, y2 = w2s(n2.x, n2.y)
+            -- 发光底层
+            nvgBeginPath(nvg)
+            nvgMoveTo(nvg, x1, y1)
+            nvgLineTo(nvg, x2, y2)
+            sc(nvg, Theme.colors.map_route_glow)
+            nvgStrokeWidth(nvg, 10)
+            nvgStroke(nvg)
+            -- 主线
+            nvgBeginPath(nvg)
+            nvgMoveTo(nvg, x1, y1)
+            nvgLineTo(nvg, x2, y2)
+            sc(nvg, Theme.colors.map_route_active)
+            nvgStrokeWidth(nvg, 4)
+            nvgStroke(nvg)
+        end
+    end
+
+    -- 3. 方向箭头（剩余段中点）
+    for i = startSeg, #plan.path - 1 do
+        local n1 = Graph.get_node(plan.path[i])
+        local n2 = Graph.get_node(plan.path[i + 1])
+        if n1 and n2 then
+            local x1, y1 = w2s(n1.x, n1.y)
+            local x2, y2 = w2s(n2.x, n2.y)
+            local mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+            local dx, dy = x2 - x1, y2 - y1
+            local dist = math.sqrt(dx * dx + dy * dy)
+            if dist > 20 then
+                local ux, uy = dx / dist, dy / dist
+                local px, py = -uy, ux
+                local sz = 5
+                nvgBeginPath(nvg)
+                nvgMoveTo(nvg, mx + ux * sz, my + uy * sz)
+                nvgLineTo(nvg, mx - ux * sz + px * sz, my - uy * sz + py * sz)
+                nvgLineTo(nvg, mx - ux * sz - px * sz, my - uy * sz - py * sz)
+                nvgClosePath(nvg)
+                fc(nvg, Theme.colors.map_route_active, 220)
+                nvgFill(nvg)
+            end
+        end
+    end
+
+    -- 4. 卡车插值位置
+    local seg = plan.segments[segIdx]
+    if seg then
+        local fromNode = Graph.get_node(seg.from)
+        local toNode   = Graph.get_node(seg.to)
+        if fromNode and toNode then
+            local t = 0
+            if seg.time_sec > 0 then
+                t = math.min((plan.segment_elapsed or 0) / seg.time_sec, 1.0)
+            end
+            -- 在世界坐标插值
+            local wx = fromNode.x + (toNode.x - fromNode.x) * t
+            local wy = fromNode.y + (toNode.y - fromNode.y) * t
+            local tx, ty = w2s(wx, wy)
+
+            -- 卡车呼吸光圈
+            local pulse = 0.5 + 0.5 * math.abs(math.sin(time * 2.5))
+            local pr = 14 + 4 * math.sin(time * 2.5)
+            nvgBeginPath(nvg)
+            nvgCircle(nvg, tx, ty, pr)
+            fc(nvg, Theme.colors.map_truck, math.floor(60 * pulse))
+            nvgFill(nvg)
+
+            -- 卡车实心点
+            nvgBeginPath(nvg)
+            nvgCircle(nvg, tx, ty, 7)
+            fc(nvg, Theme.colors.map_truck)
+            nvgFill(nvg)
+
+            -- 卡车图标
+            nvgFontFaceId(nvg, cam.font)
+            nvgFontSize(nvg, 16)
+            nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+            fc(nvg, { 40, 30, 10, 255 })
+            nvgText(nvg, tx, ty, "🚚", nil)
+        end
+    end
+end
+
 --- 绘制手动模式的途经点标记
 local function drawWaypoints(nvg, waypoints)
     for i, wpId in ipairs(waypoints) do
@@ -481,14 +632,38 @@ local function drawMap(nvg, layout)
         cam.font = nvgCreateFont(nvg, "map-sans", "Fonts/MiSans-Regular.ttf")
     end
 
-    -- 首次打开：居中当前位置
+    -- 首次打开：居中到当前位置（旅行中居中到卡车插值位置）
     if not cam.initialized and state_ then
-        local curNode = Graph.get_node(state_.map.current_location)
-        if curNode then
+        local centerX, centerY = nil, nil
+        local plan = state_.flow.route_plan
+        local travelling = Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+        if travelling and plan and plan.segment_index and plan.segment_index > 0 then
+            local seg = plan.segments[plan.segment_index]
+            if seg then
+                local fn = Graph.get_node(seg.from)
+                local tn = Graph.get_node(seg.to)
+                if fn and tn then
+                    local t = 0
+                    if seg.time_sec > 0 then
+                        t = math.min((plan.segment_elapsed or 0) / seg.time_sec, 1.0)
+                    end
+                    centerX = fn.x + (tn.x - fn.x) * t
+                    centerY = fn.y + (tn.y - fn.y) * t
+                end
+            end
+        end
+        if not centerX then
+            local curNode = Graph.get_node(state_.map.current_location)
+            if curNode then
+                centerX = curNode.x
+                centerY = curNode.y
+            end
+        end
+        if centerX then
             cam.scale = math.min(cam.cw, cam.ch) / 480
             cam.scale = math.max(ZOOM_MIN, math.min(cam.scale, ZOOM_MAX))
-            cam.panX = cam.cw / 2 - curNode.x * cam.scale
-            cam.panY = cam.ch / 2 - curNode.y * cam.scale
+            cam.panX = cam.cw / 2 - centerX * cam.scale
+            cam.panY = cam.ch / 2 - centerY * cam.scale
         end
         cam.initialized = true
     end
@@ -512,7 +687,11 @@ local function drawMap(nvg, layout)
     drawEdges(nvg, known)
 
     -- 路线高亮（在边之上、节点之下）
-    if mapMode.state == MapState.ROUTE_PREVIEW and mapMode.activePlan then
+    local isTravelling = state_ and Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+    if isTravelling and state_.flow.route_plan then
+        -- 旅行中：绘制活跃路线（已走灰色 + 剩余亮色 + 卡车位置）
+        drawActiveRoute(nvg, state_.flow.route_plan, time)
+    elseif mapMode.state == MapState.ROUTE_PREVIEW and mapMode.activePlan then
         local colorKey = STRATEGY_COLORS[mapMode.strategy] or "map_route_fastest"
         drawRoutePath(nvg, mapMode.activePlan, colorKey)
     elseif mapMode.state == MapState.MANUAL_PLAN and mapMode.manualPlan then
@@ -596,13 +775,19 @@ local function openNodeModal(nodeId)
         },
     })
 
+    -- 旅行状态判断
+    local travelling = Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+
+    -- 旅行中以下一到达节点为有效起点判断路线
+    local planOrigin = travelling and getEffectiveOrigin() or current
+
     -- 直连路线信息 & 操作按钮
-    local edge = Graph.get_edge(current, nodeId)
+    local edge = Graph.get_edge(planOrigin, nodeId)
     local reachable = false
 
     if edge then
         reachable = true
-        local dangerColor = DANGER_STR[edge.danger_level] == "高"
+        local dangerColor = DANGER_STR[edge.danger] == "高"
             and Theme.colors.danger or Theme.colors.info
 
         modal_:AddContent(UI.Panel {
@@ -642,7 +827,7 @@ local function openNodeModal(nodeId)
                             fontColor = Theme.colors.text_dim,
                         },
                         UI.Label {
-                            text = DANGER_STR[edge.danger_level] or "?",
+                            text = DANGER_STR[edge.danger] or "?",
                             fontSize = Theme.sizes.font_small,
                             fontColor = dangerColor,
                         },
@@ -652,36 +837,53 @@ local function openNodeModal(nodeId)
         })
 
         -- 相邻节点操作按钮
-        local canDepart = state_.truck.fuel >= edge.fuel_cost
-        modal_:AddContent(UI.Panel {
-            width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
-            children = {
-                UI.Button {
-                    text = canDepart and "直接出发" or "燃料不足",
-                    variant = "primary", flexGrow = 1, height = 40,
-                    disabled = not canDepart,
-                    onClick = function(self)
-                        modal_:Close()
-                        local plan = RoutePlanner.auto_plan(state_, nodeId, "fastest")
-                        if plan then
-                            Flow.start_travel(state_, plan)
-                            router_.navigate("home")
-                        end
-                    end,
+        if travelling then
+            -- 旅行中允许重新规划路线
+            modal_:AddContent(UI.Panel {
+                width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
+                children = {
+                    UI.Button {
+                        text = "查看路线",
+                        variant = "primary", flexGrow = 1, height = 40,
+                        onClick = function(self)
+                            modal_:Close()
+                            enterRoutePreview(nodeId)
+                        end,
+                    },
                 },
-                UI.Button {
-                    text = "查看路线",
-                    variant = "secondary", flexGrow = 1, height = 40,
-                    onClick = function(self)
-                        modal_:Close()
-                        enterRoutePreview(nodeId)
-                    end,
+            })
+        elseif not travelling then
+            local canDepart = state_.truck.fuel >= edge.fuel_cost
+            modal_:AddContent(UI.Panel {
+                width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
+                children = {
+                    UI.Button {
+                        text = canDepart and "直接出发" or "燃料不足",
+                        variant = "primary", flexGrow = 1, height = 40,
+                        disabled = not canDepart,
+                        onClick = function(self)
+                            modal_:Close()
+                            local plan = RoutePlanner.auto_plan(state_, nodeId, "fastest")
+                            if plan then
+                                Flow.start_travel(state_, plan)
+                                router_.navigate("home")
+                            end
+                        end,
+                    },
+                    UI.Button {
+                        text = "查看路线",
+                        variant = "secondary", flexGrow = 1, height = 40,
+                        onClick = function(self)
+                            modal_:Close()
+                            enterRoutePreview(nodeId)
+                        end,
+                    },
                 },
-            },
-        })
-    elseif nodeId ~= current then
+            })
+        end
+    elseif nodeId ~= planOrigin then
         -- 非直连：显示路径距离
-        local path = Graph.find_path(current, nodeId, state_)
+        local path = Graph.find_path(planOrigin, nodeId, state_)
         if path and #path > 1 then
             reachable = true
             modal_:AddContent(UI.Panel {
@@ -698,27 +900,44 @@ local function openNodeModal(nodeId)
             })
 
             -- 非相邻可达节点操作按钮
-            modal_:AddContent(UI.Panel {
-                width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
-                children = {
-                    UI.Button {
-                        text = "规划路线",
-                        variant = "primary", flexGrow = 1, height = 40,
-                        onClick = function(self)
-                            modal_:Close()
-                            enterRoutePreview(nodeId)
-                        end,
+            if travelling then
+                -- 旅行中允许重新规划路线
+                modal_:AddContent(UI.Panel {
+                    width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
+                    children = {
+                        UI.Button {
+                            text = "规划新路线",
+                            variant = "primary", flexGrow = 1, height = 40,
+                            onClick = function(self)
+                                modal_:Close()
+                                enterRoutePreview(nodeId)
+                            end,
+                        },
                     },
-                    UI.Button {
-                        text = "手动规划",
-                        variant = "secondary", flexGrow = 1, height = 40,
-                        onClick = function(self)
-                            modal_:Close()
-                            enterManualPlan(nodeId)
-                        end,
+                })
+            elseif not travelling then
+                modal_:AddContent(UI.Panel {
+                    width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
+                    children = {
+                        UI.Button {
+                            text = "规划路线",
+                            variant = "primary", flexGrow = 1, height = 40,
+                            onClick = function(self)
+                                modal_:Close()
+                                enterRoutePreview(nodeId)
+                            end,
+                        },
+                        UI.Button {
+                            text = "手动规划",
+                            variant = "secondary", flexGrow = 1, height = 40,
+                            onClick = function(self)
+                                modal_:Close()
+                                enterManualPlan(nodeId)
+                            end,
+                        },
                     },
-                },
-            })
+                })
+            end
         else
             modal_:AddContent(UI.Panel {
                 width = "100%", padding = 10,
@@ -758,12 +977,21 @@ rebuildPanel = function()
     routePanel_:ClearChildren()
 
     if mapMode.state == MapState.BROWSE then
-        -- 浏览模式：隐藏面板
+        -- 浏览模式：隐藏路线面板，显示探索面板
         routePanel_:SetStyle({ height = 0, padding = 0, display = "none" })
+        if explorePanel_ then
+            rebuildExplorePanel()
+        end
         return
     end
 
     routePanel_:SetStyle({ height = "auto", padding = 12, display = "flex" })
+    -- 路线模式：隐藏探索面板
+    if explorePanel_ then
+        explorePanel_:SetStyle({ display = "none" })
+    end
+
+    local isTravelling = Flow.get_phase(state_) == Flow.Phase.TRAVELLING
 
     if mapMode.state == MapState.ROUTE_PREVIEW then
         local plan = mapMode.activePlan
@@ -771,14 +999,17 @@ rebuildPanel = function()
         local targetName = targetNode and targetNode.name or mapMode.target or "?"
 
         -- 标题行
+        local titleText = isTravelling
+            and ("🚚 改道 → " .. targetName)
+            or ("目标: " .. targetName)
         routePanel_:AddChild(UI.Panel {
             width = "100%", flexDirection = "row",
             justifyContent = "space-between", alignItems = "center",
             children = {
                 UI.Label {
-                    text = "目标: " .. targetName,
+                    text = titleText,
                     fontSize = Theme.sizes.font_normal,
-                    fontColor = Theme.colors.text_primary,
+                    fontColor = isTravelling and Theme.colors.accent or Theme.colors.text_primary,
                 },
                 UI.Button {
                     text = "✕", variant = "secondary",
@@ -806,7 +1037,7 @@ rebuildPanel = function()
 
         -- 路线信息
         if plan then
-            local DANGER_LABEL = { low = "低", normal = "中", high = "高" }
+            local DANGER_LABEL = { safe = "低", normal = "中", danger = "高" }
             routePanel_:AddChild(UI.Panel {
                 width = "100%", flexDirection = "row", gap = 12, marginTop = 6,
                 justifyContent = "space-around",
@@ -824,7 +1055,7 @@ rebuildPanel = function()
                     UI.Label {
                         text = "⚠ " .. (DANGER_LABEL[plan.max_danger] or "?"),
                         fontSize = Theme.sizes.font_small,
-                        fontColor = plan.max_danger == "high" and Theme.colors.danger
+                        fontColor = plan.max_danger == "danger" and Theme.colors.danger
                             or Theme.colors.text_secondary,
                     },
                     UI.Label {
@@ -837,27 +1068,48 @@ rebuildPanel = function()
 
             -- 操作按钮
             local canDepart = state_.truck.fuel >= plan.total_fuel
-            routePanel_:AddChild(UI.Panel {
-                width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
-                children = {
-                    UI.Button {
-                        text = "手动规划",
-                        variant = "secondary", flexGrow = 1, height = 40,
-                        onClick = function(self) enterManualPlan(mapMode.target) end,
+            if isTravelling then
+                -- 旅行中：改道确认
+                routePanel_:AddChild(UI.Panel {
+                    width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
+                    children = {
+                        UI.Button {
+                            text = "确认改道",
+                            variant = "primary", flexGrow = 1, height = 40,
+                            onClick = function(self)
+                                if plan then
+                                    local ok = Flow.reroute(state_, plan)
+                                    if ok then
+                                        exitToBase()
+                                    end
+                                end
+                            end,
+                        },
                     },
-                    UI.Button {
-                        text = canDepart and "确认出发" or "燃料不足",
-                        variant = "primary", flexGrow = 2, height = 40,
-                        disabled = not canDepart,
-                        onClick = function(self)
-                            if canDepart and plan then
-                                Flow.start_travel(state_, plan)
-                                router_.navigate("home")
-                            end
-                        end,
+                })
+            else
+                routePanel_:AddChild(UI.Panel {
+                    width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
+                    children = {
+                        UI.Button {
+                            text = "手动规划",
+                            variant = "secondary", flexGrow = 1, height = 40,
+                            onClick = function(self) enterManualPlan(mapMode.target) end,
+                        },
+                        UI.Button {
+                            text = canDepart and "确认出发" or "燃料不足",
+                            variant = "primary", flexGrow = 2, height = 40,
+                            disabled = not canDepart,
+                            onClick = function(self)
+                                if canDepart and plan then
+                                    Flow.start_travel(state_, plan)
+                                    router_.navigate("home")
+                                end
+                            end,
+                        },
                     },
-                },
-            })
+                })
+            end
         else
             routePanel_:AddChild(UI.Label {
                 text = "无法规划到该目标的路线",
@@ -903,7 +1155,7 @@ rebuildPanel = function()
         -- 路线信息
         local plan = mapMode.manualPlan
         if plan then
-            local DANGER_LABEL = { low = "低", normal = "中", high = "高" }
+            local DANGER_LABEL = { safe = "低", normal = "中", danger = "高" }
             routePanel_:AddChild(UI.Panel {
                 width = "100%", flexDirection = "row", gap = 12, marginTop = 6,
                 justifyContent = "space-around",
@@ -921,7 +1173,7 @@ rebuildPanel = function()
                     UI.Label {
                         text = "⚠ " .. (DANGER_LABEL[plan.max_danger] or "?"),
                         fontSize = Theme.sizes.font_small,
-                        fontColor = plan.max_danger == "high" and Theme.colors.danger
+                        fontColor = plan.max_danger == "danger" and Theme.colors.danger
                             or Theme.colors.text_secondary,
                     },
                 },
@@ -941,7 +1193,8 @@ rebuildPanel = function()
                             table.remove(mapMode.waypoints)
                             -- 重新计算路线
                             if #mapMode.waypoints >= 2 then
-                                mapMode.manualPlan = RoutePlanner.manual_plan_with_fill(state_, mapMode.waypoints)
+                                local fromOvr = isTravelling and getEffectiveOrigin() or nil
+                                mapMode.manualPlan = RoutePlanner.manual_plan_with_fill(state_, mapMode.waypoints, fromOvr)
                             else
                                 mapMode.manualPlan = nil
                             end
@@ -950,13 +1203,20 @@ rebuildPanel = function()
                     end,
                 },
                 UI.Button {
-                    text = plan and "确认出发" or "请选择途经点",
+                    text = isTravelling
+                        and (plan and "确认改道" or "请选择途经点")
+                        or  (plan and "确认出发" or "请选择途经点"),
                     variant = "primary", flexGrow = 2, height = 40,
                     disabled = not plan or (plan and state_.truck.fuel < plan.total_fuel),
                     onClick = function(self)
                         if plan then
-                            Flow.start_travel(state_, plan)
-                            router_.navigate("home")
+                            if isTravelling then
+                                local ok = Flow.reroute(state_, plan)
+                                if ok then exitToBase() end
+                            else
+                                Flow.start_travel(state_, plan)
+                                router_.navigate("home")
+                            end
                         end
                     end,
                 },
@@ -974,13 +1234,244 @@ rebuildPanel = function()
 end
 
 -- ============================================================
+-- 探索区域面板重建
+-- ============================================================
+rebuildExplorePanel = function()
+    if not explorePanel_ or not state_ then return end
+    explorePanel_:ClearChildren()
+
+    -- 旅行中隐藏探索面板
+    local travelling = Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+    if travelling then
+        explorePanel_:SetStyle({ display = "none" })
+        return
+    end
+
+    local nodeId   = state_.map.current_location
+    local unknowns = Graph.get_unknown_neighbors(nodeId, state_)
+    local knowns   = Graph.get_neighbors(nodeId, state_)
+
+    local hasUnknowns = #unknowns > 0
+    local hasKnowns   = #knowns > 0
+
+    if not hasUnknowns and not hasKnowns then
+        explorePanel_:SetStyle({ display = "none" })
+        return
+    end
+
+    explorePanel_:SetStyle({ display = "flex" })
+
+    -- ── 未探索区域（折叠区） ──
+    if hasUnknowns then
+        local collapsed = exploreCollapsed_.unknown
+
+        -- 标题行（可点击折叠）
+        explorePanel_:AddChild(UI.Panel {
+            width = "100%", flexDirection = "row",
+            justifyContent = "space-between", alignItems = "center",
+            paddingTop = 4, paddingBottom = 4,
+            onClick = function(self)
+                exploreCollapsed_.unknown = not exploreCollapsed_.unknown
+                rebuildExplorePanel()
+            end,
+            children = {
+                UI.Label {
+                    text = "🗺 未探索区域",
+                    fontSize = Theme.sizes.font_normal,
+                    fontColor = Theme.colors.text_secondary,
+                },
+                UI.Label {
+                    text = collapsed and "▶ " .. #unknowns or "▼ " .. #unknowns,
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.text_dim,
+                },
+            },
+        })
+
+        if not collapsed then
+            for _, adj in ipairs(unknowns) do
+                local edge   = adj.edge
+                local fuelOk = state_.truck.fuel >= edge.fuel_cost
+                local dColor = DANGER_COLOR[edge.danger] or Theme.colors.text_dim
+
+                explorePanel_:AddChild(UI.Panel {
+                    width = "100%", padding = 10,
+                    backgroundColor = { 40, 36, 28, 220 },
+                    borderRadius = Theme.sizes.radius_small,
+                    borderWidth = 1, borderColor = Theme.colors.warning,
+                    flexDirection = "row", justifyContent = "space-between",
+                    alignItems = "center",
+                    children = {
+                        UI.Panel {
+                            flexShrink = 1, gap = 2,
+                            children = {
+                                UI.Label {
+                                    text = "❓ 未知区域",
+                                    fontSize = Theme.sizes.font_normal,
+                                    fontColor = Theme.colors.text_primary,
+                                },
+                                UI.Panel {
+                                    flexDirection = "row", gap = 8,
+                                    children = {
+                                        UI.Label {
+                                            text = EDGE_TYPE_LABEL[edge.type] or edge.type,
+                                            fontSize = Theme.sizes.font_tiny,
+                                            fontColor = Theme.colors.text_dim,
+                                        },
+                                        UI.Label {
+                                            text = "危险:" .. (DANGER_LABEL_MAP[edge.danger] or "?"),
+                                            fontSize = Theme.sizes.font_tiny,
+                                            fontColor = dColor,
+                                        },
+                                        UI.Label {
+                                            text = "⛽" .. edge.fuel_cost,
+                                            fontSize = Theme.sizes.font_tiny,
+                                            fontColor = fuelOk and Theme.colors.text_dim
+                                                or Theme.colors.danger,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        UI.Button {
+                            text = fuelOk and "探索" or "燃料不足",
+                            variant = fuelOk and "primary" or "secondary",
+                            height = 32, paddingLeft = 14, paddingRight = 14,
+                            disabled = not fuelOk,
+                            onClick = function(self)
+                                local ok, err = Flow.start_exploration(state_, adj.to)
+                                if ok then
+                                    router_.navigate("home")
+                                else
+                                    print("[Explore] " .. (err or "failed"))
+                                end
+                            end,
+                        },
+                    },
+                })
+            end
+        end
+    end
+
+    -- ── 前往已知区域（折叠区） ──
+    if hasKnowns then
+        local collapsed = exploreCollapsed_.known
+
+        -- 分隔（如果上面有未探索区域）
+        if hasUnknowns then
+            explorePanel_:AddChild(UI.Panel {
+                width = "100%", height = 1,
+                backgroundColor = Theme.colors.border,
+                marginTop = 4, marginBottom = 4,
+            })
+        end
+
+        -- 标题行（可点击折叠）
+        explorePanel_:AddChild(UI.Panel {
+            width = "100%", flexDirection = "row",
+            justifyContent = "space-between", alignItems = "center",
+            paddingTop = 4, paddingBottom = 4,
+            onClick = function(self)
+                exploreCollapsed_.known = not exploreCollapsed_.known
+                rebuildExplorePanel()
+            end,
+            children = {
+                UI.Label {
+                    text = "🚶 前往已知区域",
+                    fontSize = Theme.sizes.font_normal,
+                    fontColor = Theme.colors.text_secondary,
+                },
+                UI.Label {
+                    text = collapsed and "▶ " .. #knowns or "▼ " .. #knowns,
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.text_dim,
+                },
+            },
+        })
+
+        if not collapsed then
+            for _, adj in ipairs(knowns) do
+                local edge       = adj.edge
+                local targetNode = Graph.get_node(adj.to)
+                local fuelOk     = state_.truck.fuel >= edge.fuel_cost
+                local tName      = targetNode and targetNode.name or adj.to
+                local tType      = targetNode and (NODE_TYPE_LABEL[targetNode.type] or "") or ""
+
+                explorePanel_:AddChild(UI.Panel {
+                    width = "100%", padding = 10,
+                    backgroundColor = Theme.colors.bg_card,
+                    borderRadius = Theme.sizes.radius_small,
+                    flexDirection = "row", justifyContent = "space-between",
+                    alignItems = "center",
+                    children = {
+                        UI.Panel {
+                            flexShrink = 1, gap = 2,
+                            children = {
+                                UI.Label {
+                                    text = tName,
+                                    fontSize = Theme.sizes.font_normal,
+                                    fontColor = Theme.colors.text_primary,
+                                },
+                                UI.Panel {
+                                    flexDirection = "row", gap = 8,
+                                    children = {
+                                        UI.Label {
+                                            text = tType,
+                                            fontSize = Theme.sizes.font_tiny,
+                                            fontColor = Theme.colors.text_dim,
+                                        },
+                                        UI.Label {
+                                            text = "⛽" .. edge.fuel_cost,
+                                            fontSize = Theme.sizes.font_tiny,
+                                            fontColor = fuelOk and Theme.colors.text_dim
+                                                or Theme.colors.danger,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        UI.Button {
+                            text = fuelOk and "前往" or "燃料不足",
+                            variant = fuelOk and "outline" or "secondary",
+                            height = 32, paddingLeft = 14, paddingRight = 14,
+                            disabled = not fuelOk,
+                            onClick = function(self)
+                                local ok, err = Flow.start_exploration(state_, adj.to)
+                                if ok then
+                                    router_.navigate("home")
+                                else
+                                    print("[Travel] " .. (err or "failed"))
+                                end
+                            end,
+                        },
+                    },
+                })
+            end
+        end
+    end
+end
+
+-- ============================================================
 -- 模式转换实现
 -- ============================================================
 enterRoutePreview = function(nodeId)
     mapMode.state = MapState.ROUTE_PREVIEW
     mapMode.target = nodeId
     mapMode.strategy = "fastest"
-    mapMode.plans = RoutePlanner.auto_plan_all_strategies(state_, nodeId)
+
+    -- 旅行中：从下一个到达节点出发规划
+    local travelling = Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+    if travelling and state_.flow.route_plan then
+        local fromId = RoutePlanner.get_next_arrival_node(state_.flow.route_plan)
+        if fromId then
+            mapMode.plans = RoutePlanner.auto_plan_all_strategies_from(state_, fromId, nodeId)
+        else
+            mapMode.plans = RoutePlanner.auto_plan_all_strategies(state_, nodeId)
+        end
+    else
+        mapMode.plans = RoutePlanner.auto_plan_all_strategies(state_, nodeId)
+    end
+
     mapMode.activePlan = mapMode.plans.fastest
     mapMode.waypoints = {}
     mapMode.manualPlan = nil
@@ -989,7 +1480,16 @@ enterRoutePreview = function(nodeId)
 end
 
 enterManualPlan = function(targetId)
-    local current = state_.map.current_location
+    -- 旅行中：起点为下一个到达节点；否则为当前位置
+    local travelling = Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+    local origin
+    if travelling and state_.flow.route_plan then
+        origin = RoutePlanner.get_next_arrival_node(state_.flow.route_plan)
+            or state_.map.current_location
+    else
+        origin = state_.map.current_location
+    end
+
     mapMode.state = MapState.MANUAL_PLAN
     mapMode.target = targetId
     mapMode.plans = nil
@@ -997,11 +1497,12 @@ enterManualPlan = function(targetId)
     mapMode.strategy = "manual"
 
     -- 初始化途经点：起点 + 目标
-    if targetId and targetId ~= current then
-        mapMode.waypoints = { current, targetId }
-        mapMode.manualPlan = RoutePlanner.manual_plan_with_fill(state_, mapMode.waypoints)
+    local fromOvr = travelling and origin or nil
+    if targetId and targetId ~= origin then
+        mapMode.waypoints = { origin, targetId }
+        mapMode.manualPlan = RoutePlanner.manual_plan_with_fill(state_, mapMode.waypoints, fromOvr)
     else
-        mapMode.waypoints = { current }
+        mapMode.waypoints = { origin }
         mapMode.manualPlan = nil
     end
     rebuildPanel()
@@ -1124,7 +1625,9 @@ local function handleInput(dt)
 
                         -- 重新计算路线
                         if #mapMode.waypoints >= 2 then
-                            mapMode.manualPlan = RoutePlanner.manual_plan_with_fill(state_, mapMode.waypoints)
+                            local travelling = Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+                            local fromOvr = travelling and getEffectiveOrigin() or nil
+                            mapMode.manualPlan = RoutePlanner.manual_plan_with_fill(state_, mapMode.waypoints, fromOvr)
                         else
                             mapMode.manualPlan = nil
                         end
@@ -1206,6 +1709,18 @@ function M.create(state, params, r)
         end,
     }
 
+    -- 探索区域面板（地图下方，可折叠）
+    explorePanel_ = UI.Panel {
+        id = "explorePanel",
+        width = "100%",
+        padding = Theme.sizes.padding,
+        backgroundColor = Theme.colors.bg_primary,
+        gap = 6,
+        overflow = "scroll",
+        flexShrink = 1,
+    }
+    rebuildExplorePanel()
+
     -- 底部路线面板（初始隐藏）
     routePanel_ = UI.Panel {
         id = "routePanel",
@@ -1224,6 +1739,7 @@ function M.create(state, params, r)
         width = "100%", height = "100%",
         children = {
             canvas,
+            explorePanel_,
             routePanel_,
             modal_,
         },

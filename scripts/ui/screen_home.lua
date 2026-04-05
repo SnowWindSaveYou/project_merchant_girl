@@ -8,16 +8,26 @@ local Graph        = require("map/world_graph")
 local OrderBook    = require("economy/order_book")
 local RoutePlanner = require("map/route_planner")
 local Goods        = require("economy/goods")
+local CargoUtils   = require("economy/cargo_utils")
+local Goodwill     = require("settlement/goodwill")
+local Modules      = require("truck/modules")
 
 local M = {}
 ---@type table
 local router = nil
+
+-- 地图节点 → 资源点探索房间 ID（Phase 06 连接）
+local NODE_EXPLORE_ROOM = {
+    old_warehouse = "abandoned_warehouse",
+    radar_hill    = "radar_station",
+}
 
 -- 据点主题色（插画背景渐变底色）
 local SETTLEMENT_THEMES = {
     greenhouse  = { bg = { 38, 52, 38, 255 }, accent = { 108, 148,  96, 255 }, icon = "🌿" },
     tower       = { bg = { 32, 40, 54, 255 }, accent = { 112, 142, 168, 255 }, icon = "🗼" },
     ruins_camp  = { bg = { 48, 38, 30, 255 }, accent = { 168, 128,  82, 255 }, icon = "🏚" },
+    bell_tower  = { bg = { 42, 36, 46, 255 }, accent = { 148, 128, 168, 255 }, icon = "🔔" },
 }
 local DEFAULT_THEME = { bg = { 40, 38, 36, 255 }, accent = Theme.colors.accent, icon = "📍" }
 
@@ -71,6 +81,17 @@ function M.update(state, dt, r)
     if timeLabel then
         timeLabel:SetText(string.format(
             "%d:%02d", math.floor(remaining / 60), math.floor(remaining % 60)))
+    end
+
+    -- 更新当前路段描述
+    local locLabel = root:FindById("travelLocation")
+    if locLabel and seg then
+        local EDGE_TYPE_LABEL = { main_road = "公路", path = "小径", shortcut = "捷径" }
+        local segType = EDGE_TYPE_LABEL[seg.edge_type] or ""
+        local desc = segType ~= ""
+            and (seg.from_name .. " → " .. seg.to_name .. "（" .. segType .. "）")
+            or  (seg.from_name .. " → " .. seg.to_name)
+        locLabel:SetText(desc)
     end
 end
 
@@ -179,6 +200,9 @@ function createSettlementView(state, curNode)
         table.insert(lowerChildren, createBacklogWarning(backlogInfo))
     end
 
+    -- ── 成长目标卡片 ──
+    table.insert(lowerChildren, createProgressCard(state))
+
     -- ── 操作按钮区 ──
     if isSettlement then
         -- 委托
@@ -218,18 +242,8 @@ function createSettlementView(state, curNode)
             })
         end
 
-        -- 剧情预留：到处逛逛
-        table.insert(lowerChildren, UI.Button {
-            text = "🔍 到处逛逛",
-            variant = "outline",
-            width = "100%", height = 40,
-            fontSize = Theme.sizes.font_small,
-            onClick = function(self)
-                print("[Home] 剧情/探索功能待开发")
-            end,
-        })
     else
-        -- 非聚落节点：只有查看地图和委托
+        -- 非聚落节点：出发按钮（如有订单）
         if #activeOrders > 0 then
             table.insert(lowerChildren, UI.Button {
                 text = "🚚 出发",
@@ -242,7 +256,22 @@ function createSettlementView(state, curNode)
                 end,
             })
         end
+
+        -- 资源点特殊行动：搜刮此地
+        if NODE_EXPLORE_ROOM[nodeId] then
+            table.insert(lowerChildren, UI.Button {
+                text = "🔍 搜刮此地",
+                variant = "secondary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                onClick = function(self)
+                    router.navigate("explore", { room_id = NODE_EXPLORE_ROOM[nodeId] })
+                end,
+            })
+        end
     end
+
+    -- 探索区域已迁移到地图页面（screen_map）
 
     local lowerPanel = UI.Panel {
         id = "settlementActions",
@@ -286,6 +315,21 @@ function createTravelView(state)
 
     local contentChildren = {}
 
+    -- 当前路段描述
+    local EDGE_TYPE_LABEL = { main_road = "公路", path = "小径", shortcut = "捷径" }
+    local segFrom = seg and seg.from_name or "?"
+    local segTo   = seg and seg.to_name or "?"
+    local segType = seg and (EDGE_TYPE_LABEL[seg.edge_type] or "") or ""
+    local locationDesc = segType ~= "" and (segFrom .. " → " .. segTo .. "（" .. segType .. "）")
+        or (segFrom .. " → " .. segTo)
+
+    -- 最终目的地名
+    local finalDest = "?"
+    if plan.path and #plan.path > 0 then
+        local finalNode = Graph.get_node(plan.path[#plan.path])
+        finalDest = finalNode and finalNode.name or plan.path[#plan.path]
+    end
+
     -- 行驶进度卡片
     table.insert(contentChildren, UI.Panel {
         id = "travelStrip",
@@ -295,13 +339,31 @@ function createTravelView(state)
         borderWidth = 1, borderColor = Theme.colors.info,
         gap = 10,
         children = {
+            -- 当前位置：道路上
+            UI.Panel {
+                width = "100%", flexDirection = "row",
+                alignItems = "center", gap = 6,
+                children = {
+                    UI.Label {
+                        text = "🚚",
+                        fontSize = 16,
+                    },
+                    UI.Label {
+                        id = "travelLocation",
+                        text = locationDesc,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = Theme.colors.text_secondary,
+                        flexShrink = 1,
+                    },
+                },
+            },
             -- 目标 + 时间
             UI.Panel {
                 width = "100%", flexDirection = "row",
                 justifyContent = "space-between", alignItems = "center",
                 children = {
                     UI.Label {
-                        text = "→ " .. destName,
+                        text = "→ " .. finalDest,
                         fontSize = Theme.sizes.font_large,
                         fontColor = Theme.colors.info,
                     },
@@ -407,27 +469,176 @@ function createCargoSummary(state)
     for gid, count in pairs(state.truck.cargo) do
         if count > 0 then
             local g = Goods.get(gid)
-            table.insert(items, (g and g.name or gid) .. " x" .. count)
+            local name = g and g.name or gid
+            local committed = CargoUtils.get_committed(state, gid)
+            if committed > 0 then
+                name = name .. " x" .. count .. "(委" .. committed .. ")"
+            else
+                name = name .. " x" .. count
+            end
+            table.insert(items, name)
         end
     end
     local text = #items > 0 and table.concat(items, " · ") or "空"
 
+    local used = CargoUtils.get_cargo_used(state)
+    local hasShortage = CargoUtils.has_any_shortage(state)
+
+    local cargoChildren = {
+        UI.Panel {
+            width = "100%", flexDirection = "row",
+            justifyContent = "space-between", alignItems = "center",
+            children = {
+                UI.Label {
+                    text = "货舱",
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.text_dim,
+                },
+                UI.Label {
+                    text = used .. "/" .. state.truck.cargo_slots,
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.text_dim,
+                },
+            },
+        },
+        UI.Label {
+            text = text,
+            fontSize = Theme.sizes.font_small,
+            fontColor = Theme.colors.text_primary,
+        },
+    }
+
+    if hasShortage then
+        table.insert(cargoChildren, UI.Label {
+            text = "⚠ 委托货物不足",
+            fontSize = Theme.sizes.font_tiny,
+            fontColor = Theme.colors.danger,
+        })
+    end
+
     return UI.Panel {
         width = "100%", padding = 10,
         backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
+        borderWidth = hasShortage and 1 or 0,
+        borderColor = hasShortage and Theme.colors.danger or nil,
         gap = 2,
+        children = cargoChildren,
+    }
+end
+
+-- ============================================================
+-- 成长目标（中期目标概览）
+-- ============================================================
+function createProgressCard(state)
+    local items = {}
+
+    -- 1. 货车模块升级进度
+    local totalLv, maxLv = 0, 0
+    for _, mid in ipairs(Modules.ORDER) do
+        totalLv = totalLv + Modules.get_level(state, mid)
+        maxLv   = maxLv + Modules.DEFS[mid].max_level
+    end
+    table.insert(items, UI.Panel {
+        width = "100%", flexDirection = "row",
+        justifyContent = "space-between", alignItems = "center",
         children = {
             UI.Label {
-                text = "货舱",
+                text = "模块升级",
                 fontSize = Theme.sizes.font_small,
-                fontColor = Theme.colors.text_dim,
+                fontColor = Theme.colors.text_secondary,
             },
             UI.Label {
-                text = text,
+                text = totalLv .. " / " .. maxLv,
+                fontSize = Theme.sizes.font_small,
+                fontColor = totalLv >= maxLv and Theme.colors.success or Theme.colors.info,
+            },
+        },
+    })
+
+    -- 2. 各聚落好感进度
+    local settlements = { "greenhouse", "tower", "ruins_camp", "bell_tower" }
+    local settNames   = { greenhouse = "温室", tower = "塔台", ruins_camp = "游民营", bell_tower = "钟楼" }
+    local gwParts = {}
+    for _, sid in ipairs(settlements) do
+        local sett = state.settlements[sid]
+        local gw   = sett and sett.goodwill or 0
+        local info = Goodwill.get_info(gw)
+        table.insert(gwParts, (settNames[sid] or sid) .. " Lv" .. info.level)
+    end
+    table.insert(items, UI.Panel {
+        width = "100%", flexDirection = "row",
+        justifyContent = "space-between", alignItems = "center",
+        children = {
+            UI.Label {
+                text = "聚落好感",
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_secondary,
+            },
+            UI.Label {
+                text = table.concat(gwParts, "  "),
+                fontSize = Theme.sizes.font_tiny,
+                fontColor = Theme.colors.text_primary,
+            },
+        },
+    })
+
+    -- 3. 角色关系
+    local charParts = {}
+    for _, cid in ipairs({ "linli", "taoxia" }) do
+        local char = state.character[cid]
+        local rel  = char and char.relation or 0
+        local cName = cid == "linli" and "林砾" or "陶夏"
+        table.insert(charParts, cName .. " " .. math.floor(rel))
+    end
+    table.insert(items, UI.Panel {
+        width = "100%", flexDirection = "row",
+        justifyContent = "space-between", alignItems = "center",
+        children = {
+            UI.Label {
+                text = "角色关系",
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_secondary,
+            },
+            UI.Label {
+                text = table.concat(charParts, "  "),
+                fontSize = Theme.sizes.font_tiny,
+                fontColor = Theme.colors.text_primary,
+            },
+        },
+    })
+
+    -- 4. 总里程
+    local trips = state.stats and state.stats.total_trips or 0
+    table.insert(items, UI.Panel {
+        width = "100%", flexDirection = "row",
+        justifyContent = "space-between", alignItems = "center",
+        children = {
+            UI.Label {
+                text = "完成行程",
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_secondary,
+            },
+            UI.Label {
+                text = trips .. " 趟",
                 fontSize = Theme.sizes.font_small,
                 fontColor = Theme.colors.text_primary,
             },
         },
+    })
+
+    -- 组合
+    table.insert(items, 1, UI.Label {
+        text = "成长目标",
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.info,
+    })
+
+    return UI.Panel {
+        width = "100%", padding = 10,
+        backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
+        borderWidth = 1, borderColor = Theme.colors.border,
+        gap = 4,
+        children = items,
     }
 end
 

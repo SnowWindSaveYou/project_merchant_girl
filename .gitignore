@@ -1,15 +1,24 @@
+# 构建产物
 .build/
 dist/
-.tmp/
-.cli/
-logs/
+
+# 引擎内部目录
 engine-docs/
 examples/
 templates/
 urhox-libs/
 schemas/
-.emmylua/
+prompts/
 lua-tools/
 .claude/
-prompts/
+.emmylua/
+.tmp/
+.cli/
+logs/
 CLAUDE.md
+
+# 克隆残留
+project_merchant_girl/
+
+# 系统文件
+*.meta

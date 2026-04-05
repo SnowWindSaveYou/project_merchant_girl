@@ -20,11 +20,11 @@ function M.create(state, params, r)
     local strategy  = result.strategy or "unknown"
     local destName  = Graph.get_node_name(result.destination or state.map.current_location)
 
-    -- 收集本趟交付的订单
+    -- 收集本趟交付的订单（含 delivery_result 字段）
     local deliveredOrders = params and params.delivered_orders or {}
     local totalReward = 0
     for _, o in ipairs(deliveredOrders) do
-        totalReward = totalReward + (o.base_reward or 0)
+        totalReward = totalReward + (o.partial_reward or o.base_reward or 0)
     end
 
     -- 剩余活跃订单
@@ -40,21 +40,57 @@ function M.create(state, params, r)
     SaveLocal.save(state)
 
     -- 交付详情列表
+    local RESULT_LABEL = {
+        full    = { tag = "全额", color = Theme.colors.success },
+        partial = { tag = "部分", color = Theme.colors.warning },
+        failed  = { tag = "失败", color = Theme.colors.danger },
+        expired = { tag = "超时", color = Theme.colors.danger },
+    }
+
     local deliveryCards = {}
     if #deliveredOrders > 0 then
         for _, o in ipairs(deliveredOrders) do
+            local dr = o.delivery_result or "full"
+            local info = RESULT_LABEL[dr] or RESULT_LABEL.full
+            local reward = o.partial_reward or o.base_reward or 0
+
+            -- 左侧：货物信息 + 交付标签
+            local leftText = o.goods_name .. " "
+            if dr == "partial" then
+                leftText = leftText .. (o.delivered_count or 0) .. "/" .. o.count
+            else
+                leftText = leftText .. "×" .. o.count
+            end
+            leftText = leftText .. " → " .. o.to_name
+
+            -- 右侧：奖励金额
+            local rewardText = reward > 0 and ("+$" .. reward) or "$0"
+
             table.insert(deliveryCards, UI.Panel {
                 width = "100%", flexDirection = "row",
                 justifyContent = "space-between", alignItems = "center",
+                gap = 4,
                 children = {
-                    UI.Label {
-                        text = o.goods_name .. " ×" .. o.count .. " → " .. o.to_name,
-                        fontSize = Theme.sizes.font_small, fontColor = Theme.colors.text_primary,
-                        flexShrink = 1,
+                    UI.Panel {
+                        flexDirection = "row", alignItems = "center", gap = 6, flexShrink = 1,
+                        children = {
+                            UI.Label {
+                                text = "[" .. info.tag .. "]",
+                                fontSize = Theme.sizes.font_tiny,
+                                fontColor = info.color,
+                            },
+                            UI.Label {
+                                text = leftText,
+                                fontSize = Theme.sizes.font_small,
+                                fontColor = Theme.colors.text_primary,
+                                flexShrink = 1,
+                            },
+                        },
                     },
                     UI.Label {
-                        text = "+$" .. o.base_reward,
-                        fontSize = Theme.sizes.font_small, fontColor = Theme.colors.success,
+                        text = rewardText,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = reward > 0 and info.color or Theme.colors.text_dim,
                     },
                 },
             })

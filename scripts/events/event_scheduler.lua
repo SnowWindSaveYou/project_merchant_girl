@@ -1,6 +1,8 @@
 --- 事件调度器
 --- 行程中按时间片触发随机事件，替代旧的"到站后一次性触发"
 local EventPool = require("events/event_pool")
+local Goods     = require("economy/goods")
+local ItemUse   = require("economy/item_use")
 
 local M = {}
 
@@ -104,14 +106,50 @@ function M._try_pick(state, context)
         end
     end
 
+    -- fatigued：事件判定略差（触发概率 +10%，更容易遇到坏事）
+    local fatigued = ItemUse.has_status(state, "linli", "fatigued")
+        or ItemUse.has_status(state, "taoxia", "fatigued")
+    if fatigued then
+        chance = chance + 0.1
+    end
+
     if math.random() > chance then return nil end
 
     -- 构建事件池筛选上下文
     local filter_ctx = nil
     if context then
         local tags = {}
+        -- 边类型标签
         if context.edge_type then table.insert(tags, "route_" .. context.edge_type) end
+        -- 节点类型标签
         if context.node_type then table.insert(tags, "route_" .. context.node_type) end
+        -- 危险等级标签（route_safe / route_normal / route_danger）
+        if context.danger then
+            table.insert(tags, "route_" .. context.danger)
+        end
+        -- 到达聚落标签
+        if context.node_type == "settlement" then
+            table.insert(tags, "arrive_settlement")
+        end
+        -- 货物类别标签（cargo_survival / cargo_industrial / cargo_cultural / cargo_military）
+        local cargo = state.truck and state.truck.cargo or {}
+        local cargo_tag_set = {}
+        for gid, cnt in pairs(cargo) do
+            if cnt > 0 then
+                local g = Goods.get(gid)
+                local cat = g and g.category
+                if cat and not cargo_tag_set["cargo_" .. cat] then
+                    cargo_tag_set["cargo_" .. cat] = true
+                    table.insert(tags, "cargo_" .. cat)
+                end
+            end
+        end
+        -- 车辆模块标签（has_radar / has_weapon / has_cold_storage）
+        local modules = state.truck and state.truck.modules or {}
+        if (modules.radar or 0) > 0       then table.insert(tags, "has_radar") end
+        if (modules.turret or 0) > 0      then table.insert(tags, "has_weapon") end
+        if (modules.cold_storage or 0) > 0 then table.insert(tags, "has_cold_storage") end
+
         filter_ctx = {
             scene       = "drive",        -- 行驶中触发的事件
             active_tags = tags,

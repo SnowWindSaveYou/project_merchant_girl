@@ -11,6 +11,7 @@ local TABS = {
     { id = "map",    icon = "🗺",  label = "地图"  },
     { id = "orders", icon = "📋", label = "委托"  },
     { id = "cargo",  icon = "📦", label = "货舱"  },
+    { id = "truck",  icon = "🚚", label = "货车"  },
 }
 
 --- 创建底部导航栏
@@ -34,17 +35,29 @@ function M.create(state, activeTab, screenName, router)
                 -- shop 映射到 home tab，但点击 home 仍应导航回首页
                 if tab.id == screenName then return end
 
+                -- 旅行中：只切换显示页面，不修改 flow.phase
+                -- 否则会把 TRAVELLING 改成 IDLE/MAP/PREPARE，导致旅行中断
+                local travelling = Flow.get_phase(state) == Flow.Phase.TRAVELLING
+
                 if tab.id == "home" then
-                    Flow.back_to_idle(state)
+                    if not travelling then
+                        Flow.back_to_idle(state)
+                    end
                     router.navigate("home")
                 elseif tab.id == "map" then
-                    Flow.enter_map(state)
+                    if not travelling then
+                        Flow.enter_map(state)
+                    end
                     router.navigate("map")
                 elseif tab.id == "orders" then
-                    Flow.enter_prepare(state)
+                    if not travelling then
+                        Flow.enter_prepare(state)
+                    end
                     router.navigate("orders")
                 elseif tab.id == "cargo" then
                     router.navigate("cargo")
+                elseif tab.id == "truck" then
+                    router.navigate("truck")
                 end
             end,
             children = {

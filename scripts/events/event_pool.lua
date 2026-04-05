@@ -22,6 +22,12 @@ local DESCRIPTIONS = {
     EVT_010 = "整理货箱时，在角落发现了一个脏兮兮的布偶。",
     EVT_014 = "一夜翻来覆去没睡好，早上起来浑身酸痛。",
     EVT_020 = "聚落酒馆里有人小声议论着夜市的传闻。",
+    EVT_032 = "前方一台失控的工业搬运机横冲直撞，机械臂不停挥舞，周围散落着被砸烂的货箱。",
+    EVT_051 = "几辆焊着钢板的改装皮卡横在路中央，车上站着持枪的武装人员，示意你停车。",
+    EVT_053 = "辐射雾中隐约可见数道车灯，一伙掠夺者从两侧包抄过来，切断了退路。",
+    EVT_054 = "路边一栋半塌的建筑引起了陶夏的注意——里面可能还有没被搜刮干净的物资。",
+    EVT_055 = "夜幕中突然传来摩托引擎的轰鸣，几束手电光从后方快速逼近。",
+    EVT_056 = "林砾发现后视镜中一直跟着一辆装甲改装车，对方明显有备而来——是赏金猎人。",
 }
 
 -- ============================================================
@@ -199,10 +205,16 @@ function M.filter(state, context)
             end
         end
 
-        -- 5. scene 过滤
+        -- 5. scene 过滤（行驶中兼容多种场景）
         if ok and ctx.scene and evt.scene then
             if evt.scene ~= ctx.scene then
-                ok = false
+                -- drive 场景兼容：行驶途中也可触发路边/营地/收音机事件
+                local drive_compat = {
+                    route_node = true, camp = true, radio = true,
+                }
+                if ctx.scene ~= "drive" or not drive_compat[evt.scene] then
+                    ok = false
+                end
             end
         end
 
@@ -270,7 +282,25 @@ function M._check_module_condition(state, cond)
     return false
 end
 
+--- 获取关系值等级（用于事件权重调整）
+---@param state table
+---@return number 0~3
+local function get_relation_tier(state)
+    local r = 0
+    if state.character then
+        r = math.max(
+            state.character.linli  and state.character.linli.relation  or 0,
+            state.character.taoxia and state.character.taoxia.relation or 0
+        )
+    end
+    if r >= 30 then return 3 end
+    if r >= 15 then return 2 end
+    if r >= 5  then return 1 end
+    return 0
+end
+
 --- 加权随机选择一个事件
+--- 关系值影响：高关系 → bond 事件权重提升, danger 降低
 ---@param state table
 ---@param context table|nil
 ---@return table|nil
@@ -278,13 +308,28 @@ function M.pick(state, context)
     local pool = M.filter(state, context)
     if #pool == 0 then return nil end
 
+    local rel_tier = get_relation_tier(state)
+
     local tw = 0
-    for _, e in ipairs(pool) do tw = tw + (e.weight or 1) end
+    local weights = {}
+    for i, e in ipairs(pool) do
+        local w = e.weight or 1
+        -- 关系值调整事件权重
+        if rel_tier >= 1 then
+            if e.pool == "bond" then
+                w = w * (1 + rel_tier * 0.3)  -- bond 事件权重 +30%/60%/90%
+            elseif e.pool == "danger" and rel_tier >= 2 then
+                w = w * 0.8                    -- danger 事件权重 -20%（团队默契高）
+            end
+        end
+        weights[i] = w
+        tw = tw + w
+    end
 
     local roll = math.random() * tw
     local acc = 0
-    for _, e in ipairs(pool) do
-        acc = acc + (e.weight or 1)
+    for i, e in ipairs(pool) do
+        acc = acc + weights[i]
         if roll <= acc then return e end
     end
     return pool[#pool]

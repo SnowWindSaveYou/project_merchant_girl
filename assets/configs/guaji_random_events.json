@@ -119,6 +119,7 @@
     "unlock_event:event_id",
     "set_flag:flag_id",
     "start_combat:combat_id",
+    "start_explore:room_id",
     "spawn_order:order_id"
   ],
   "events": [
@@ -971,6 +972,91 @@
       "next_event_id": null,
       "summary": "终局总开关事件",
       "remark": "只触发一次"
+    },
+    {
+      "event_id": "EVT_051",
+      "event_name": "车队截道",
+      "phase": "mid",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 65,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_normal"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_051",
+      "result_set_id": "RS_EVT_051",
+      "next_event_id": null,
+      "summary": "中等路段武装车队拦截",
+      "remark": "中期战斗事件，难度中等"
+    },
+    {
+      "event_id": "EVT_053",
+      "event_name": "辐射区的掠夺者",
+      "phase": "mid",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 55,
+      "cooldown_run": 4,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_053",
+      "result_set_id": "RS_EVT_053",
+      "next_event_id": null,
+      "summary": "高危路段重型伏击",
+      "remark": "重型战斗，高风险高回报"
+    },
+    {
+      "event_id": "EVT_054",
+      "event_name": "路边废墟",
+      "phase": "all",
+      "pool": "danger",
+      "scene": "route_node",
+      "weight": 60,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_normal", "route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_054",
+      "result_set_id": "RS_EVT_054",
+      "next_event_id": null,
+      "summary": "废墟资源点探索战",
+      "remark": "探索战入口，搜刮物资"
+    },
+    {
+      "event_id": "EVT_055",
+      "event_name": "夜间劫道",
+      "phase": "early",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 68,
+      "cooldown_run": 3,
+      "trigger_tags": ["route_night"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_055",
+      "result_set_id": "RS_EVT_055",
+      "next_event_id": null,
+      "summary": "夜间小股流寇袭击",
+      "remark": "前中期夜间战斗"
+    },
+    {
+      "event_id": "EVT_056",
+      "event_name": "赏金猎人追击",
+      "phase": "late",
+      "pool": "danger",
+      "scene": "drive",
+      "weight": 40,
+      "cooldown_run": 5,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_056",
+      "result_set_id": "RS_EVT_056",
+      "next_event_id": null,
+      "summary": "后期赏金猎人追踪",
+      "remark": "高难度战斗，后期才出现"
     }
   ],
   "choice_sets": {
@@ -985,8 +1071,8 @@
       {
         "choice_set_id": "CH_EVT_009",
         "choice_id": "B",
-        "choice_text": "停车威慑",
-        "show_condition": ["has_weapon"],
+        "choice_text": "停车迎战",
+        "show_condition": [],
         "result_key": "RES_EVT_009_B"
       },
       {
@@ -1189,6 +1275,137 @@
         "show_condition": [],
         "result_key": "RES_EVT_014_C"
       }
+    ],
+    "CH_EVT_032": [
+      {
+        "choice_set_id": "CH_EVT_032",
+        "choice_id": "A",
+        "choice_text": "绕道避开",
+        "show_condition": [],
+        "result_key": "RES_EVT_032_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_032",
+        "choice_id": "B",
+        "choice_text": "尝试关闭它",
+        "show_condition": [],
+        "result_key": "RES_EVT_032_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_032",
+        "choice_id": "C",
+        "choice_text": "搜刮周围物资",
+        "show_condition": [],
+        "result_key": "RES_EVT_032_C"
+      }
+    ],
+    "CH_EVT_051": [
+      {
+        "choice_set_id": "CH_EVT_051",
+        "choice_id": "A",
+        "choice_text": "减速谈判",
+        "show_condition": [],
+        "result_key": "RES_EVT_051_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_051",
+        "choice_id": "B",
+        "choice_text": "冲卡突破",
+        "show_condition": [],
+        "result_key": "RES_EVT_051_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_051",
+        "choice_id": "C",
+        "choice_text": "停车迎战",
+        "show_condition": [],
+        "result_key": "RES_EVT_051_C"
+      }
+    ],
+    "CH_EVT_053": [
+      {
+        "choice_set_id": "CH_EVT_053",
+        "choice_id": "A",
+        "choice_text": "全速冲过",
+        "show_condition": [],
+        "result_key": "RES_EVT_053_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_053",
+        "choice_id": "B",
+        "choice_text": "迎击掠夺者",
+        "show_condition": [],
+        "result_key": "RES_EVT_053_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_053",
+        "choice_id": "C",
+        "choice_text": "丢弃部分货物脱身",
+        "show_condition": [],
+        "result_key": "RES_EVT_053_C"
+      }
+    ],
+    "CH_EVT_054": [
+      {
+        "choice_set_id": "CH_EVT_054",
+        "choice_id": "A",
+        "choice_text": "进去搜刮",
+        "show_condition": [],
+        "result_key": "RES_EVT_054_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_054",
+        "choice_id": "B",
+        "choice_text": "太危险了，走吧",
+        "show_condition": [],
+        "result_key": "RES_EVT_054_B"
+      }
+    ],
+    "CH_EVT_055": [
+      {
+        "choice_set_id": "CH_EVT_055",
+        "choice_id": "A",
+        "choice_text": "开大灯加速甩开",
+        "show_condition": [],
+        "result_key": "RES_EVT_055_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_055",
+        "choice_id": "B",
+        "choice_text": "熄灯隐蔽",
+        "show_condition": [],
+        "result_key": "RES_EVT_055_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_055",
+        "choice_id": "C",
+        "choice_text": "准备迎战",
+        "show_condition": [],
+        "result_key": "RES_EVT_055_C"
+      }
+    ],
+    "CH_EVT_056": [
+      {
+        "choice_set_id": "CH_EVT_056",
+        "choice_id": "A",
+        "choice_text": "利用地形甩脱",
+        "show_condition": [],
+        "result_key": "RES_EVT_056_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_056",
+        "choice_id": "B",
+        "choice_text": "正面对抗",
+        "show_condition": [],
+        "result_key": "RES_EVT_056_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_056",
+        "choice_id": "C",
+        "choice_text": "交出赏金抵命",
+        "show_condition": [],
+        "result_key": "RES_EVT_056_C"
+      }
     ]
   },
   "result_sets": {
@@ -1204,8 +1421,8 @@
       {
         "result_key": "RES_EVT_009_B",
         "ops": ["start_combat:ambush_light", "add_relation:1"],
-        "reward_desc": "若车顶机枪成型则能立威",
-        "risk_desc": "若武装不足可能掉货",
+        "reward_desc": "林砾准备好了迎击装置，准备战斗！",
+        "risk_desc": "散兵劫匪装备简陋，但人数不少",
         "set_flags": ["combat_intro_done"],
         "clear_flags": []
       },
@@ -1435,6 +1652,154 @@
         "set_flags": [],
         "clear_flags": []
       }
+    ],
+    "RS_EVT_032": [
+      {
+        "result_key": "RES_EVT_032_A",
+        "ops": ["add_fuel:-6", "add_time:8"],
+        "reward_desc": "安全绕开失控机器",
+        "risk_desc": "额外消耗燃料和时间",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_032_B",
+        "ops": ["start_combat:ambush_light", "add_credit:30"],
+        "reward_desc": "搬运机发出刺耳警报转向你们——准备战斗！",
+        "risk_desc": "机器力量惊人，小心机械臂",
+        "set_flags": ["flag_robot_disabled"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_032_C",
+        "ops": ["start_explore:abandoned_warehouse"],
+        "reward_desc": "趁搬运机远离，你们钻进了旁边的废墟……",
+        "risk_desc": "搬运机可能随时折返",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_051": [
+      {
+        "result_key": "RES_EVT_051_A",
+        "ops": ["add_credit:-40", "add_time:5"],
+        "reward_desc": "交了买路钱，平安通过",
+        "risk_desc": "损失信用点",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_051_B",
+        "ops": ["add_fuel:-10", "add_damage:8"],
+        "reward_desc": "强行冲过路障",
+        "risk_desc": "车辆受损、消耗燃料",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_051_C",
+        "ops": ["start_combat:ambush_medium"],
+        "reward_desc": "对方见你没有退让的意思，举起了武器——准备战斗！",
+        "risk_desc": "武装车队人多势众，火力不弱",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_053": [
+      {
+        "result_key": "RES_EVT_053_A",
+        "ops": ["add_fuel:-12", "add_damage:5"],
+        "reward_desc": "勉强冲出包围",
+        "risk_desc": "油耗大增，车身擦伤",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_053_B",
+        "ops": ["start_combat:ambush_heavy"],
+        "reward_desc": "掠夺者包围了货车，没有退路——准备战斗！",
+        "risk_desc": "辐射区老手，装备精良，极其危险",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_053_C",
+        "ops": ["lose_goods:food_can:2", "add_time:3"],
+        "reward_desc": "丢弃货物后对方失去追击兴趣",
+        "risk_desc": "损失部分货物",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_054": [
+      {
+        "result_key": "RES_EVT_054_A",
+        "ops": ["start_explore:abandoned_warehouse"],
+        "reward_desc": "陶夏推开锈蚀的铁门，里面黑洞洞的……",
+        "risk_desc": "废墟结构不稳，随时可能坍塌",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_054_B",
+        "ops": [],
+        "reward_desc": "安全第一",
+        "risk_desc": "错过潜在物资",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_055": [
+      {
+        "result_key": "RES_EVT_055_A",
+        "ops": ["add_fuel:-8"],
+        "reward_desc": "大灯刺眼，对方暂时失去视野",
+        "risk_desc": "高速消耗燃料",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_055_B",
+        "ops": ["add_time:8", "add_damage:3"],
+        "reward_desc": "借助夜色隐蔽通过",
+        "risk_desc": "摸黑前进导致轻微碰撞",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_055_C",
+        "ops": ["start_combat:ambush_light", "add_relation:1"],
+        "reward_desc": "林砾打开车灯照亮前方，几个蒙面人影现身——准备战斗！",
+        "risk_desc": "夜间视野受限，但对方装备也差",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_056": [
+      {
+        "result_key": "RES_EVT_056_A",
+        "ops": ["add_fuel:-15", "add_damage:5", "add_time:10"],
+        "reward_desc": "利用复杂地形甩开追踪",
+        "risk_desc": "大量消耗燃料，车辆颠簸受损",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_056_B",
+        "ops": ["start_combat:ambush_heavy"],
+        "reward_desc": "对方亮出了武器，看来谈不拢了——准备战斗！",
+        "risk_desc": "职业赏金猎人，装备精良，极其危险",
+        "set_flags": ["flag_bounty_hunter_defeated"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_056_C",
+        "ops": ["add_credit:-80"],
+        "reward_desc": "花钱消灾，对方收钱离开",
+        "risk_desc": "损失大量信用点",
+        "set_flags": [],
+        "clear_flags": []
+      }
     ]
   },
   "chains": [
@@ -1491,8 +1856,12 @@
     ],
     "dedupe_rule": "同一 pool 在连续 2 次跑商内尽量不重复",
     "combat_bridge": {
-      "start_combat:ambush_light": "进入车载迎击",
-      "start_combat:resource_small": "进入探索战"
+      "start_combat:ambush_light": "进入车载迎击（散兵劫匪）",
+      "start_combat:ambush_medium": "进入车载迎击（武装车队）",
+      "start_combat:ambush_heavy": "进入车载迎击（赏金猎人）",
+      "start_explore:abandoned_warehouse": "进入探索战（废弃仓库）",
+      "start_explore:old_clinic": "进入探索战（旧诊所）",
+      "start_explore:military_outpost": "进入探索战（军事哨站）"
     },
     "localization_note": "前端正文建议独立到 event_text 或本地化表，不与数值配置混写。"
   }

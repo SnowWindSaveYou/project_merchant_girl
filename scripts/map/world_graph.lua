@@ -23,49 +23,58 @@ M.EdgeType = {
 }
 
 -- ============================================================
--- 首版节点定义（7 个节点）
+-- 节点定义（12 个节点）
 -- ============================================================
 M.NODES = {
+    -- ===== 聚落（4 个） =====
     {
         id   = "greenhouse",
         name = "温室社区",
         type = "settlement",
-        x = 100, y = 400, -- UI 布局坐标（逻辑坐标，非像素）
+        x = 80, y = 400,
         desc = "以旧生态穹顶为核心的农业聚落",
     },
     {
         id   = "tower",
         name = "北穹塔台",
         type = "settlement",
-        x = 500, y = 100,
+        x = 500, y = 80,
         desc = "建在旧防空观测塔群上的技术聚落",
     },
     {
         id   = "ruins_camp",
         name = "废墟游民营地",
         type = "settlement",
-        x = 500, y = 450,
+        x = 550, y = 450,
         desc = "塌陷商场周边的流动型拾荒聚落",
     },
+    {
+        id   = "bell_tower",
+        name = "钟楼书院",
+        type = "settlement",
+        x = 750, y = 250,
+        desc = "围绕旧钟楼建立的学者聚落，收藏大量末世前书籍",
+    },
+    -- ===== 中转 / 功能节点 =====
     {
         id   = "crossroads",
         name = "旧公路交叉口",
         type = "transit",
-        x = 300, y = 250,
+        x = 280, y = 250,
         desc = "一处半废弃的高速匝道，可补给和分道",
     },
     {
         id   = "old_warehouse",
         name = "废弃仓库",
         type = "resource",
-        x = 350, y = 400,
+        x = 350, y = 420,
         desc = "锈蚀铁皮仓库群，可能有旧时代物资",
     },
     {
         id   = "danger_pass",
         name = "塌陷高架",
         type = "hazard",
-        x = 200, y = 120,
+        x = 180, y = 120,
         desc = "断裂的高架桥段，通行风险极高",
     },
     {
@@ -75,12 +84,42 @@ M.NODES = {
         x = 450, y = 280,
         desc = "废弃的通信中继站，偶有微弱信号",
     },
+    -- ===== 新增节点 =====
+    {
+        id   = "dry_riverbed",
+        name = "干涸河床",
+        type = "transit",
+        x = 650, y = 400,
+        desc = "早已干涸的河道，沙尘中偶见旧桥墩残骸",
+    },
+    {
+        id   = "radar_hill",
+        name = "雷达山丘",
+        type = "resource",
+        x = 650, y = 120,
+        desc = "山顶有座废弃军用雷达站，零件散落一地",
+    },
+    {
+        id   = "sunken_plaza",
+        name = "沉降广场",
+        type = "hazard",
+        x = 400, y = 500,
+        desc = "地面塌陷形成的凹地，有变异生物出没",
+    },
+    {
+        id   = "hermit_cave",
+        name = "隐士洞窟",
+        type = "story",
+        x = 150, y = 520,
+        desc = "深藏山壁中的隐居者洞穴，据说住着一位知晓旧时代秘密的老人",
+    },
 }
 
 -- ============================================================
--- 首版边定义
+-- 边定义
 -- ============================================================
 M.EDGES = {
+    -- ===== 原有边 =====
     -- 主干道：温室 → 交叉口 → 塔台（安全但慢）
     {
         id = "edge_gh_cross",
@@ -88,7 +127,7 @@ M.EDGES = {
         type = "main_road",
         travel_time_sec = 50,
         fuel_cost = 8,
-        danger_level = "low",
+        danger = "safe",
         bidirectional = true,
     },
     {
@@ -97,7 +136,7 @@ M.EDGES = {
         type = "main_road",
         travel_time_sec = 55,
         fuel_cost = 9,
-        danger_level = "low",
+        danger = "safe",
         bidirectional = true,
     },
     -- 捷径：温室 → 塌陷高架 → 塔台（快但危险）
@@ -107,7 +146,7 @@ M.EDGES = {
         type = "shortcut",
         travel_time_sec = 25,
         fuel_cost = 6,
-        danger_level = "high",
+        danger = "danger",
         bidirectional = true,
     },
     {
@@ -116,7 +155,7 @@ M.EDGES = {
         type = "shortcut",
         travel_time_sec = 20,
         fuel_cost = 5,
-        danger_level = "high",
+        danger = "danger",
         bidirectional = true,
     },
     -- 小径：交叉口 → 废弃仓库（探索）
@@ -126,7 +165,7 @@ M.EDGES = {
         type = "path",
         travel_time_sec = 30,
         fuel_cost = 5,
-        danger_level = "normal",
+        danger = "normal",
         bidirectional = true,
     },
     -- 小径：交叉口 → 信号中继站
@@ -136,7 +175,7 @@ M.EDGES = {
         type = "path",
         travel_time_sec = 35,
         fuel_cost = 6,
-        danger_level = "normal",
+        danger = "normal",
         bidirectional = true,
     },
     -- 主干道：信号中继站 → 废墟游民营地
@@ -146,7 +185,7 @@ M.EDGES = {
         type = "main_road",
         travel_time_sec = 40,
         fuel_cost = 7,
-        danger_level = "normal",
+        danger = "normal",
         bidirectional = true,
     },
     -- 小径：废弃仓库 → 废墟游民营地
@@ -156,7 +195,99 @@ M.EDGES = {
         type = "path",
         travel_time_sec = 35,
         fuel_cost = 6,
-        danger_level = "normal",
+        danger = "normal",
+        bidirectional = true,
+    },
+
+    -- ===== 新增边：连接钟楼书院 =====
+    -- 信号中继站 → 钟楼书院（主路，学者常走）
+    {
+        id = "edge_signal_bell",
+        from = "signal_relay", to = "bell_tower",
+        type = "main_road",
+        travel_time_sec = 45,
+        fuel_cost = 7,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 塔台 → 雷达山丘（小径，技术据点关联）
+    {
+        id = "edge_tower_radar",
+        from = "tower", to = "radar_hill",
+        type = "path",
+        travel_time_sec = 35,
+        fuel_cost = 6,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 雷达山丘 → 钟楼书院（小径，东侧通道）
+    {
+        id = "edge_radar_bell",
+        from = "radar_hill", to = "bell_tower",
+        type = "path",
+        travel_time_sec = 40,
+        fuel_cost = 7,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 废墟营地 → 干涸河床（主路，南线通道）
+    {
+        id = "edge_ruins_riverbed",
+        from = "ruins_camp", to = "dry_riverbed",
+        type = "main_road",
+        travel_time_sec = 30,
+        fuel_cost = 5,
+        danger = "safe",
+        bidirectional = true,
+    },
+    -- 干涸河床 → 钟楼书院（小径，东南入口）
+    {
+        id = "edge_riverbed_bell",
+        from = "dry_riverbed", to = "bell_tower",
+        type = "path",
+        travel_time_sec = 35,
+        fuel_cost = 6,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 废弃仓库 → 沉降广场（捷径，高危）
+    {
+        id = "edge_warehouse_sunken",
+        from = "old_warehouse", to = "sunken_plaza",
+        type = "shortcut",
+        travel_time_sec = 20,
+        fuel_cost = 4,
+        danger = "danger",
+        bidirectional = true,
+    },
+    -- 沉降广场 → 废墟营地（小径）
+    {
+        id = "edge_sunken_ruins",
+        from = "sunken_plaza", to = "ruins_camp",
+        type = "path",
+        travel_time_sec = 25,
+        fuel_cost = 5,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 温室 → 隐士洞窟（小径，叙事线路）
+    {
+        id = "edge_gh_hermit",
+        from = "greenhouse", to = "hermit_cave",
+        type = "path",
+        travel_time_sec = 40,
+        fuel_cost = 7,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 隐士洞窟 → 沉降广场（捷径，危险地下通道）
+    {
+        id = "edge_hermit_sunken",
+        from = "hermit_cave", to = "sunken_plaza",
+        type = "shortcut",
+        travel_time_sec = 30,
+        fuel_cost = 5,
+        danger = "danger",
         bidirectional = true,
     },
 }
@@ -207,6 +338,20 @@ function M.get_neighbors(node_id, state)
     local result = {}
     for _, adj in ipairs(raw) do
         if known[adj.to] then
+            table.insert(result, adj)
+        end
+    end
+    return result
+end
+
+--- 获取从 node_id 出发的未探索邻居（未知节点）
+function M.get_unknown_neighbors(node_id, state)
+    local raw = M.ADJ[node_id] or {}
+    if not state then return {} end
+    local known = state.map.known_nodes or {}
+    local result = {}
+    for _, adj in ipairs(raw) do
+        if not known[adj.to] then
             table.insert(result, adj)
         end
     end
@@ -275,11 +420,11 @@ function M.find_fastest_path(from_id, to_id, state)
     return M._dijkstra(from_id, to_id, state, "travel_time_sec")
 end
 
---- Dijkstra 最安全路径（danger_level 映射为权重）
-local DANGER_WEIGHT = { low = 1, normal = 3, high = 8 }
+--- Dijkstra 最安全路径（danger 映射为权重）
+local DANGER_WEIGHT = { safe = 1, normal = 3, danger = 8 }
 function M.find_safest_path(from_id, to_id, state)
     return M._dijkstra(from_id, to_id, state, nil, function(edge)
-        return (DANGER_WEIGHT[edge.danger_level] or 5) * edge.travel_time_sec
+        return (DANGER_WEIGHT[edge.danger] or 5) * edge.travel_time_sec
     end)
 end
 

@@ -3,6 +3,10 @@
 local RoutePlanner   = require("map/route_planner")
 local OrderBook      = require("economy/order_book")
 local EventScheduler = require("events/event_scheduler")
+local ItemUse        = require("economy/item_use")
+local Ticker         = require("core/ticker")
+local Pricing        = require("economy/pricing")
+local Goodwill       = require("settlement/goodwill")
 
 local M = {}
 
@@ -69,7 +73,9 @@ function M.update_travel(state, dt)
     local plan = state.flow.route_plan
     if not plan then return nil end
 
-    local arrival = RoutePlanner.advance(plan, dt)
+    -- fatigued：行驶速度 -10%
+    local speed_mult = Ticker.get_speed_mult(state)
+    local arrival = RoutePlanner.advance(plan, dt * speed_mult)
     return arrival
 end
 
@@ -105,19 +111,139 @@ function M.handle_node_arrival(state, arrival_info)
         state.map.known_nodes[node_id] = true
     end
 
-    -- 4. 到达聚落时生成可接订单（仅一次，缓存到 state）
+    -- 4. poisoned：每段行程额外消耗耐久 -5
+    local poisoned = ItemUse.has_status(state, "linli", "poisoned")
+        or ItemUse.has_status(state, "taoxia", "poisoned")
+    if poisoned then
+        local poison_dmg = 5
+        state.truck.durability = math.max(0, state.truck.durability - poison_dmg)
+    end
+
+    -- 5. 到达聚落时生成可接订单 + 据点服务
     local Graph = require("map/world_graph")
     local node = Graph.get_node(node_id)
+    local services_log = {}
     if node and node.type == "settlement" then
         OrderBook.generate_on_arrival(state, node_id)
+
+        -- 据点休整：仅高好感据点(Lv2+)自动清除 demoralized
+        local gw = state.settlements[node_id] and state.settlements[node_id].goodwill or 0
+        if Goodwill.is_unlocked(gw, "rest_area") then
+            for _, cid in ipairs({ "linli", "taoxia" }) do
+                if ItemUse.has_status(state, cid, "demoralized") then
+                    ItemUse.clear_status(state, cid, "demoralized")
+                    local charName = cid == "linli" and "林砾" or "陶夏"
+                    table.insert(services_log,
+                        charName .. " 在友好据点休整，士气恢复了")
+                end
+            end
+        end
+
+        -- 据点自动修理：恢复 10 点耐久（免费基础服务）
+        if state.truck.durability < state.truck.durability_max then
+            local repair = math.min(10, state.truck.durability_max - state.truck.durability)
+            state.truck.durability = state.truck.durability + repair
+            table.insert(services_log, "据点工匠修补了货车（耐久 +" .. repair .. "）")
+        end
+
+        -- 供需衰减（每趟到达聚落时触发）
+        Pricing.decay_supply_demand(state)
     end
 
     return {
-        node_id        = node_id,
-        delivered      = delivered,
+        node_id         = node_id,
+        delivered       = delivered,
         delivery_reward = reward,
-        is_final       = arrival_info.finished,
+        is_final        = arrival_info.finished,
+        services_log    = services_log,
     }
+end
+
+--- 自由出发：前往相邻节点（探索未知 或 前往已知区域）
+--- 不需要订单也可出发，构建单段路线直接上路
+---@param state table
+---@param target_node_id string 目标节点 ID（可以是未知节点）
+---@return boolean ok
+---@return string|nil error_msg
+function M.start_exploration(state, target_node_id)
+    local Graph = require("map/world_graph")
+    local from_id = state.map.current_location
+
+    -- 必须直接相邻
+    local edge = Graph.get_edge(from_id, target_node_id)
+    if not edge then
+        return false, "没有通路"
+    end
+
+    -- 燃料检查
+    if state.truck.fuel < edge.fuel_cost then
+        return false, "燃料不足"
+    end
+
+    -- 构建单段路线计划
+    local target_node = Graph.get_node(target_node_id)
+    local is_known = state.map.known_nodes and state.map.known_nodes[target_node_id]
+
+    local plan = {
+        route_plan_id   = "explore_" .. os.time(),
+        strategy        = "exploration",
+        path            = { from_id, target_node_id },
+        segments        = {
+            {
+                from      = from_id,
+                to        = target_node_id,
+                from_name = Graph.get_node_name(from_id),
+                to_name   = is_known
+                    and (target_node and target_node.name or target_node_id)
+                    or "未知区域",
+                edge_id   = edge.id,
+                edge_type = edge.type,
+                time_sec  = edge.travel_time_sec,
+                fuel_cost = edge.fuel_cost,
+                danger    = edge.danger,
+            },
+        },
+        total_time      = edge.travel_time_sec,
+        total_fuel      = edge.fuel_cost,
+        max_danger      = edge.danger,
+        segment_index   = 0,
+        segment_elapsed = 0,
+    }
+
+    -- 随身携带已接订单（如果有的话）
+    OrderBook.load_all_accepted(state)
+
+    state.flow.phase       = M.Phase.TRAVELLING
+    state.flow.route_plan  = plan
+    state.flow.event_timer = EventScheduler.new_timer()
+
+    return true
+end
+
+--- 旅行中替换剩余路线（保留当前段，后续段替换为新路线）
+---@param state table
+---@param new_plan table 从下一个到达节点开始的新 plan
+---@return boolean ok
+function M.reroute(state, new_plan)
+    if state.flow.phase ~= M.Phase.TRAVELLING then
+        print("[Flow] ERROR: reroute 只能在旅行中调用")
+        return false
+    end
+    if not new_plan then
+        print("[Flow] ERROR: reroute 需要有效的 new_plan")
+        return false
+    end
+
+    local current_plan = state.flow.route_plan
+    if not current_plan then
+        print("[Flow] ERROR: 当前没有路线计划")
+        return false
+    end
+
+    local merged = RoutePlanner.merge_plan(current_plan, new_plan)
+    state.flow.route_plan = merged
+    print("[Flow] Rerouted: " .. #merged.segments .. " segments, strategy=" .. (merged.strategy or "?"))
+    return true
 end
 
 --- 完成整趟行程，进入结算
@@ -137,10 +263,7 @@ function M.finish_trip(state)
     -- 更新统计
     state.stats.total_trips = state.stats.total_trips + 1
 
-    -- 扣除燃料
-    if plan then
-        state.truck.fuel = math.max(0, state.truck.fuel - plan.total_fuel)
-    end
+    -- 燃料已在 ticker.advance() 中按帧实时扣除，此处不再重复扣除
 
     -- 切换到结算
     state.flow.phase = M.Phase.SUMMARY

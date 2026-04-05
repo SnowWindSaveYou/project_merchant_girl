@@ -28,16 +28,12 @@ function M.new()
             fuel_max       = 100,
             cargo_slots    = 8,
             cargo          = {}, -- { [goods_id] = count }
+            committed      = {}, -- { [goods_id] = count } 委托货物追踪
             modules = {
                 engine       = 1,
-                cargo        = 0,
-                suspension   = 0,
-                repair_kit   = 0,
+                cargo_bay    = 0,
                 radar        = 0,
                 cold_storage = 0,
-                camouflage   = 0,
-                antenna      = 0,
-                solar_panel  = 0,
                 turret       = 0,
             },
         },
@@ -58,8 +54,8 @@ function M.new()
 
         -- 角色
         character = {
-            linli  = { relation = 0 },
-            taoxia = { relation = 0 },
+            linli  = { relation = 0, status = {} },
+            taoxia = { relation = 0, status = {} },
         },
 
         -- 地图

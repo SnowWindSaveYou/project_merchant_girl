@@ -4,6 +4,13 @@
 local Flags   = require("core/flags")
 local ItemUse = require("economy/item_use")
 
+--- demoralized 好感衰减倍率
+local function goodwill_mult(state)
+    local demoralized = ItemUse.has_status(state, "linli", "demoralized")
+        or ItemUse.has_status(state, "taoxia", "demoralized")
+    return demoralized and 0.8 or 1.0
+end
+
 local M = {}
 
 --- 批量执行操作列表，返回执行日志
@@ -62,14 +69,20 @@ function M.apply_one(state, op)
         -- 支持两种格式:
         -- "add_goodwill:5"              → 对当前聚落加好感
         -- "add_goodwill:greenhouse:10"  → 对指定聚落加好感
+        -- demoralized 状态：好感获取 -20%
+        local gw_mult = goodwill_mult(state)
         local faction, amt = value:match("^(.+):([%d%-]+)$")
         if faction and state.settlements[faction] then
-            state.settlements[faction].goodwill = state.settlements[faction].goodwill + (tonumber(amt) or 0)
+            local raw = tonumber(amt) or 0
+            local final = (raw > 0) and math.floor(raw * gw_mult + 0.5) or raw
+            state.settlements[faction].goodwill = state.settlements[faction].goodwill + final
         else
             -- 无 faction 参数，对当前聚落操作
             local loc = state.flow.travel and state.flow.travel.to or state.map.current_location
             if state.settlements[loc] then
-                state.settlements[loc].goodwill = state.settlements[loc].goodwill + (num or 0)
+                local raw = num or 0
+                local final = (raw > 0) and math.floor(raw * gw_mult + 0.5) or raw
+                state.settlements[loc].goodwill = state.settlements[loc].goodwill + final
             end
         end
 
@@ -144,12 +157,40 @@ function M.apply_one(state, op)
         -- "unlock_event:EVT_023" → 将特定事件解锁（通过设置对应旗标）
         Flags.set(state, "event_unlocked_" .. value)
 
-    -- ====== 战斗/订单（桩，后续阶段实现具体逻辑） ======
+    -- ====== 角色状态 ======
+
+    elseif action == "add_status" then
+        -- "add_status:linli:fatigued" 或 "add_status:fatigued"（默认双角色）
+        local char_id, sid = value:match("^(.+):(.+)$")
+        if char_id and (char_id == "linli" or char_id == "taoxia") then
+            ItemUse.add_status(state, char_id, sid)
+        else
+            -- 无角色指定，随机施加给一个角色
+            local target = math.random() < 0.5 and "linli" or "taoxia"
+            ItemUse.add_status(state, target, value)
+        end
+
+    elseif action == "clear_status" then
+        -- "clear_status:linli:fatigued" 或 "clear_status:fatigued"（清除所有角色的）
+        local char_id, sid = value:match("^(.+):(.+)$")
+        if char_id and (char_id == "linli" or char_id == "taoxia") then
+            ItemUse.clear_status(state, char_id, sid)
+        else
+            ItemUse.clear_status(state, "linli", value)
+            ItemUse.clear_status(state, "taoxia", value)
+        end
+
+    -- ====== 战斗/订单 ======
 
     elseif action == "start_combat" then
         -- "start_combat:ambush_light" → 标记待处理战斗
         state.flow.pending_combat = value
         print("[EventExec] Combat queued: " .. value)
+
+    elseif action == "start_explore" then
+        -- "start_explore:abandoned_warehouse" → 标记待处理探索
+        state.flow.pending_explore = value
+        print("[EventExec] Explore queued: " .. value)
 
     elseif action == "spawn_order" then
         -- "spawn_order:urgent_medicine" → 在当前聚落注入一个特殊订单
