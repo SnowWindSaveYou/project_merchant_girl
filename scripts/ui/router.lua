@@ -21,7 +21,6 @@ end
 
 --- 切换到指定页面
 function M.navigate(name, params)
-    print("[Router] navigate -> " .. name)
     currentName = name
     currentScreen = screens[name]
     if not currentScreen then
@@ -29,14 +28,17 @@ function M.navigate(name, params)
         return
     end
 
-    local content = currentScreen.create(gameState, params, M)
+    local ok, content = pcall(currentScreen.create, gameState, params, M)
+    if not ok then
+        print("[Router] ERROR: screen '" .. name .. "' create crashed: " .. tostring(content))
+        return
+    end
     if not content then return end
 
     if Shell.is_shelled(name) then
         local shell = Shell.create(gameState, content, name, M)
         UI.SetRoot(shell)
     else
-        -- 全屏页面：event, event_result, summary
         UI.SetRoot(content)
     end
 end

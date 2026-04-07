@@ -29,6 +29,12 @@ local ScreenAmbush      = require("ui/screen_ambush")
 local ScreenExplore     = require("ui/screen_explore")
 local ScreenDebug       = require("ui/screen_debug")
 local ScreenTruck       = require("ui/screen_truck")
+local ScreenCampfire    = require("ui/screen_campfire")
+local ScreenNpc         = require("ui/screen_npc")
+local ScreenQuestLog    = require("ui/screen_quest_log")
+local DialoguePool      = require("narrative/dialogue_pool")
+local NpcDialoguePool   = require("narrative/npc_dialogue_pool")
+local WanderingNpc      = require("narrative/wandering_npc")
 
 -- 游戏状态
 ---@type table
@@ -97,6 +103,39 @@ function Start()
             if char and not char.status then char.status = {} end
             if char and not char.relation then char.relation = 0 end
         end
+        -- 前哨站聚落兼容（Phase 11）
+        local newSettlements = {
+            greenhouse_farm = { goodwill = 5,  visited = false, reputation = 100 },
+            dome_outpost    = { goodwill = 0,  visited = false, reputation = 100 },
+            metro_camp      = { goodwill = 0,  visited = false, reputation = 100 },
+            old_church      = { goodwill = 0,  visited = false, reputation = 100 },
+        }
+        for sid, defaults in pairs(newSettlements) do
+            if not gameState.settlements[sid] then
+                gameState.settlements[sid] = defaults
+            end
+        end
+        -- 叙事系统兼容
+        if not gameState.narrative then
+            gameState.narrative = {
+                story_flags = {}, memories = {},
+                campfire_cooldowns = {}, campfire_count = 0,
+            }
+        end
+        if not gameState.narrative.campfire_cooldowns then
+            gameState.narrative.campfire_cooldowns = {}
+        end
+        if not gameState.narrative.campfire_count then
+            gameState.narrative.campfire_count = 0
+        end
+        if not gameState.narrative.npc_cooldowns then
+            gameState.narrative.npc_cooldowns = {}
+        end
+        if not gameState.narrative.npc_visit_count then
+            gameState.narrative.npc_visit_count = {}
+        end
+        -- 流浪 NPC 位置兼容
+        WanderingNpc.ensure_init(gameState)
         -- 货车模块兼容
         if not gameState.truck.modules then
             gameState.truck.modules = {
@@ -153,6 +192,9 @@ function Start()
     Router.register("explore",      ScreenExplore)
     Router.register("debug",        ScreenDebug)
     Router.register("truck",        ScreenTruck)
+    Router.register("campfire",     ScreenCampfire)
+    Router.register("npc",          ScreenNpc)
+    Router.register("quest_log",    ScreenQuestLog)
 
     -- 4. 初始页面
     local phase = Flow.get_phase(gameState)
@@ -189,6 +231,8 @@ end
 function handleTripFinish()
     local result = Flow.finish_trip(gameState)
     EventPool.tick_cooldowns(gameState)
+    DialoguePool.tick_cooldowns(gameState)
+    NpcDialoguePool.tick_cooldowns(gameState)
 
     Router.navigate("summary", {
         result = result,
@@ -302,8 +346,6 @@ function HandleUpdate(eventType, eventData)
         -- 特殊流程页面：战斗/探索期间停车，事件期间行驶但延迟到达
         local truck_stopped = curPage == "ambush"
             or curPage == "explore"
-            or gameState.flow.pending_combat
-            or gameState.flow.pending_explore
         -- 事件流程中：行驶继续但到达延迟处理
         local in_event = curPage == "event"
             or curPage == "event_result"

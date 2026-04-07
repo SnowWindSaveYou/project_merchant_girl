@@ -113,6 +113,35 @@ M.NODES = {
         x = 150, y = 520,
         desc = "深藏山壁中的隐居者洞穴，据说住着一位知晓旧时代秘密的老人",
     },
+    -- ===== 前哨站（4 个，Phase 11 新增） =====
+    {
+        id   = "greenhouse_farm",
+        name = "外围农场",
+        type = "settlement",
+        x = 120, y = 530,
+        desc = "温室社区南侧的露天耕地，种植抗辐射作物",
+    },
+    {
+        id   = "dome_outpost",
+        name = "穹顶哨站",
+        type = "settlement",
+        x = 380, y = 140,
+        desc = "塔台技术派在西南方向设立的前沿观测站",
+    },
+    {
+        id   = "metro_camp",
+        name = "地铁营地",
+        type = "settlement",
+        x = 620, y = 520,
+        desc = "废弃地铁隧道内的拾荒者据点，善于修理旧物",
+    },
+    {
+        id   = "old_church",
+        name = "旧教堂",
+        type = "settlement",
+        x = 820, y = 350,
+        desc = "钟楼书院东南的废弃教堂，被学者们改造为分院",
+    },
 }
 
 -- ============================================================
@@ -290,6 +319,88 @@ M.EDGES = {
         danger = "danger",
         bidirectional = true,
     },
+
+    -- ===== 前哨站连接（Phase 11 新增 8 条） =====
+    -- 温室 → 外围农场（安全短途）
+    {
+        id = "edge_gh_farm",
+        from = "greenhouse", to = "greenhouse_farm",
+        type = "path",
+        travel_time_sec = 25,
+        fuel_cost = 4,
+        danger = "safe",
+        bidirectional = true,
+    },
+    -- 外围农场 → 隐士洞窟（小径）
+    {
+        id = "edge_farm_hermit",
+        from = "greenhouse_farm", to = "hermit_cave",
+        type = "path",
+        travel_time_sec = 30,
+        fuel_cost = 5,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 穹顶哨站 → 交叉口（小径）
+    {
+        id = "edge_dome_cross",
+        from = "dome_outpost", to = "crossroads",
+        type = "path",
+        travel_time_sec = 30,
+        fuel_cost = 5,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 穹顶哨站 → 塔台（安全主路）
+    {
+        id = "edge_dome_tower",
+        from = "dome_outpost", to = "tower",
+        type = "main_road",
+        travel_time_sec = 25,
+        fuel_cost = 4,
+        danger = "safe",
+        bidirectional = true,
+    },
+    -- 地铁营地 → 废墟营地（安全短途）
+    {
+        id = "edge_metro_ruins",
+        from = "metro_camp", to = "ruins_camp",
+        type = "path",
+        travel_time_sec = 20,
+        fuel_cost = 3,
+        danger = "safe",
+        bidirectional = true,
+    },
+    -- 地铁营地 → 干涸河床（小径）
+    {
+        id = "edge_metro_riverbed",
+        from = "metro_camp", to = "dry_riverbed",
+        type = "path",
+        travel_time_sec = 25,
+        fuel_cost = 4,
+        danger = "normal",
+        bidirectional = true,
+    },
+    -- 旧教堂 → 钟楼书院（安全主路）
+    {
+        id = "edge_church_bell",
+        from = "old_church", to = "bell_tower",
+        type = "main_road",
+        travel_time_sec = 20,
+        fuel_cost = 3,
+        danger = "safe",
+        bidirectional = true,
+    },
+    -- 旧教堂 → 干涸河床（小径）
+    {
+        id = "edge_church_riverbed",
+        from = "old_church", to = "dry_riverbed",
+        type = "path",
+        travel_time_sec = 35,
+        fuel_cost = 6,
+        danger = "normal",
+        bidirectional = true,
+    },
 }
 
 -- ============================================================
@@ -367,6 +478,11 @@ function M.get_edge(from_id, to_id)
         end
     end
     return nil
+end
+
+--- 获取所有节点
+function M.get_all_nodes()
+    return M.NODES
 end
 
 --- 获取所有聚落节点

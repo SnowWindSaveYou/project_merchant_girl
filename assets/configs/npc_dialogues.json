@@ -1,0 +1,1359 @@
+{
+  "dialogues": [
+    {
+      "id": "NPC_SH_001",
+      "npc_id": "shen_he",
+      "title": "温室的新面孔",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_shen_he_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "你好，是新来的行商吧？我是沈禾，负责这片温室的日常运转。" },
+        { "speaker": "linli", "text": "……嗯，我叫林砾。这是陶夏。" },
+        { "speaker": "npc", "text": "路上辛苦了。这里虽然不大，但至少能吃上热饭。" },
+        { "speaker": "npc", "text": "如果你们愿意帮忙运些物资，我可以给你们一个公道的价格。" },
+        { "speaker": "taoxia", "text": "有饭吃就行！我们正好饿得前胸贴后背了。" }
+      ],
+      "choices": [
+        {
+          "text": "我们很乐意合作",
+          "ops": ["add_goodwill:greenhouse:5", "set_flag:npc_shen_he_intro"],
+          "result_text": "沈禾微微笑了笑，递过一杯热水。这个地方让人安心。"
+        },
+        {
+          "text": "先看看再说吧",
+          "ops": ["add_goodwill:greenhouse:2", "set_flag:npc_shen_he_intro"],
+          "result_text": "沈禾点点头，没有多说什么。她似乎习惯了行商的谨慎。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_SH_002",
+      "npc_id": "shen_he",
+      "title": "作物的烦恼",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_shen_he_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "最近温室三号区的作物长势不太好，叶子发黄了。" },
+        { "speaker": "linli", "text": "是土壤的问题吗？" },
+        { "speaker": "npc", "text": "可能是微量元素不够。如果你下次路过北穹塔台，能帮我带点化肥吗？" },
+        { "speaker": "taoxia", "text": "化肥？那边有卖？" },
+        { "speaker": "npc", "text": "韩策那边有工业合成线，应该能弄到。" }
+      ],
+      "choices": [
+        {
+          "text": "没问题，包在我们身上",
+          "ops": ["add_goodwill:greenhouse:4", "add_relation_linli:1"],
+          "result_text": "沈禾眼里多了些光。对她来说，作物就是社区的命脉。"
+        },
+        {
+          "text": "看情况吧，运费另算",
+          "ops": ["add_goodwill:greenhouse:2"],
+          "result_text": "沈禾笑着摇摇头：\"行商就是行商，合理。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_SH_003",
+      "npc_id": "shen_he",
+      "title": "丰收与分享",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_shen_he_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "今天一号区大丰收了！来，尝尝刚摘的番茄。" },
+        { "speaker": "taoxia", "text": "哇！好久没吃到新鲜蔬果了！" },
+        { "speaker": "npc", "text": "以前觉得种地很无聊，现在才知道……能看到东西长出来，就是最大的安慰。" },
+        { "speaker": "linli", "text": "……确实。在路上看到的大多是荒地。" },
+        { "speaker": "npc", "text": "所以我才更想守住这片绿色。哪怕只是一小片温室。" }
+      ],
+      "choices": [
+        {
+          "text": "你做得很好，沈禾",
+          "ops": ["add_goodwill:greenhouse:4", "add_relation_taoxia:1"],
+          "result_text": "沈禾低头笑了笑，把多余的番茄塞进了你的背包。"
+        },
+        {
+          "text": "这些蔬果能卖个好价钱",
+          "ops": ["add_goodwill:greenhouse:2", "add_credits:15"],
+          "result_text": "\"行商的职业病。\"沈禾打趣道，但还是多给了你一筐。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_SH_004",
+      "npc_id": "shen_he",
+      "title": "种子的秘密",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_shen_he_intro"],
+      "forbidden_flags": ["mem_shen_he_seeds"],
+      "steps": [
+        { "speaker": "npc", "text": "林砾，我想给你看样东西。" },
+        { "speaker": "linli", "text": "这是……种子？" },
+        { "speaker": "npc", "text": "灾前最后一批基因库备份种子。全世界可能就剩这些了。" },
+        { "speaker": "npc", "text": "我一直不敢种。万一失败了，就真的什么都没了。" },
+        { "speaker": "taoxia", "text": "……那你打算怎么办？" },
+        { "speaker": "npc", "text": "我想请你们帮忙找一份旧农学院的培育手册。白述那边的书院也许有。" }
+      ],
+      "choices": [
+        {
+          "text": "我们一定帮你找到",
+          "ops": ["add_goodwill:greenhouse:8", "set_flag:mem_shen_he_seeds"],
+          "result_text": "沈禾郑重地点了点头。这些种子，是她对未来最后的赌注。",
+          "memory": {
+            "id": "mem_shen_he_seeds",
+            "title": "基因库的种子",
+            "desc": "沈禾展示了灾前最后一批基因库备份种子，托付你们寻找培育手册。"
+          }
+        },
+        {
+          "text": "这太重要了，要小心行事",
+          "ops": ["add_goodwill:greenhouse:5", "set_flag:mem_shen_he_seeds"],
+          "result_text": "\"我知道。\"沈禾轻声说，\"所以我只告诉了你们。\"",
+          "memory": {
+            "id": "mem_shen_he_seeds",
+            "title": "基因库的种子",
+            "desc": "沈禾展示了灾前最后一批基因库备份种子，托付你们寻找培育手册。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_HC_001",
+      "npc_id": "han_ce",
+      "title": "塔台的规矩",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_han_ce_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "身份登记，货物清单，行驶路线。三样交齐了再谈交易。" },
+        { "speaker": "taoxia", "text": "呃……我们就是来送货的，用不着这么严格吧？" },
+        { "speaker": "npc", "text": "正因为是送货的才要严格。上个月有人借送货之名运了违禁品进来。" },
+        { "speaker": "linli", "text": "……我们不会。" },
+        { "speaker": "npc", "text": "希望如此。我是韩策，塔台负责人。规矩是死的，但可以让活人安心。" }
+      ],
+      "choices": [
+        {
+          "text": "理解，规矩我们遵守",
+          "ops": ["add_goodwill:tower:5", "set_flag:npc_han_ce_intro"],
+          "result_text": "韩策微微颔首，在数据板上记下了什么。至少第一印象不差。"
+        },
+        {
+          "text": "真麻烦……不过算了",
+          "ops": ["add_goodwill:tower:2", "set_flag:npc_han_ce_intro"],
+          "result_text": "韩策面无表情地递过登记表。效率，是他唯一在乎的东西。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_HC_002",
+      "npc_id": "han_ce",
+      "title": "信号异常",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_han_ce_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "最近北面信号塔收到了异常频段，不在我已知的编码表里。" },
+        { "speaker": "linli", "text": "什么样的信号？" },
+        { "speaker": "npc", "text": "断断续续的脉冲信号。像是某种自动应答系统还在运作。" },
+        { "speaker": "taoxia", "text": "灾前的遗留设备？" },
+        { "speaker": "npc", "text": "有可能。如果你们路过北面高地，帮我留意一下信号源的方向。" }
+      ],
+      "choices": [
+        {
+          "text": "收到，会帮你留意的",
+          "ops": ["add_goodwill:tower:4", "add_relation_linli:1"],
+          "result_text": "韩策递过一个小型信号探测仪。\"频率已经设好了，靠近就会响。\""
+        },
+        {
+          "text": "信号源的事……有报酬吗",
+          "ops": ["add_goodwill:tower:2", "add_credits:20"],
+          "result_text": "\"合理。\"韩策转了二十信用点过来，没多说一个字。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_HC_003",
+      "npc_id": "han_ce",
+      "title": "效率与温度",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_han_ce_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "韩策，你就没想过把塔台弄得暖和点？到处都是冷冰冰的金属。" },
+        { "speaker": "npc", "text": "保温层会影响信号接收灵敏度。" },
+        { "speaker": "taoxia", "text": "……我说的不是物理上的暖和。" },
+        { "speaker": "npc", "text": "……" },
+        { "speaker": "linli", "text": "她的意思是，偶尔可以让大家聚在一起吃顿饭。" },
+        { "speaker": "npc", "text": "吃饭不会提高通讯效率。但……我考虑一下。" }
+      ],
+      "choices": [
+        {
+          "text": "偶尔放松也是一种效率",
+          "ops": ["add_goodwill:tower:4", "add_relation_taoxia:2"],
+          "result_text": "韩策沉默了一会儿，然后在数据板上记下了\"集体用餐：待评估\"。"
+        },
+        {
+          "text": "算了，他就是这样的人",
+          "ops": ["add_goodwill:tower:2"],
+          "result_text": "韩策继续低头工作。但你注意到他悄悄把暖风调高了一格。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_HC_004",
+      "npc_id": "han_ce",
+      "title": "隐瞒的信号",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_han_ce_intro"],
+      "forbidden_flags": ["mem_han_ce_signal"],
+      "steps": [
+        { "speaker": "npc", "text": "林砾，有件事我需要和你谈谈。关上门。" },
+        { "speaker": "linli", "text": "……什么事？" },
+        { "speaker": "npc", "text": "之前那个异常信号，我解码了一部分。" },
+        { "speaker": "npc", "text": "是一组坐标。指向西南方向，大约三天车程的位置。" },
+        { "speaker": "npc", "text": "但我没有公开。因为坐标附近的区域……辐射值超标。" },
+        { "speaker": "taoxia", "text": "所以你想让我们替你去看看？" },
+        { "speaker": "npc", "text": "不。我想让你们帮我决定——这个信息，应不应该告诉其他聚落。" }
+      ],
+      "choices": [
+        {
+          "text": "大家有权知道真相",
+          "ops": ["add_goodwill:tower:8", "add_relation_linli:2", "set_flag:mem_han_ce_signal"],
+          "result_text": "韩策长出一口气。\"我就知道你会这么说。也许……你是对的。\"",
+          "memory": {
+            "id": "mem_han_ce_signal",
+            "title": "西南方的坐标",
+            "desc": "韩策解码了一组指向西南方高辐射区的坐标，你建议他公开信息。"
+          }
+        },
+        {
+          "text": "先搞清楚再说，别引起恐慌",
+          "ops": ["add_goodwill:tower:5", "add_relation_linli:1", "set_flag:mem_han_ce_signal"],
+          "result_text": "韩策点了点头：\"谨慎。我欣赏这一点。\"",
+          "memory": {
+            "id": "mem_han_ce_signal",
+            "title": "西南方的坐标",
+            "desc": "韩策解码了一组指向西南方高辐射区的坐标，你们决定先调查再公开。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_WS_001",
+      "npc_id": "wu_shiqi",
+      "title": "营地的规矩",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_wu_shiqi_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "哟，新面孔。送货的？" },
+        { "speaker": "linli", "text": "……对。" },
+        { "speaker": "npc", "text": "先说好规矩——进了营地，东西不能乱翻，人不能乱问。价格我来定。" },
+        { "speaker": "taoxia", "text": "好大的口气啊？" },
+        { "speaker": "npc", "text": "嗤。口气大是因为实力撑得起来。叫我伍拾七就行，营地的事归我管。" }
+      ],
+      "choices": [
+        {
+          "text": "明白，你的地盘你做主",
+          "ops": ["add_goodwill:ruins_camp:5", "set_flag:npc_wu_shiqi_intro"],
+          "result_text": "伍拾七歪嘴一笑：\"识趣。走吧，先带你们转转。\""
+        },
+        {
+          "text": "行，但价格得公平",
+          "ops": ["add_goodwill:ruins_camp:3", "set_flag:npc_wu_shiqi_intro"],
+          "result_text": "\"哈，有骨头。\"伍拾七拍了拍你的肩，\"行，给你个面子。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_WS_002",
+      "npc_id": "wu_shiqi",
+      "title": "黑市传闻",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_wu_shiqi_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "最近有人在南边搞了个地下交易场。不归我管的那种。" },
+        { "speaker": "linli", "text": "什么意思？" },
+        { "speaker": "npc", "text": "意思是——有人想在我眼皮底下抢生意。" },
+        { "speaker": "npc", "text": "要是你下次路过那边，帮我探探底，回来告诉我。" },
+        { "speaker": "taoxia", "text": "当间谍啊？报酬呢？" },
+        { "speaker": "npc", "text": "报酬就是我不涨你的进场费。怎么样？" }
+      ],
+      "choices": [
+        {
+          "text": "行，帮你留意",
+          "ops": ["add_goodwill:ruins_camp:4", "add_relation_taoxia:1"],
+          "result_text": "伍拾七满意地叼起金属签：\"够意思。\""
+        },
+        {
+          "text": "情报不便宜，得加钱",
+          "ops": ["add_goodwill:ruins_camp:2", "add_credits:25"],
+          "result_text": "\"切，行商就是行商。\"伍拾七不情愿地掏了钱。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_WS_003",
+      "npc_id": "wu_shiqi",
+      "title": "营地里的孩子",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_wu_shiqi_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "伍拾七，你营地里怎么还有小孩子？" },
+        { "speaker": "npc", "text": "……拣来的。路上碰到就捡了。" },
+        { "speaker": "taoxia", "text": "好嘛，没看出来你还挺有爱心的。" },
+        { "speaker": "npc", "text": "少来。我只是不想他们碍事——小孩到处乱跑会踩到陷阱。" },
+        { "speaker": "linli", "text": "……但你给他们搭了单独的帐篷，还有热水。" },
+        { "speaker": "npc", "text": "……吵什么吵，快说正事。" }
+      ],
+      "choices": [
+        {
+          "text": "你是个好人，伍拾七",
+          "ops": ["add_goodwill:ruins_camp:5", "add_relation_linli:1"],
+          "result_text": "伍拾七别过脸去：\"再说这种话就把你赶出去。\"但帐篷后面传来了孩子的笑声。"
+        },
+        {
+          "text": "需要我帮忙带点孩子用的东西吗",
+          "ops": ["add_goodwill:ruins_camp:4", "add_relation_taoxia:1"],
+          "result_text": "\"……奶粉。如果能弄到的话。\"伍拾七的声音难得放轻了。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_WS_004",
+      "npc_id": "wu_shiqi",
+      "title": "地下高速",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_wu_shiqi_intro"],
+      "forbidden_flags": ["mem_wu_shiqi_highway"],
+      "steps": [
+        { "speaker": "npc", "text": "行了行了，看在你们不错的份上，告诉你们个秘密。" },
+        { "speaker": "linli", "text": "什么秘密？" },
+        { "speaker": "npc", "text": "废墟下面有一条旧物流高速。灾前的地下隧道，保存得还不错。" },
+        { "speaker": "npc", "text": "但入口那边塌了半截，要先清理才能通行。" },
+        { "speaker": "taoxia", "text": "地下高速！那跑货不就快多了？" },
+        { "speaker": "npc", "text": "是快。但你得先帮我一个忙——我有支拾荒队失联了，就在那附近。" }
+      ],
+      "choices": [
+        {
+          "text": "先救人，路的事之后再说",
+          "ops": ["add_goodwill:ruins_camp:8", "add_relation_linli:2", "set_flag:mem_wu_shiqi_highway"],
+          "result_text": "伍拾七愣了一下，然后罕见地露出了真诚的笑容：\"……够义气。\"",
+          "memory": {
+            "id": "mem_wu_shiqi_highway",
+            "title": "废墟下的高速",
+            "desc": "伍拾七透露了废墟下保存完好的旧物流高速，但入口附近有失联的拾荒队。"
+          }
+        },
+        {
+          "text": "救人可以，但路的使用权得给我们",
+          "ops": ["add_goodwill:ruins_camp:5", "set_flag:mem_wu_shiqi_highway"],
+          "result_text": "\"精明。\"伍拾七点了根签子，\"成交。\"",
+          "memory": {
+            "id": "mem_wu_shiqi_highway",
+            "title": "废墟下的高速",
+            "desc": "伍拾七透露了废墟下保存完好的旧物流高速，你们以救人换取了通行权。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_BS_001",
+      "npc_id": "bai_shu",
+      "title": "钟楼的守门人",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_bai_shu_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "你们是行商？请进。钟楼对所有旅人敞开大门。" },
+        { "speaker": "linli", "text": "谢谢。你是……" },
+        { "speaker": "npc", "text": "白述。我负责看管书院里的这些书，以及偶尔——给钟上发条。" },
+        { "speaker": "taoxia", "text": "这钟还能走？" },
+        { "speaker": "npc", "text": "走得不太准了。但人们需要一个能告诉他们'现在是几点'的东西。哪怕不太准确。" }
+      ],
+      "choices": [
+        {
+          "text": "保存知识很重要",
+          "ops": ["add_goodwill:bell_tower:5", "set_flag:npc_bai_shu_intro"],
+          "result_text": "白述微微点头：\"知音难觅。请随意翻阅架上的书籍。\""
+        },
+        {
+          "text": "你们这儿有什么好东西可以交易",
+          "ops": ["add_goodwill:bell_tower:2", "set_flag:npc_bai_shu_intro"],
+          "result_text": "白述平静地看着你：\"知识无价，但抄本可以谈。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_BS_002",
+      "npc_id": "bai_shu",
+      "title": "旧世界的地图",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_bai_shu_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "你们在路上走了这么久，有没有见过灾前的路标？" },
+        { "speaker": "linli", "text": "偶尔会看到。大多已经锈蚀了。" },
+        { "speaker": "npc", "text": "我在整理一份旧世界的道路图。每一条还能辨认的路标，对我来说都很珍贵。" },
+        { "speaker": "npc", "text": "如果你们愿意帮我记录途中看到的路标，我可以用知识来回报。" },
+        { "speaker": "taoxia", "text": "知识？比如什么？" },
+        { "speaker": "npc", "text": "比如……哪些区域的水源是安全的。这种信息值不值钱？" }
+      ],
+      "choices": [
+        {
+          "text": "当然值钱，我们帮你记录",
+          "ops": ["add_goodwill:bell_tower:4", "add_relation_linli:1"],
+          "result_text": "白述递过一个小笔记本和一支铅笔：\"详细一点，包括路标上的编号。\""
+        },
+        {
+          "text": "可以，但水源信息先给我",
+          "ops": ["add_goodwill:bell_tower:2", "add_relation_taoxia:1"],
+          "result_text": "白述微笑着展开一张手绘地图，指了几个蓝点：\"这些经过验证。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_BS_003",
+      "npc_id": "bai_shu",
+      "title": "钟声的意义",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_bai_shu_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "linli", "text": "白述，为什么每天还要敲钟？" },
+        { "speaker": "npc", "text": "……你问过其他聚落的人吗？他们怎么看？" },
+        { "speaker": "linli", "text": "有人觉得是习惯，有人觉得是纪念。" },
+        { "speaker": "npc", "text": "都对。但对我来说，钟声是一种承诺。" },
+        { "speaker": "npc", "text": "只要钟还在响，就说明这个地方还有人在。还有人在记录。还有人在等。" },
+        { "speaker": "taoxia", "text": "……等什么？" },
+        { "speaker": "npc", "text": "等更多像你们这样的人，愿意把消息带到远方去。" }
+      ],
+      "choices": [
+        {
+          "text": "我们会把钟楼的消息带到每一个聚落",
+          "ops": ["add_goodwill:bell_tower:5", "add_relation_linli:2"],
+          "result_text": "白述看着远处的钟塔，轻声说：\"那钟声就没有白响。\""
+        },
+        {
+          "text": "只要路还通，我们就会回来",
+          "ops": ["add_goodwill:bell_tower:4", "add_relation_taoxia:1"],
+          "result_text": "白述点了点头：\"路通则人通。谢谢你们。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_BS_004",
+      "npc_id": "bai_shu",
+      "title": "残图与真相",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_bai_shu_intro"],
+      "forbidden_flags": ["mem_bai_shu_map"],
+      "steps": [
+        { "speaker": "npc", "text": "林砾，我有件事想了很久，决定告诉你。" },
+        { "speaker": "linli", "text": "你很少这么郑重。" },
+        { "speaker": "npc", "text": "因为这关系到所有聚落的未来。" },
+        { "speaker": "npc", "text": "我手上有一份残图。指向一个叫'云海高塔'的地方。" },
+        { "speaker": "npc", "text": "传说那里保存着灾前的通讯枢纽。如果能重启……聚落之间就不用再靠行商传递消息了。" },
+        { "speaker": "taoxia", "text": "那不是要让我们失业吗？" },
+        { "speaker": "npc", "text": "也许。但也许——会让所有人都活得更好。" }
+      ],
+      "choices": [
+        {
+          "text": "如果能让大家过得更好，值得一试",
+          "ops": ["add_goodwill:bell_tower:8", "add_relation_linli:2", "set_flag:mem_bai_shu_map"],
+          "result_text": "白述小心翼翼地展开那张泛黄的残图：\"这条路……很远，也很危险。\"",
+          "memory": {
+            "id": "mem_bai_shu_map",
+            "title": "云海高塔的残图",
+            "desc": "白述展示了指向'云海高塔'通讯枢纽的残图，那里也许能改变所有聚落的命运。"
+          }
+        },
+        {
+          "text": "先别声张，我们需要更多情报",
+          "ops": ["add_goodwill:bell_tower:5", "add_relation_taoxia:1", "set_flag:mem_bai_shu_map"],
+          "result_text": "白述把残图折好收起：\"审慎，我赞同。但别等太久。\"",
+          "memory": {
+            "id": "mem_bai_shu_map",
+            "title": "云海高塔的残图",
+            "desc": "白述展示了指向'云海高塔'通讯枢纽的残图，你们决定先收集更多情报再行动。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_ZM_001",
+      "npc_id": "zhao_miao",
+      "title": "农场的守望者",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_zhao_miao_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "别踩那片地！刚播了种！" },
+        { "speaker": "taoxia", "text": "哇！吓我一跳！" },
+        { "speaker": "npc", "text": "抱歉抱歉……我是赵苗，这片外围农场归我管。沈禾让我在这儿开荒的。" },
+        { "speaker": "linli", "text": "你认识沈禾？" },
+        { "speaker": "npc", "text": "当然！她是我师父。温室那边地方不够用了，我就被派到这儿来扩大种植面积。" },
+        { "speaker": "npc", "text": "虽然条件差了点，但土地肥沃，潜力很大。你们要是能帮忙运些工具过来就好了。" }
+      ],
+      "choices": [
+        {
+          "text": "工具的事交给我们",
+          "ops": ["add_goodwill:greenhouse_farm:5", "set_flag:npc_zhao_miao_intro"],
+          "result_text": "赵苗高兴地拍了拍手上的土：\"太好了！下次来我请你们吃烤玉米！\""
+        },
+        {
+          "text": "先看看你这儿有什么可以交易的",
+          "ops": ["add_goodwill:greenhouse_farm:2", "set_flag:npc_zhao_miao_intro"],
+          "result_text": "赵苗从围裙口袋里掏出几颗土豆：\"暂时就这些……但以后会更多的！\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_ZM_002",
+      "npc_id": "zhao_miao",
+      "title": "野兽的困扰",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_zhao_miao_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "唉，又被啃了一片……" },
+        { "speaker": "linli", "text": "什么情况？" },
+        { "speaker": "npc", "text": "不知道是什么野兽，每到夜里就来祸害庄稼。围栏挡不住它。" },
+        { "speaker": "taoxia", "text": "你没追过去看看？" },
+        { "speaker": "npc", "text": "追过，但那东西跑得比我快多了。要是能弄到捕兽夹就好了……" },
+        { "speaker": "npc", "text": "伍拾七那边应该有，他的人啥都能搞到。帮我问问？" }
+      ],
+      "choices": [
+        {
+          "text": "下次路过废墟营地帮你带",
+          "ops": ["add_goodwill:greenhouse_farm:4", "add_relation_linli:1"],
+          "result_text": "赵苗如释重负地叹了口气：\"真是帮了大忙了，再这样下去收成都没了。\""
+        },
+        {
+          "text": "捕兽夹不便宜，运费另算",
+          "ops": ["add_goodwill:greenhouse_farm:2", "add_credits:10"],
+          "result_text": "赵苗有点为难地掏出几个零散的信用点：\"就这些了……拜托了。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_ZM_003",
+      "npc_id": "zhao_miao",
+      "title": "师父的教诲",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_zhao_miao_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "赵苗，你跟沈禾学种地学了多久？" },
+        { "speaker": "npc", "text": "三年了。灾后第一年我还什么都不会，连锄头都握不稳。" },
+        { "speaker": "npc", "text": "师父说，种地就跟做人一样——得有耐心，不能急。种子不会因为你着急就长得快。" },
+        { "speaker": "linli", "text": "……这话说得好。" },
+        { "speaker": "npc", "text": "不过我还是偷偷急过。有一次浇太多水，把一整畦苗都泡死了……" },
+        { "speaker": "taoxia", "text": "哈哈哈！笨蛋！" },
+        { "speaker": "npc", "text": "呜……不要笑我啦。" }
+      ],
+      "choices": [
+        {
+          "text": "犯过错才能学到东西",
+          "ops": ["add_goodwill:greenhouse_farm:4", "add_relation_taoxia:1"],
+          "result_text": "赵苗不好意思地挠挠头：\"嘿嘿，现在已经不会犯那种错了！大概……\""
+        },
+        {
+          "text": "沈禾是个好师父",
+          "ops": ["add_goodwill:greenhouse_farm:3", "add_goodwill:greenhouse:2"],
+          "result_text": "赵苗用力点头：\"是啊！师父是最好的人！\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_ZM_004",
+      "npc_id": "zhao_miao",
+      "title": "地下水源",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_zhao_miao_intro"],
+      "forbidden_flags": ["mem_zhao_miao_water"],
+      "steps": [
+        { "speaker": "npc", "text": "林砾姐，你能帮我保密吗？" },
+        { "speaker": "linli", "text": "怎么了？" },
+        { "speaker": "npc", "text": "我前几天挖地基的时候，挖到了一条地下水脉。" },
+        { "speaker": "npc", "text": "水质很好，比地表水干净多了。如果好好开发，能解决好几个聚落的用水问题。" },
+        { "speaker": "taoxia", "text": "这是好事啊！为什么要保密？" },
+        { "speaker": "npc", "text": "因为……如果消息传出去，各方势力可能会争抢水源。我不想这片地变成战场。" },
+        { "speaker": "npc", "text": "我想先跟师父商量，再慢慢告诉大家。你们觉得呢？" }
+      ],
+      "choices": [
+        {
+          "text": "你的想法很成熟，先告诉沈禾吧",
+          "ops": ["add_goodwill:greenhouse_farm:8", "add_goodwill:greenhouse:3", "set_flag:mem_zhao_miao_water"],
+          "result_text": "赵苗松了口气：\"谢谢你们。我相信师父会做出最好的决定的。\"",
+          "memory": {
+            "id": "mem_zhao_miao_water",
+            "title": "地下水脉",
+            "desc": "赵苗在外围农场挖到了一条干净的地下水脉，你建议她先告诉沈禾再做打算。"
+          }
+        },
+        {
+          "text": "水源是公共资源，应该尽快公开",
+          "ops": ["add_goodwill:greenhouse_farm:5", "set_flag:mem_zhao_miao_water"],
+          "result_text": "赵苗犹豫了一下：\"也许你说得对……但让我再想想。\"",
+          "memory": {
+            "id": "mem_zhao_miao_water",
+            "title": "地下水脉",
+            "desc": "赵苗在外围农场挖到了一条干净的地下水脉，关于是否公开的问题还在考虑中。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_CY_001",
+      "npc_id": "cheng_yuan",
+      "title": "穹顶之下",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_cheng_yuan_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "停车。扫描完成后才能进入穹顶范围。" },
+        { "speaker": "taoxia", "text": "怎么又是扫描……跟韩策一样。" },
+        { "speaker": "npc", "text": "韩策是我上司。他的规矩，我只会执行得更严格。" },
+        { "speaker": "linli", "text": "你是穹顶哨站的负责人？" },
+        { "speaker": "npc", "text": "程远。韩策派我在这儿值守前哨。负责北面的信号中继和早期预警。" },
+        { "speaker": "npc", "text": "这地方虽然小，但如果塔台是大脑，这里就是眼睛。少不了。" }
+      ],
+      "choices": [
+        {
+          "text": "眼睛也需要补给，我们可以帮忙",
+          "ops": ["add_goodwill:dome_outpost:5", "set_flag:npc_cheng_yuan_intro"],
+          "result_text": "程远面无表情地点了下头，但扫描速度明显加快了。算是他表达善意的方式。"
+        },
+        {
+          "text": "行吧，扫就扫",
+          "ops": ["add_goodwill:dome_outpost:2", "set_flag:npc_cheng_yuan_intro"],
+          "result_text": "程远递过一张通行标签：\"有效期三天。下次来还要重新扫。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_CY_002",
+      "npc_id": "cheng_yuan",
+      "title": "北面的雷暴",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_cheng_yuan_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "近期不建议走北面的路线。" },
+        { "speaker": "linli", "text": "为什么？" },
+        { "speaker": "npc", "text": "探测器显示北面高空有异常电离层活动。通俗说——可能会有电磁暴。" },
+        { "speaker": "taoxia", "text": "电磁暴？那是什么？很危险吗？" },
+        { "speaker": "npc", "text": "对电子设备有破坏性。你们货车上的导航和通讯可能会失灵。" },
+        { "speaker": "npc", "text": "等暴风过后我会更新路况。你们可以走南线绕行。" }
+      ],
+      "choices": [
+        {
+          "text": "谢谢提醒，安全第一",
+          "ops": ["add_goodwill:dome_outpost:4", "add_relation_linli:1"],
+          "result_text": "程远在数据板上标记了南线路径发给你：\"这是最新的安全路线。\""
+        },
+        {
+          "text": "路况信息能定期共享吗？",
+          "ops": ["add_goodwill:dome_outpost:3", "add_goodwill:tower:1"],
+          "result_text": "程远想了想：\"我请示一下韩策。定期给你们发路况通报……可以考虑。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_CY_003",
+      "npc_id": "cheng_yuan",
+      "title": "一个人的哨站",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_cheng_yuan_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "程远，你一个人在这儿不孤单吗？" },
+        { "speaker": "npc", "text": "任务不允许孤单。" },
+        { "speaker": "taoxia", "text": "……你跟韩策说话方式好像啊。" },
+        { "speaker": "npc", "text": "他教的。但……" },
+        { "speaker": "linli", "text": "但？" },
+        { "speaker": "npc", "text": "……夜班的时候，偶尔会对着雷达屏幕发呆。看那些光点移动，猜它们是什么。" },
+        { "speaker": "npc", "text": "有时候我会想，是不是远处也有个人，在看着另一块屏幕，也在猜我是什么。" }
+      ],
+      "choices": [
+        {
+          "text": "下次我们带点书来，夜班的时候能看",
+          "ops": ["add_goodwill:dome_outpost:5", "add_relation_taoxia:2"],
+          "result_text": "程远的表情终于有了一丝波动：\"……谢谢。不要小说，要技术手册。\""
+        },
+        {
+          "text": "有我们在，你不是一个人",
+          "ops": ["add_goodwill:dome_outpost:4", "add_relation_linli:1"],
+          "result_text": "程远沉默了一会儿，然后轻轻点了点头。雷达屏幕上的光点，今晚看起来没那么冷了。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_CY_004",
+      "npc_id": "cheng_yuan",
+      "title": "穹顶的裂缝",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_cheng_yuan_intro"],
+      "forbidden_flags": ["mem_cheng_yuan_crack"],
+      "steps": [
+        { "speaker": "npc", "text": "林砾，有个问题我需要你们的意见。" },
+        { "speaker": "linli", "text": "说吧。" },
+        { "speaker": "npc", "text": "穹顶的防护罩出现了微裂纹。目前不影响使用，但按老化速度估算……" },
+        { "speaker": "npc", "text": "大约半年后会失去气密性。到时候这个哨站就不能用了。" },
+        { "speaker": "taoxia", "text": "那赶紧报告韩策啊！" },
+        { "speaker": "npc", "text": "报告了。但修复材料需要特种玻璃，整个区域都找不到。" },
+        { "speaker": "npc", "text": "除非……你们在路上遇到过灾前的建材仓库。" }
+      ],
+      "choices": [
+        {
+          "text": "我们帮你找，这个哨站不能丢",
+          "ops": ["add_goodwill:dome_outpost:8", "add_goodwill:tower:3", "set_flag:mem_cheng_yuan_crack"],
+          "result_text": "程远难得露出了感激的神情：\"……谢谢。这个哨站是韩策信任我的证明，我不想让他失望。\"",
+          "memory": {
+            "id": "mem_cheng_yuan_crack",
+            "title": "穹顶的裂缝",
+            "desc": "穹顶哨站的防护罩出现微裂纹，半年内需要特种玻璃修复，否则哨站将报废。"
+          }
+        },
+        {
+          "text": "实在找不到的话，可以考虑换个地方建",
+          "ops": ["add_goodwill:dome_outpost:5", "set_flag:mem_cheng_yuan_crack"],
+          "result_text": "程远沉默了很久：\"换地方……也是个办法。但这里的位置是最优的信号中继点。\"",
+          "memory": {
+            "id": "mem_cheng_yuan_crack",
+            "title": "穹顶的裂缝",
+            "desc": "穹顶哨站的防护罩出现微裂纹，正在考虑修复或迁移方案。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_AX_001",
+      "npc_id": "a_xiu",
+      "title": "地铁里的铁匠",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_a_xiu_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "当心脑袋！这儿天花板矮。" },
+        { "speaker": "taoxia", "text": "咦？你们住在地铁站里？" },
+        { "speaker": "npc", "text": "何止住，这儿是整个营地最好的修理铺。我叫阿锈，什么都能修，什么都能拆。" },
+        { "speaker": "linli", "text": "伍拾七的人？" },
+        { "speaker": "npc", "text": "算是吧。老七让我在这边建了个分站，主要负责废旧设备回收和维修。" },
+        { "speaker": "npc", "text": "你们车上有啥需要修的没？第一次免费，下次打八折。" }
+      ],
+      "choices": [
+        {
+          "text": "太好了，正好有些零件需要换",
+          "ops": ["add_goodwill:metro_camp:5", "set_flag:npc_a_xiu_intro"],
+          "result_text": "阿锈翻了翻工具箱，哗啦啦的金属碰撞声在隧道里回荡：\"坐好了，马上搞定。\""
+        },
+        {
+          "text": "先看看你的手艺再说",
+          "ops": ["add_goodwill:metro_camp:2", "set_flag:npc_a_xiu_intro"],
+          "result_text": "阿锈嘿嘿一笑，随手拿起一块废铁三下五除二折成了个小玩意儿：\"怎样？\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_AX_002",
+      "npc_id": "a_xiu",
+      "title": "旧列车的秘密",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_a_xiu_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "嘿，你们想不想看个有意思的东西？" },
+        { "speaker": "taoxia", "text": "什么什么？" },
+        { "speaker": "npc", "text": "隧道深处有辆灾前的列车。车厢基本完好，我一直在琢磨能不能让它跑起来。" },
+        { "speaker": "linli", "text": "铁轨还能用吗？" },
+        { "speaker": "npc", "text": "有些路段塌了，但如果只跑短途——比如到废墟营地那一段——问题不大。" },
+        { "speaker": "npc", "text": "就是缺电池组。你们要是在路上碰到灾前的储能设备，帮我留意一下。" }
+      ],
+      "choices": [
+        {
+          "text": "地铁能跑起来的话太酷了！",
+          "ops": ["add_goodwill:metro_camp:4", "add_relation_taoxia:1"],
+          "result_text": "阿锈兴奋地搓搓手：\"对吧！到时候你们可以坐头等舱！\""
+        },
+        {
+          "text": "电池组值不少钱，得谈好价格",
+          "ops": ["add_goodwill:metro_camp:2", "add_credits:15"],
+          "result_text": "阿锈叹了口气，从角落里翻出几个零件当定金：\"行吧，先付这些。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_AX_003",
+      "npc_id": "a_xiu",
+      "title": "锈迹斑斑的心",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_a_xiu_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "linli", "text": "阿锈，你的名字……很特别。" },
+        { "speaker": "npc", "text": "不是本名啦。灾前我叫什么来着……不记得了。" },
+        { "speaker": "npc", "text": "捡到我的老人说我身上全是锈迹斑斑的铁片，就叫我阿锈了。" },
+        { "speaker": "taoxia", "text": "……那个老人呢？" },
+        { "speaker": "npc", "text": "不在了。但他教会我——坏掉的东西不要扔，修一修还能用。" },
+        { "speaker": "npc", "text": "人也是一样。所以老七那边的人，谁的装备坏了都来找我。" },
+        { "speaker": "npc", "text": "修东西的时候最踏实。不用想其他乱七八糟的事。" }
+      ],
+      "choices": [
+        {
+          "text": "你修好的不只是东西，还有人心",
+          "ops": ["add_goodwill:metro_camp:5", "add_relation_linli:2"],
+          "result_text": "阿锈愣了一下，然后咧嘴笑了：\"别肉麻了！来来来，帮我扶着这块板子。\""
+        },
+        {
+          "text": "你真厉害，什么都能修",
+          "ops": ["add_goodwill:metro_camp:3", "add_relation_taoxia:1"],
+          "result_text": "阿锈得意地拍了拍胸口：\"那当然！除了心——心不好修。哈哈！\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_AX_004",
+      "npc_id": "a_xiu",
+      "title": "地铁尽头的声音",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_a_xiu_intro"],
+      "forbidden_flags": ["mem_a_xiu_sound"],
+      "steps": [
+        { "speaker": "npc", "text": "嘘——你们听到了吗？" },
+        { "speaker": "linli", "text": "什么声音？" },
+        { "speaker": "npc", "text": "隧道深处……有规律的金属敲击声。每天晚上十二点准时响，持续十分钟。" },
+        { "speaker": "taoxia", "text": "不会是闹鬼吧？！" },
+        { "speaker": "npc", "text": "鬼才不会那么守时。我猜是某种自动化设备还在运转。" },
+        { "speaker": "npc", "text": "但隧道那一段塌了半截，我一个人不敢往深处走。你们……愿意陪我去看看吗？" }
+      ],
+      "choices": [
+        {
+          "text": "走，一起去看看",
+          "ops": ["add_goodwill:metro_camp:8", "add_goodwill:ruins_camp:2", "set_flag:mem_a_xiu_sound"],
+          "result_text": "阿锈紧张地拿起最大的扳手：\"好！有你们在就不怕了！……大概。\"",
+          "memory": {
+            "id": "mem_a_xiu_sound",
+            "title": "隧道深处的声音",
+            "desc": "地铁隧道深处每晚有规律的金属敲击声，阿锈怀疑是灾前的自动化设备，你们决定一起去调查。"
+          }
+        },
+        {
+          "text": "先让伍拾七派几个人手来",
+          "ops": ["add_goodwill:metro_camp:5", "set_flag:mem_a_xiu_sound"],
+          "result_text": "阿锈想了想：\"也对，安全第一。我先跟老七说一声。\"",
+          "memory": {
+            "id": "mem_a_xiu_sound",
+            "title": "隧道深处的声音",
+            "desc": "地铁隧道深处每晚有规律的金属敲击声，决定先请伍拾七派人支援再去调查。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_SM_001",
+      "npc_id": "su_mo",
+      "title": "沉默的看守",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_su_mo_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "……" },
+        { "speaker": "taoxia", "text": "那个……你好？有人在吗？" },
+        { "speaker": "npc", "text": "……在。苏墨。旧教堂看守。" },
+        { "speaker": "linli", "text": "白述让你在这儿值守？" },
+        { "speaker": "npc", "text": "嗯。白述老师说，这里的壁画和手稿需要有人保护。我就来了。" },
+        { "speaker": "npc", "text": "话不多，但你们需要什么……可以说。" }
+      ],
+      "choices": [
+        {
+          "text": "保护文化遗产很重要，辛苦了",
+          "ops": ["add_goodwill:old_church:5", "set_flag:npc_su_mo_intro"],
+          "result_text": "苏墨微微低头，算是回礼。沉默中自有一种可靠的力量。"
+        },
+        {
+          "text": "这些壁画和手稿值钱吗？",
+          "ops": ["add_goodwill:old_church:2", "set_flag:npc_su_mo_intro"],
+          "result_text": "苏墨看了你一眼，没有回答。也许对他来说，有些东西不该用钱来衡量。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_SM_002",
+      "npc_id": "su_mo",
+      "title": "壁画的修复",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_su_mo_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "这面壁画……在脱落。" },
+        { "speaker": "linli", "text": "看起来年代很久了。" },
+        { "speaker": "npc", "text": "灾前的。画的是这片土地过去的样子。有河，有桥，有很多人。" },
+        { "speaker": "taoxia", "text": "好漂亮……跟现在完全不一样。" },
+        { "speaker": "npc", "text": "所以要修。白述老师给了我一份修复配方，但需要矿物颜料。" },
+        { "speaker": "npc", "text": "你们路上如果看到彩色的矿石……帮我带回来。" }
+      ],
+      "choices": [
+        {
+          "text": "一定帮你留意",
+          "ops": ["add_goodwill:old_church:4", "add_relation_linli:1"],
+          "result_text": "苏墨轻轻触碰壁画的边缘，眼神温柔得像在对待一个脆弱的生命。"
+        },
+        {
+          "text": "矿石颜料应该不难找，看看白述那边有没有线索",
+          "ops": ["add_goodwill:old_church:3", "add_goodwill:bell_tower:1"],
+          "result_text": "苏墨点了点头：\"白述老师那边……可能有记录。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_SM_003",
+      "npc_id": "su_mo",
+      "title": "无声的琴",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_su_mo_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "苏墨，教堂角落那个是什么？钢琴？" },
+        { "speaker": "npc", "text": "风琴。灾前留下的。" },
+        { "speaker": "taoxia", "text": "还能弹吗？" },
+        { "speaker": "npc", "text": "……有几个键坏了。但大部分还能响。" },
+        { "speaker": "linli", "text": "你会弹？" },
+        { "speaker": "npc", "text": "不太会。白述老师教过一些。夜里没人的时候……会弹几个音。" },
+        { "speaker": "npc", "text": "声音在教堂里回荡的感觉……很安静。那种好的安静。" }
+      ],
+      "choices": [
+        {
+          "text": "弹给我们听听吧",
+          "ops": ["add_goodwill:old_church:5", "add_relation_taoxia:2"],
+          "result_text": "苏墨犹豫了很久，最后坐到风琴前。几个简单的音符在教堂穹顶下回旋。陶夏闭上了眼睛。"
+        },
+        {
+          "text": "如果需要修风琴的零件，我帮你找",
+          "ops": ["add_goodwill:old_church:4", "add_relation_linli:1"],
+          "result_text": "苏墨的眼神亮了一瞬：\"……谢谢。那几个坏键的声音，我一直很想听到。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_SM_004",
+      "npc_id": "su_mo",
+      "title": "地下密室",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_su_mo_intro"],
+      "forbidden_flags": ["mem_su_mo_crypt"],
+      "steps": [
+        { "speaker": "npc", "text": "跟我来。有个地方……想给你们看。" },
+        { "speaker": "linli", "text": "地下室？" },
+        { "speaker": "npc", "text": "教堂下面有一间密室。我打扫的时候发现的。" },
+        { "speaker": "npc", "text": "里面有一面墙，刻满了名字。" },
+        { "speaker": "taoxia", "text": "名字？什么名字？" },
+        { "speaker": "npc", "text": "灾难发生时……最后在这里避难的人。他们把名字刻在墙上，怕被遗忘。" },
+        { "speaker": "npc", "text": "我在考虑……要不要告诉白述老师。这些名字，应该被记录下来。" }
+      ],
+      "choices": [
+        {
+          "text": "应该告诉白述，他会妥善处理的",
+          "ops": ["add_goodwill:old_church:8", "add_goodwill:bell_tower:3", "set_flag:mem_su_mo_crypt"],
+          "result_text": "苏墨在昏暗的灯光下轻轻抚过那些刻痕：\"他们不会被遗忘的。\"",
+          "memory": {
+            "id": "mem_su_mo_crypt",
+            "title": "名字之墙",
+            "desc": "旧教堂地下密室有一面刻满避难者名字的墙壁，苏墨决定告诉白述将它们记录保存。"
+          }
+        },
+        {
+          "text": "这是珍贵的历史，值得让所有聚落知道",
+          "ops": ["add_goodwill:old_church:5", "add_relation_linli:1", "set_flag:mem_su_mo_crypt"],
+          "result_text": "苏墨安静地点了点头。密室里的空气似乎都凝固了，带着沉甸甸的重量。",
+          "memory": {
+            "id": "mem_su_mo_crypt",
+            "title": "名字之墙",
+            "desc": "旧教堂地下密室有一面刻满避难者名字的墙壁，你们认为这段历史应该被所有聚落铭记。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_MH_001",
+      "npc_id": "meng_hui",
+      "title": "路边的药箱",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_meng_hui_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "别动。伤口我看一下。" },
+        { "speaker": "taoxia", "text": "啊？我没受伤——" },
+        { "speaker": "npc", "text": "不是说你。你的货车轮胎磨损很严重，再跑二十公里就要爆了。" },
+        { "speaker": "linli", "text": "你是……？" },
+        { "speaker": "npc", "text": "孟回，行脚医生。人和车我都看。路上碰见了就算缘分。" },
+        { "speaker": "npc", "text": "我没有固定据点，走到哪儿算哪儿。需要药或者修理的，我都可以帮忙。" }
+      ],
+      "choices": [
+        {
+          "text": "太好了，帮我们检查一下",
+          "ops": ["set_flag:npc_meng_hui_intro", "add_durability:5"],
+          "result_text": "孟回蹲下身，三两下就修好了轮胎上的破损。\"举手之劳，下次路上见。\""
+        },
+        {
+          "text": "你一个人走这么危险的路不怕吗",
+          "ops": ["set_flag:npc_meng_hui_intro"],
+          "result_text": "孟回整理药箱：\"怕。但路上受伤的人更怕。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_MH_002",
+      "npc_id": "meng_hui",
+      "title": "路过的处方",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_meng_hui_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "又见面了。你们脸色不太好，吃了什么不干净的东西？" },
+        { "speaker": "taoxia", "text": "可能是路上的罐头……味道怪怪的。" },
+        { "speaker": "npc", "text": "让我看看。嗯，轻微食物中毒，没大碍。给你们配点药。" },
+        { "speaker": "linli", "text": "谢谢。你的药材从哪儿来的？" },
+        { "speaker": "npc", "text": "走到哪儿采到哪儿。废墟里的旧药房、路边的草药……拼拼凑凑够用了。" },
+        { "speaker": "npc", "text": "不过有些药材越来越难找了。特别是抗生素类的原料。" }
+      ],
+      "choices": [
+        {
+          "text": "我们路上帮你留意药材",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
+          "result_text": "孟回把一包草药塞进你的行李：\"好人。这包是预防用的，路上喝。\""
+        },
+        {
+          "text": "药材能卖多少钱？",
+          "ops": ["add_credits:10"],
+          "result_text": "孟回苦笑：\"药不该论价……但活下去也需要钱。\"她递过几枚信用点作为诊金。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_MH_003",
+      "npc_id": "meng_hui",
+      "title": "行医者的夜",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_meng_hui_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "孟回姐，你晚上一个人睡在外面不害怕？" },
+        { "speaker": "npc", "text": "习惯了。找个避风的地方，生堆火，药箱当枕头。" },
+        { "speaker": "linli", "text": "为什么不在聚落里安顿下来？" },
+        { "speaker": "npc", "text": "待过。但看到路上还有人在受苦，就坐不住了。" },
+        { "speaker": "npc", "text": "有一次我在路边救了个快死的人，他醒来第一句话是'还好你路过'。" },
+        { "speaker": "npc", "text": "从那以后我就想——如果我不路过呢？所以我选择一直在路上。" }
+      ],
+      "choices": [
+        {
+          "text": "你是真正的好人，孟回",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:1"],
+          "result_text": "孟回摆摆手：\"什么好人。就是个停不下来的老毛病。\""
+        },
+        {
+          "text": "至少今晚跟我们一起扎营吧",
+          "ops": ["add_relation_taoxia:2"],
+          "result_text": "孟回犹豫了一下，然后点了点头：\"也好。很久没跟人一起吃饭了。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_MH_004",
+      "npc_id": "meng_hui",
+      "title": "无法治愈的病",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_meng_hui_intro"],
+      "forbidden_flags": ["mem_meng_hui_past"],
+      "steps": [
+        { "speaker": "npc", "text": "林砾，能帮我个忙吗？" },
+        { "speaker": "linli", "text": "什么事？" },
+        { "speaker": "npc", "text": "灾前我是一家医院的实习医生。最后一天，医院里挤满了人。" },
+        { "speaker": "npc", "text": "我的导师让我先撤离，说他能撑住。然后……就没有然后了。" },
+        { "speaker": "taoxia", "text": "……" },
+        { "speaker": "npc", "text": "导师的笔记本我一直带着。里面有很多药方，但有几页被水泡坏了。" },
+        { "speaker": "npc", "text": "白述那边的书院……也许有医学文献能帮我补全这些缺失的部分。" }
+      ],
+      "choices": [
+        {
+          "text": "我会帮你找到的，这些药方能救很多人",
+          "ops": ["add_relation_linli:3", "set_flag:mem_meng_hui_past"],
+          "result_text": "孟回的眼眶红了一瞬，然后迅速别过脸去：\"谢谢。导师会高兴的。\"",
+          "memory": {
+            "id": "mem_meng_hui_past",
+            "title": "导师的药方",
+            "desc": "孟回的导师在灾难中留下了一本药方笔记，部分被水损毁，需要找医学文献补全。"
+          }
+        },
+        {
+          "text": "你已经救了很多人了，导师不会怪你",
+          "ops": ["add_relation_taoxia:2", "set_flag:mem_meng_hui_past"],
+          "result_text": "孟回沉默了很久。\"也许吧。但补全那些药方……是我能为他做的最后一件事。\"",
+          "memory": {
+            "id": "mem_meng_hui_past",
+            "title": "导师的药方",
+            "desc": "孟回的导师在灾难中留下了一本药方笔记，她希望找到医学文献来补全缺失的部分。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_MS_001",
+      "npc_id": "ming_sha",
+      "title": "沙漠来客",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_ming_sha_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "嗬，同行？难得在这条路上碰到行商。" },
+        { "speaker": "linli", "text": "你也是行商？" },
+        { "speaker": "npc", "text": "鸣砂。跑单帮的。不属于任何聚落，不接固定委托，只做一锤子买卖。" },
+        { "speaker": "taoxia", "text": "好酷的名字！为什么叫鸣砂？" },
+        { "speaker": "npc", "text": "因为我从沙漠那边来。那边的沙子踩上去会响。" },
+        { "speaker": "npc", "text": "来这片区域是听说聚落间的贸易正在恢复，想看看有没有赚钱的机会。" }
+      ],
+      "choices": [
+        {
+          "text": "同行之间互相照应，欢迎",
+          "ops": ["set_flag:npc_ming_sha_intro"],
+          "result_text": "鸣砂咧嘴一笑：\"照应？行吧，但生意归生意。下次有好货记得先找我。\""
+        },
+        {
+          "text": "同行是冤家啊，别抢我生意",
+          "ops": ["set_flag:npc_ming_sha_intro"],
+          "result_text": "鸣砂举起双手：\"放心，你跑的路线我不感兴趣。我只做……特殊商品。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_MS_002",
+      "npc_id": "ming_sha",
+      "title": "市场情报",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_ming_sha_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "喂，有个消息你可能感兴趣。" },
+        { "speaker": "linli", "text": "什么消息？" },
+        { "speaker": "npc", "text": "听说北边那个科技塔台最近大量收购电子元件。价格翻了一倍。" },
+        { "speaker": "taoxia", "text": "真的假的？那我们赶紧去进货！" },
+        { "speaker": "npc", "text": "消息当然不是白给的。不过看在同行的面子上——这次算我请。" },
+        { "speaker": "npc", "text": "下次碰到什么好情报，记得跟我分享。互通有无嘛。" }
+      ],
+      "choices": [
+        {
+          "text": "没问题，互通有无",
+          "ops": ["add_relation_linli:1", "add_credits:15"],
+          "result_text": "鸣砂拍了拍你的肩膀：\"爽快！这十五信用点是情报费的折扣价，你赚到了。\""
+        },
+        {
+          "text": "免费的消息我不太信",
+          "ops": ["add_relation_taoxia:1"],
+          "result_text": "鸣砂无所谓地耸耸肩：\"信不信由你，反正我已经赚过一波了。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_MS_003",
+      "npc_id": "ming_sha",
+      "title": "独行商人的规矩",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_ming_sha_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "linli", "text": "鸣砂，你一个人跑商不危险吗？没有同伴。" },
+        { "speaker": "npc", "text": "有过同伴。后来发现——人心比路上的野兽更难预测。" },
+        { "speaker": "taoxia", "text": "被坑过？" },
+        { "speaker": "npc", "text": "不想说。总之从那以后我定了三条规矩。" },
+        { "speaker": "npc", "text": "第一，不跟人合伙。第二，不欠人情。第三——" },
+        { "speaker": "linli", "text": "第三？" },
+        { "speaker": "npc", "text": "不跟比我穷的人做生意。开玩笑的，第三是——永远留一手退路。" }
+      ],
+      "choices": [
+        {
+          "text": "听起来你吃过不少亏",
+          "ops": ["add_relation_linli:2"],
+          "result_text": "鸣砂的笑容有一瞬间变得苦涩：\"吃亏是福……大概吧。\""
+        },
+        {
+          "text": "但你现在不是在跟我们说话吗，这算合伙吗",
+          "ops": ["add_relation_taoxia:2"],
+          "result_text": "鸣砂愣了一下，然后哈哈大笑：\"你小丫头嘴真贫！行，你们是例外。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_MS_004",
+      "npc_id": "ming_sha",
+      "title": "沙漠那边",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_ming_sha_intro"],
+      "forbidden_flags": ["mem_ming_sha_desert"],
+      "steps": [
+        { "speaker": "npc", "text": "你们有没有想过——这片区域之外是什么样？" },
+        { "speaker": "linli", "text": "沙漠那边……有其他幸存者吗？" },
+        { "speaker": "npc", "text": "有。零零散散的，比这边更艰难。" },
+        { "speaker": "npc", "text": "但有一个地方不一样。叫'盐湖城'。一群人围着一个巨大的盐湖建了个贸易站。" },
+        { "speaker": "npc", "text": "物资比这边丰富得多。问题是——中间隔着三百公里的无人区。" },
+        { "speaker": "taoxia", "text": "三百公里？！那你是怎么过来的？" },
+        { "speaker": "npc", "text": "我的秘密。不过如果你们有一天想去……我可以告诉你们路线。" }
+      ],
+      "choices": [
+        {
+          "text": "如果能打通这条商路，对所有聚落都是好事",
+          "ops": ["add_relation_linli:3", "set_flag:mem_ming_sha_desert"],
+          "result_text": "鸣砂收起了嬉皮笑脸，认真地看着你：\"你是我见过的第一个想这么大的行商。\"",
+          "memory": {
+            "id": "mem_ming_sha_desert",
+            "title": "沙漠彼端的盐湖城",
+            "desc": "鸣砂来自沙漠另一端的'盐湖城'贸易站，中间隔着三百公里无人区，他承诺可以提供路线。"
+          }
+        },
+        {
+          "text": "先顾好眼前吧，三百公里太远了",
+          "ops": ["add_relation_taoxia:1", "set_flag:mem_ming_sha_desert"],
+          "result_text": "鸣砂点点头：\"务实，挺好。但别忘了——路永远在那儿，等着有人走。\"",
+          "memory": {
+            "id": "mem_ming_sha_desert",
+            "title": "沙漠彼端的盐湖城",
+            "desc": "鸣砂提到了沙漠另一端的'盐湖城'贸易站，虽然遥远，但也许有一天值得探索。"
+          }
+        }
+      ]
+    }
+  ]
+}

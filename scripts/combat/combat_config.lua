@@ -15,7 +15,7 @@ M.AMBUSH_ENEMIES = {
         atk_min  = 3,        -- 每回合最低伤害
         atk_max  = 8,        -- 每回合最高伤害
         rounds   = 3,        -- 总决策回合数
-        escape_threshold = 100, -- 逃脱进度阈值
+        escape_threshold = 70,  -- 散兵容易甩脱（3回合×accelerate35=105>70）
         loot_on_repel = {    -- 击退后掉落（小概率）
             { id = "metal_scrap", count = 1, chance = 0.3 },
         },
@@ -27,7 +27,7 @@ M.AMBUSH_ENEMIES = {
         atk_min  = 6,
         atk_max  = 14,
         rounds   = 4,
-        escape_threshold = 100,
+        escape_threshold = 120, -- 武装车队难以甩脱（需组合战术）
         loot_on_repel = {
             { id = "ammo",        count = 1, chance = 0.25 },
             { id = "metal_scrap", count = 2, chance = 0.4 },

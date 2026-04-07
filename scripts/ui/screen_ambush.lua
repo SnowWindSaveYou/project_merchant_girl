@@ -237,11 +237,70 @@ function M._show_result_view(state)
         })
     end
 
+    -- 战斗回顾（逐回合记录）
+    local reviewWidgets = {}
+    if combat.round_log and #combat.round_log > 0 then
+        table.insert(reviewWidgets, UI.Panel {
+            width = "100%", height = 1,
+            backgroundColor = Theme.colors.divider, marginTop = 4,
+        })
+        table.insert(reviewWidgets, UI.Label {
+            text = "📋 战斗回顾",
+            fontSize = Theme.sizes.font_small,
+            fontColor = Theme.colors.text_dim,
+        })
+        for i, round in ipairs(combat.round_log) do
+            table.insert(reviewWidgets, UI.Panel {
+                width = "100%", padding = 6,
+                backgroundColor = { 30, 28, 25, 180 },
+                borderRadius = Theme.sizes.radius_small,
+                children = {
+                    UI.Label {
+                        text = "第" .. i .. "回合 — " .. round.tactic_name,
+                        fontSize = Theme.sizes.font_tiny,
+                        fontColor = Theme.colors.text_dim,
+                    },
+                    UI.Label {
+                        text = round.narration,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = Theme.colors.text_secondary,
+                        lineHeight = 1.3,
+                    },
+                },
+            })
+        end
+    end
+
+    -- 合并内容子组件
+    local cardChildren = {
+        UI.Label {
+            text = summary.title,
+            fontSize = Theme.sizes.font_title,
+            fontColor = resultColor,
+        },
+        UI.Panel {
+            width = "100%", gap = 6,
+            children = lineWidgets,
+        },
+    }
+    for _, w in ipairs(reviewWidgets) do
+        table.insert(cardChildren, w)
+    end
+    table.insert(cardChildren, UI.Button {
+        text = "继续",
+        variant = "primary",
+        width = "100%", height = 48, marginTop = 8,
+        onClick = function(self)
+            router.navigate("home")
+        end,
+    })
+
     local root = UI.Panel {
         id = "ambushScreen",
         width = "100%", height = "100%",
         backgroundColor = { 20, 15, 12, 255 },
         justifyContent = "center", alignItems = "center",
+        overflow = "scroll",
         children = {
             UI.Panel {
                 width = "90%", maxWidth = 420,
@@ -250,26 +309,7 @@ function M._show_result_view(state)
                 borderRadius = Theme.sizes.radius_large,
                 borderWidth = 2, borderColor = resultColor,
                 gap = 12, alignItems = "center",
-                children = {
-                    UI.Label {
-                        text = summary.title,
-                        fontSize = Theme.sizes.font_title,
-                        fontColor = resultColor,
-                    },
-                    UI.Panel {
-                        width = "100%", gap = 6,
-                        children = lineWidgets,
-                    },
-                    UI.Button {
-                        text = "继续",
-                        variant = "primary",
-                        width = "100%", height = 48, marginTop = 8,
-                        onClick = function(self)
-                            -- 返回主页继续行驶
-                            router.navigate("home")
-                        end,
-                    },
-                },
+                children = cardChildren,
             },
         },
     }

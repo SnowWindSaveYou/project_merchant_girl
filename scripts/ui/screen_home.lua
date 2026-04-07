@@ -11,6 +11,11 @@ local Goods        = require("economy/goods")
 local CargoUtils   = require("economy/cargo_utils")
 local Goodwill     = require("settlement/goodwill")
 local Modules      = require("truck/modules")
+local Campfire     = require("narrative/campfire")
+local NpcManager          = require("narrative/npc_manager")
+local SettlementEventPool = require("events/settlement_event_pool")
+local WanderingNpc        = require("narrative/wandering_npc")
+local QuestLog            = require("narrative/quest_log")
 
 local M = {}
 ---@type table
@@ -24,10 +29,15 @@ local NODE_EXPLORE_ROOM = {
 
 -- 据点主题色（插画背景渐变底色）
 local SETTLEMENT_THEMES = {
-    greenhouse  = { bg = { 38, 52, 38, 255 }, accent = { 108, 148,  96, 255 }, icon = "🌿" },
-    tower       = { bg = { 32, 40, 54, 255 }, accent = { 112, 142, 168, 255 }, icon = "🗼" },
-    ruins_camp  = { bg = { 48, 38, 30, 255 }, accent = { 168, 128,  82, 255 }, icon = "🏚" },
-    bell_tower  = { bg = { 42, 36, 46, 255 }, accent = { 148, 128, 168, 255 }, icon = "🔔" },
+    greenhouse      = { bg = { 38, 52, 38, 255 }, accent = { 108, 148,  96, 255 }, icon = "🌿" },
+    tower           = { bg = { 32, 40, 54, 255 }, accent = { 112, 142, 168, 255 }, icon = "🗼" },
+    ruins_camp      = { bg = { 48, 38, 30, 255 }, accent = { 168, 128,  82, 255 }, icon = "🏚" },
+    bell_tower      = { bg = { 42, 36, 46, 255 }, accent = { 148, 128, 168, 255 }, icon = "🔔" },
+    -- 前哨站
+    greenhouse_farm = { bg = { 34, 48, 32, 255 }, accent = {  96, 138,  80, 255 }, icon = "🌱" },
+    dome_outpost    = { bg = { 30, 36, 48, 255 }, accent = {  96, 126, 152, 255 }, icon = "📡" },
+    metro_camp      = { bg = { 44, 36, 28, 255 }, accent = { 152, 112,  72, 255 }, icon = "🚇" },
+    old_church      = { bg = { 38, 32, 42, 255 }, accent = { 132, 112, 148, 255 }, icon = "🕯" },
 }
 local DEFAULT_THEME = { bg = { 40, 38, 36, 255 }, accent = Theme.colors.accent, icon = "📍" }
 
@@ -205,6 +215,74 @@ function createSettlementView(state, curNode)
 
     -- ── 操作按钮区 ──
     if isSettlement then
+        -- 聚落事件（到达时触发的本地事件）
+        local pendingEvt = state.flow and state.flow.pending_settlement_event or nil
+        if pendingEvt then
+            table.insert(lowerChildren, UI.Button {
+                text = "⚡ " .. (pendingEvt.title or "聚落事件"),
+                variant = "primary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                onClick = function(self)
+                    local evt = state.flow.pending_settlement_event
+                    state.flow.pending_settlement_event = nil
+                    SettlementEventPool.set_cooldown(state, evt.id)
+                    router.navigate("event", {
+                        event = evt,
+                        source = "settlement",
+                    })
+                end,
+            })
+        end
+
+        -- NPC 拜访
+        local npc = NpcManager.get_npc_for_settlement(nodeId)
+        if npc then
+            local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
+            table.insert(lowerChildren, UI.Button {
+                text = canVisit
+                    and (npc.icon .. " 拜访 " .. npc.name)
+                    or  (npc.icon .. " " .. npc.name .. "（" .. (visitReason or "不可用") .. "）"),
+                variant = "secondary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                disabled = not canVisit,
+                onClick = function(self)
+                    if not canVisit then return end
+                    local dialogue = NpcManager.start_visit(state, npc.id)
+                    if dialogue then
+                        router.navigate("npc", { npc_id = npc.id, dialogue = dialogue })
+                    end
+                end,
+            })
+        end
+
+        -- 流浪 NPC（聚落内遇见）
+        local wanderersHere = WanderingNpc.get_wanderers_at(state, nodeId)
+        for _, w in ipairs(wanderersHere) do
+            local wid = w.id
+            local wnpc = NpcManager.get_npc(wid)
+            if wnpc then
+                local wCanVisit, wReason = NpcManager.can_visit(state, wid)
+                table.insert(lowerChildren, UI.Button {
+                    text = wCanVisit
+                        and (wnpc.icon .. " 遇见 " .. wnpc.name .. "（" .. wnpc.title .. "）")
+                        or  (wnpc.icon .. " " .. wnpc.name .. "（" .. (wReason or "不可用") .. "）"),
+                    variant = "secondary",
+                    width = "100%", height = 44,
+                    fontSize = Theme.sizes.font_normal,
+                    disabled = not wCanVisit,
+                    onClick = function(self)
+                        if not wCanVisit then return end
+                        local dialogue = NpcManager.start_visit(state, wid)
+                        if dialogue then
+                            router.navigate("npc", { npc_id = wid, dialogue = dialogue })
+                        end
+                    end,
+                })
+            end
+        end
+
         -- 委托
         table.insert(lowerChildren, UI.Button {
             text = "📋 接取委托",
@@ -228,6 +306,23 @@ function createSettlementView(state, curNode)
             end,
         })
 
+        -- 篝火
+        local canCamp, campReason = Campfire.can_start(state)
+        table.insert(lowerChildren, UI.Button {
+            text = canCamp and "🔥 篝火休憩" or ("🔥 篝火（" .. (campReason or "不可用") .. "）"),
+            variant = "secondary",
+            width = "100%", height = 44,
+            fontSize = Theme.sizes.font_normal,
+            disabled = not canCamp,
+            onClick = function(self)
+                if not canCamp then return end
+                local dialogue, consumed = Campfire.start(state)
+                if dialogue then
+                    router.navigate("campfire", { dialogue = dialogue, consumed = consumed })
+                end
+            end,
+        })
+
         -- 出发（仅有活跃订单时）
         if #activeOrders > 0 then
             table.insert(lowerChildren, UI.Button {
@@ -243,6 +338,32 @@ function createSettlementView(state, curNode)
         end
 
     else
+        -- 非聚落节点：流浪 NPC 遇见
+        local wanderersHere = WanderingNpc.get_wanderers_at(state, nodeId)
+        for _, w in ipairs(wanderersHere) do
+            local wid = w.id
+            local wnpc = NpcManager.get_npc(wid)
+            if wnpc then
+                local wCanVisit, wReason = NpcManager.can_visit(state, wid)
+                table.insert(lowerChildren, UI.Button {
+                    text = wCanVisit
+                        and (wnpc.icon .. " 遇见 " .. wnpc.name .. "（" .. wnpc.title .. "）")
+                        or  (wnpc.icon .. " " .. wnpc.name .. "（" .. (wReason or "不可用") .. "）"),
+                    variant = "secondary",
+                    width = "100%", height = 44,
+                    fontSize = Theme.sizes.font_normal,
+                    disabled = not wCanVisit,
+                    onClick = function(self)
+                        if not wCanVisit then return end
+                        local dialogue = NpcManager.start_visit(state, wid)
+                        if dialogue then
+                            router.navigate("npc", { npc_id = wid, dialogue = dialogue })
+                        end
+                    end,
+                })
+            end
+        end
+
         -- 非聚落节点：出发按钮（如有订单）
         if #activeOrders > 0 then
             table.insert(lowerChildren, UI.Button {
@@ -256,6 +377,23 @@ function createSettlementView(state, curNode)
                 end,
             })
         end
+
+        -- 篝火（非聚落节点）
+        local canCamp, campReason = Campfire.can_start(state)
+        table.insert(lowerChildren, UI.Button {
+            text = canCamp and "🔥 篝火休憩" or ("🔥 篝火（" .. (campReason or "不可用") .. "）"),
+            variant = "secondary",
+            width = "100%", height = 44,
+            fontSize = Theme.sizes.font_normal,
+            disabled = not canCamp,
+            onClick = function(self)
+                if not canCamp then return end
+                local dialogue, consumed = Campfire.start(state)
+                if dialogue then
+                    router.navigate("campfire", { dialogue = dialogue, consumed = consumed })
+                end
+            end,
+        })
 
         -- 资源点特殊行动：搜刮此地
         if NODE_EXPLORE_ROOM[nodeId] then
@@ -555,34 +693,43 @@ function createProgressCard(state)
         },
     })
 
-    -- 2. 各聚落好感进度
-    local settlements = { "greenhouse", "tower", "ruins_camp", "bell_tower" }
-    local settNames   = { greenhouse = "温室", tower = "塔台", ruins_camp = "游民营", bell_tower = "钟楼" }
+    -- 2. 各势力好感进度（按势力分组）
+    local Factions = require("settlement/factions")
+    local factionOrder = { "farm", "tech", "scav", "scholar" }
     local gwParts = {}
-    for _, sid in ipairs(settlements) do
-        local sett = state.settlements[sid]
-        local gw   = sett and sett.goodwill or 0
-        local info = Goodwill.get_info(gw)
-        table.insert(gwParts, (settNames[sid] or sid) .. " Lv" .. info.level)
+    for _, fid in ipairs(factionOrder) do
+        local fi = Factions.get_faction_info(fid)
+        if fi then
+            -- 显示首都好感等级
+            local capSett = state.settlements[fi.capital]
+            local capGw   = capSett and capSett.goodwill or 0
+            local capInfo = Goodwill.get_info(capGw)
+            local capNode = Graph.get_node(fi.capital)
+            local capName = capNode and capNode.name or fi.capital
+            -- 缩短名称
+            if #capName > 6 then capName = string.sub(capName, 1, 6) end
+            table.insert(gwParts, fi.icon .. capName .. " Lv" .. capInfo.level)
+        end
     end
     table.insert(items, UI.Panel {
         width = "100%", flexDirection = "row",
         justifyContent = "space-between", alignItems = "center",
         children = {
             UI.Label {
-                text = "聚落好感",
+                text = "势力好感",
                 fontSize = Theme.sizes.font_small,
                 fontColor = Theme.colors.text_secondary,
             },
             UI.Label {
-                text = table.concat(gwParts, "  "),
+                text = table.concat(gwParts, " "),
                 fontSize = Theme.sizes.font_tiny,
                 fontColor = Theme.colors.text_primary,
             },
         },
     })
 
-    -- 3. 角色关系
+    -- 3. 角色关系 + 阶段名
+    local _, stageLabel = Campfire.get_relation_stage(state)
     local charParts = {}
     for _, cid in ipairs({ "linli", "taoxia" }) do
         local char = state.character[cid]
@@ -599,15 +746,73 @@ function createProgressCard(state)
                 fontSize = Theme.sizes.font_small,
                 fontColor = Theme.colors.text_secondary,
             },
+            UI.Panel {
+                flexDirection = "row", gap = 6, alignItems = "center",
+                children = {
+                    UI.Label {
+                        text = table.concat(charParts, "  "),
+                        fontSize = Theme.sizes.font_tiny,
+                        fontColor = Theme.colors.text_primary,
+                    },
+                    UI.Label {
+                        text = "·" .. stageLabel,
+                        fontSize = Theme.sizes.font_tiny,
+                        fontColor = Theme.colors.accent,
+                    },
+                },
+            },
+        },
+    })
+
+    -- 4. 篝火 / 回忆
+    local campCount = state.narrative and state.narrative.campfire_count or 0
+    local memCount  = state.narrative and state.narrative.memories
+        and #state.narrative.memories or 0
+    table.insert(items, UI.Panel {
+        width = "100%", flexDirection = "row",
+        justifyContent = "space-between", alignItems = "center",
+        children = {
             UI.Label {
-                text = table.concat(charParts, "  "),
+                text = "篝火·回忆",
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_secondary,
+            },
+            UI.Label {
+                text = campCount .. " 次篝火  " .. memCount .. " 段回忆",
                 fontSize = Theme.sizes.font_tiny,
                 fontColor = Theme.colors.text_primary,
             },
         },
     })
 
-    -- 4. 总里程
+    -- 5. 任务线索
+    local activeQuests = QuestLog.active_count(state)
+    local completedQuests = #QuestLog.get_completed(state)
+    local questTotal = activeQuests + completedQuests
+    if questTotal > 0 then
+        table.insert(items, UI.Panel {
+            width = "100%", flexDirection = "row",
+            justifyContent = "space-between", alignItems = "center",
+            onClick = function(self)
+                router.navigate("quest_log")
+            end,
+            children = {
+                UI.Label {
+                    text = "📜 任务线索",
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.text_secondary,
+                },
+                UI.Label {
+                    text = activeQuests .. " 进行中  " .. completedQuests .. " 已完成  ›",
+                    fontSize = Theme.sizes.font_tiny,
+                    fontColor = activeQuests > 0
+                        and Theme.colors.info or Theme.colors.text_primary,
+                },
+            },
+        })
+    end
+
+    -- 6. 总里程
     local trips = state.stats and state.stats.total_trips or 0
     table.insert(items, UI.Panel {
         width = "100%", flexDirection = "row",

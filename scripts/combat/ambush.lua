@@ -4,6 +4,7 @@
 local Config  = require("combat/combat_config")
 local ItemUse = require("economy/item_use")
 local Modules = require("truck/modules")
+local Goods   = require("economy/goods")
 
 local M = {}
 
@@ -38,8 +39,10 @@ function M.create(state, enemy_id)
         enemy       = template,
         phase       = M.Phase.INTRO,
 
-        -- 战斗数值
-        threat          = template.threat,
+        -- 战斗数值（雷达 Lv3 敌情预警：初始威胁 -20%）
+        threat          = Modules.has_enemy_warning(state)
+                          and math.floor(template.threat * 0.8 + 0.5)
+                          or template.threat,
         escape_progress = 0,
         escape_threshold = math.max(10,
             math.floor(template.escape_threshold * (1 - Modules.get_repel_bonus(state)) + 0.5)),
@@ -50,6 +53,7 @@ function M.create(state, enemy_id)
         ammo_available  = ammo_count,
         smoke_available = smoke_count,
         ammo_used       = 0,
+        ammo_per_round  = true,   -- 每回合消耗 1 发弹药
 
         -- 累计结果
         total_dmg_taken = 0,
@@ -157,9 +161,17 @@ function M.execute_round(state, combat, tactic_id)
     combat.escape_progress = combat.escape_progress + escape_add
     table.insert(narration, tactic.icon .. " " .. tactic.name .. "！")
 
-    -- 3. 陶夏开火（自动）（陶夏受伤时火力减半）
-    local firepower = Config.NO_AMMO_FIREPOWER
+    -- 3. 陶夏开火（自动）—— 每回合消耗 1 发弹药
+    local has_ammo_this_round = false
     if combat.ammo_available > 0 then
+        ItemUse.consume(state, "ammo", 1)
+        combat.ammo_available = combat.ammo_available - 1
+        combat.ammo_used = combat.ammo_used + 1
+        has_ammo_this_round = true
+    end
+
+    local firepower = Config.NO_AMMO_FIREPOWER
+    if has_ammo_this_round then
         firepower = Config.AMMO_FIREPOWER
         if tactic_id == "steady" then
             -- 稳车射击时额外削减威胁
@@ -173,7 +185,7 @@ function M.execute_round(state, combat, tactic_id)
     firepower = math.floor(firepower * Modules.get_firepower_mult(state) + 0.5)
     combat.threat = math.max(5, combat.threat - firepower)
 
-    if combat.ammo_available > 0 then
+    if has_ammo_this_round then
         if ItemUse.has_status(state, "taoxia", "wounded") then
             table.insert(narration, "陶夏忍着伤痛开火，火力不如平时。")
         else
@@ -204,12 +216,7 @@ function M.execute_round(state, combat, tactic_id)
         combat.total_fuel_cost = combat.total_fuel_cost + tactic.fuel_cost
     end
 
-    -- 6. 弹药消耗（稳车射击消耗弹药）
-    if tactic_id == "steady" and combat.ammo_available > 0 then
-        ItemUse.consume(state, "ammo", 1)
-        combat.ammo_available = combat.ammo_available - 1
-        combat.ammo_used = combat.ammo_used + 1
-    end
+    -- 6. （弹药已在第3步按回合消耗，每回合消耗1发）
 
     -- 7. 检查战斗结束条件
     local finished = false
@@ -262,13 +269,19 @@ end
 
 function M._drop_cargo(state, combat)
     for gid, count in pairs(state.truck.cargo) do
-        if count > 0 and math.random() < Config.CARGO_DROP_CHANCE then
-            local drop = math.min(count, math.random(1, Config.CARGO_DROP_MAX))
-            state.truck.cargo[gid] = count - drop
-            if state.truck.cargo[gid] <= 0 then
-                state.truck.cargo[gid] = nil
+        if count > 0 then
+            -- 价值加权：贵重货物更难掉落
+            local info = Goods.get(gid)
+            local base = info and info.base_price or 20
+            local chance = math.max(0.15, math.min(0.55, 0.6 - base * 0.008))
+            if math.random() < chance then
+                local drop = math.min(count, math.random(1, Config.CARGO_DROP_MAX))
+                state.truck.cargo[gid] = count - drop
+                if state.truck.cargo[gid] <= 0 then
+                    state.truck.cargo[gid] = nil
+                end
+                combat.cargo_lost[gid] = (combat.cargo_lost[gid] or 0) + drop
             end
-            combat.cargo_lost[gid] = (combat.cargo_lost[gid] or 0) + drop
         end
     end
 end
@@ -306,7 +319,6 @@ function M.get_summary(combat)
     end
 
     -- 掉货
-    local Goods = require("economy/goods")
     for gid, cnt in pairs(combat.cargo_lost) do
         local g = Goods.get(gid)
         local gname = g and g.name or gid

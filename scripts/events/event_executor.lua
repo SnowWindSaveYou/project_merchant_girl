@@ -1,8 +1,9 @@
 --- 事件执行器
 --- 将 "add_credit:20" 格式的指令统一应用到 state
 --- 支持设计文档定义的全部 16 种 ops
-local Flags   = require("core/flags")
-local ItemUse = require("economy/item_use")
+local Flags    = require("core/flags")
+local ItemUse  = require("economy/item_use")
+local Goodwill = require("settlement/goodwill")
 
 --- demoralized 好感衰减倍率
 local function goodwill_mult(state)
@@ -42,7 +43,7 @@ function M.apply_one(state, op)
 
     -- ====== 经济 ======
 
-    if action == "add_credit" then
+    if action == "add_credit" or action == "add_credits" then
         state.economy.credits = math.max(0, state.economy.credits + (num or 0))
 
     elseif action == "add_fuel" then
@@ -70,19 +71,22 @@ function M.apply_one(state, op)
         -- "add_goodwill:5"              → 对当前聚落加好感
         -- "add_goodwill:greenhouse:10"  → 对指定聚落加好感
         -- demoralized 状态：好感获取 -20%
+        -- 势力溢出：同势力其他聚落获得 50% 好感
         local gw_mult = goodwill_mult(state)
-        local faction, amt = value:match("^(.+):([%d%-]+)$")
-        if faction and state.settlements[faction] then
+        local target_sid, amt = value:match("^(.+):([%d%-]+)$")
+        if target_sid and state.settlements[target_sid] then
             local raw = tonumber(amt) or 0
             local final = (raw > 0) and math.floor(raw * gw_mult + 0.5) or raw
-            state.settlements[faction].goodwill = state.settlements[faction].goodwill + final
+            state.settlements[target_sid].goodwill = state.settlements[target_sid].goodwill + final
+            Goodwill.apply_faction_spillover(state, target_sid, final)
         else
-            -- 无 faction 参数，对当前聚落操作
+            -- 无 settlement 参数，对当前聚落操作
             local loc = state.flow.travel and state.flow.travel.to or state.map.current_location
             if state.settlements[loc] then
                 local raw = num or 0
                 local final = (raw > 0) and math.floor(raw * gw_mult + 0.5) or raw
                 state.settlements[loc].goodwill = state.settlements[loc].goodwill + final
+                Goodwill.apply_faction_spillover(state, loc, final)
             end
         end
 

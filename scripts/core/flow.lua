@@ -1,12 +1,14 @@
 --- 核心流程状态机
 --- IDLE → MAP → PREPARE → ROUTE_PLAN → TRAVELLING → ARRIVAL → SETTLEMENT → SUMMARY → IDLE
-local RoutePlanner   = require("map/route_planner")
-local OrderBook      = require("economy/order_book")
-local EventScheduler = require("events/event_scheduler")
-local ItemUse        = require("economy/item_use")
-local Ticker         = require("core/ticker")
-local Pricing        = require("economy/pricing")
-local Goodwill       = require("settlement/goodwill")
+local RoutePlanner        = require("map/route_planner")
+local OrderBook           = require("economy/order_book")
+local EventScheduler      = require("events/event_scheduler")
+local ItemUse             = require("economy/item_use")
+local Ticker              = require("core/ticker")
+local Pricing             = require("economy/pricing")
+local Goodwill            = require("settlement/goodwill")
+local SettlementEventPool = require("events/settlement_event_pool")
+local WanderingNpc        = require("narrative/wandering_npc")
 
 local M = {}
 
@@ -148,6 +150,9 @@ function M.handle_node_arrival(state, arrival_info)
 
         -- 供需衰减（每趟到达聚落时触发）
         Pricing.decay_supply_demand(state)
+
+        -- 聚落内事件检查（30% 概率触发）
+        SettlementEventPool.check_on_arrival(state, node_id)
     end
 
     return {
@@ -262,6 +267,12 @@ function M.finish_trip(state)
 
     -- 更新统计
     state.stats.total_trips = state.stats.total_trips + 1
+
+    -- 聚落事件冷却递减
+    SettlementEventPool.tick_cooldowns(state)
+
+    -- 流浪 NPC 迁移（50% 概率移动到新位置）
+    WanderingNpc.migrate_all(state)
 
     -- 燃料已在 ticker.advance() 中按帧实时扣除，此处不再重复扣除
 

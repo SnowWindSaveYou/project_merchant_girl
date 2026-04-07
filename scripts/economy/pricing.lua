@@ -46,6 +46,31 @@ M.MODIFIERS = {
         cultural   = { buy = 0.7, sell = 0.5 },   -- 产地（书院藏书多）
         military   = { buy = 1.4, sell = 1.2 },   -- 需求（防御薄弱）
     },
+    -- ===== 前哨站（继承首都倾向，略有偏差） =====
+    greenhouse_farm = {
+        survival   = { buy = 0.75, sell = 0.55 },  -- 产地偏低（农场更强）
+        industrial = { buy = 1.5,  sell = 1.3 },   -- 需求偏高
+        cultural   = { buy = 1.1,  sell = 0.9 },   -- 略需
+        military   = { buy = 1.1,  sell = 0.9 },   -- 略需
+    },
+    dome_outpost = {
+        survival   = { buy = 1.2, sell = 1.0 },    -- 需求
+        industrial = { buy = 0.85, sell = 0.65 },   -- 产地（技术相关）
+        cultural   = { buy = 1.2,  sell = 1.0 },   -- 略需
+        military   = { buy = 0.9,  sell = 0.7 },   -- 中性偏低
+    },
+    metro_camp = {
+        survival   = { buy = 1.3, sell = 1.1 },    -- 需求（隧道缺食物）
+        industrial = { buy = 1.0, sell = 0.8 },    -- 中性
+        cultural   = { buy = 0.8, sell = 0.6 },    -- 产地偏低（回收旧物）
+        military   = { buy = 0.85, sell = 0.65 },   -- 产地（拆解弹药）
+    },
+    old_church = {
+        survival   = { buy = 1.2, sell = 1.0 },    -- 略需
+        industrial = { buy = 1.1, sell = 0.9 },    -- 略需
+        cultural   = { buy = 0.75, sell = 0.55 },   -- 产地（藏经阁）
+        military   = { buy = 1.3,  sell = 1.1 },   -- 需求（防御薄弱）
+    },
 }
 
 --- 获取供需修正系数

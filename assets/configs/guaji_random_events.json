@@ -1057,6 +1057,57 @@
       "next_event_id": null,
       "summary": "后期赏金猎人追踪",
       "remark": "高难度战斗，后期才出现"
+    },
+    {
+      "event_id": "EVT_057",
+      "event_name": "废弃诊所",
+      "phase": "mid",
+      "pool": "danger",
+      "scene": "route_node",
+      "weight": 50,
+      "cooldown_run": 4,
+      "trigger_tags": ["route_normal", "route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_057",
+      "result_set_id": "RS_EVT_057",
+      "next_event_id": null,
+      "summary": "旧诊所探索入口",
+      "remark": "中期探索战，医疗物资产出"
+    },
+    {
+      "event_id": "EVT_058",
+      "event_name": "军事哨站废墟",
+      "phase": "late",
+      "pool": "danger",
+      "scene": "route_node",
+      "weight": 38,
+      "cooldown_run": 5,
+      "trigger_tags": ["route_danger"],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_058",
+      "result_set_id": "RS_EVT_058",
+      "next_event_id": null,
+      "summary": "军事哨站探索入口",
+      "remark": "后期高难探索，弹药产出"
+    },
+    {
+      "event_id": "EVT_059",
+      "event_name": "锈迹斑斑的信号塔",
+      "phase": "mid",
+      "pool": "danger",
+      "scene": "route_node",
+      "weight": 45,
+      "cooldown_run": 4,
+      "trigger_tags": ["route_normal"],
+      "required_flags": ["has_radar"],
+      "forbidden_flags": [],
+      "choice_set_id": "CH_EVT_059",
+      "result_set_id": "RS_EVT_059",
+      "next_event_id": null,
+      "summary": "雷达站探索入口",
+      "remark": "需要雷达模块才能发现，电路板产出"
     }
   ],
   "choice_sets": {
@@ -1405,6 +1456,116 @@
         "choice_text": "交出赏金抵命",
         "show_condition": [],
         "result_key": "RES_EVT_056_C"
+      }
+    ],
+    "CH_EVT_057": [
+      {
+        "choice_set_id": "CH_EVT_057",
+        "choice_id": "A",
+        "choice_text": "进去搜药",
+        "show_condition": [],
+        "result_key": "RES_EVT_057_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_057",
+        "choice_id": "B",
+        "choice_text": "不冒险了",
+        "show_condition": [],
+        "result_key": "RES_EVT_057_B"
+      }
+    ],
+    "CH_EVT_058": [
+      {
+        "choice_set_id": "CH_EVT_058",
+        "choice_id": "A",
+        "choice_text": "潜入搜索",
+        "show_condition": [],
+        "result_key": "RES_EVT_058_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_058",
+        "choice_id": "B",
+        "choice_text": "太危险，撤退",
+        "show_condition": [],
+        "result_key": "RES_EVT_058_B"
+      }
+    ],
+    "CH_EVT_059": [
+      {
+        "choice_set_id": "CH_EVT_059",
+        "choice_id": "A",
+        "choice_text": "攀上信号塔搜索",
+        "show_condition": [],
+        "result_key": "RES_EVT_059_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_059",
+        "choice_id": "B",
+        "choice_text": "只在外围看看",
+        "show_condition": [],
+        "result_key": "RES_EVT_059_B"
+      }
+    ],
+    "CH_EVT_023": [
+      {
+        "choice_set_id": "CH_EVT_023",
+        "choice_id": "A",
+        "choice_text": "把玩偶送给孩子们",
+        "show_condition": ["has_flag:flag_doll_found"],
+        "result_key": "RES_EVT_023_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_023",
+        "choice_id": "B",
+        "choice_text": "分一些罐头给他们",
+        "show_condition": [],
+        "result_key": "RES_EVT_023_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_023",
+        "choice_id": "C",
+        "choice_text": "摸摸头就走",
+        "show_condition": [],
+        "result_key": "RES_EVT_023_C"
+      }
+    ],
+    "CH_EVT_039": [
+      {
+        "choice_set_id": "CH_EVT_039",
+        "choice_id": "A",
+        "choice_text": "花 80 块买下地图",
+        "show_condition": [],
+        "result_key": "RES_EVT_039_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_039",
+        "choice_id": "B",
+        "choice_text": "用 2 个旧书换取",
+        "show_condition": ["has_goods:old_book:2"],
+        "result_key": "RES_EVT_039_B"
+      },
+      {
+        "choice_set_id": "CH_EVT_039",
+        "choice_id": "C",
+        "choice_text": "不感兴趣，走了",
+        "show_condition": [],
+        "result_key": "RES_EVT_039_C"
+      }
+    ],
+    "CH_EVT_048": [
+      {
+        "choice_set_id": "CH_EVT_048",
+        "choice_id": "A",
+        "choice_text": "按地图指引深入探索",
+        "show_condition": ["has_flag:flag_last_map_bought"],
+        "result_key": "RES_EVT_048_A"
+      },
+      {
+        "choice_set_id": "CH_EVT_048",
+        "choice_id": "B",
+        "choice_text": "只做标记，以后再来",
+        "show_condition": [],
+        "result_key": "RES_EVT_048_B"
       }
     ]
   },
@@ -1800,6 +1961,130 @@
         "set_flags": [],
         "clear_flags": []
       }
+    ],
+    "RS_EVT_057": [
+      {
+        "result_key": "RES_EVT_057_A",
+        "ops": ["start_explore:old_clinic"],
+        "reward_desc": "推开诊所的玻璃门，药柜倒了一地，但也许还能找到有用的东西……",
+        "risk_desc": "地板腐朽，天花板随时可能塌陷",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_057_B",
+        "ops": [],
+        "reward_desc": "安全第一",
+        "risk_desc": "错过药品补给",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_058": [
+      {
+        "result_key": "RES_EVT_058_A",
+        "ops": ["start_explore:military_outpost"],
+        "reward_desc": "铁丝网被剪开了一个口子，你们猫腰钻了进去……",
+        "risk_desc": "哨站内可能残留自动防御装置",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_058_B",
+        "ops": [],
+        "reward_desc": "明智的撤退",
+        "risk_desc": "错过军用物资",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_059": [
+      {
+        "result_key": "RES_EVT_059_A",
+        "ops": ["start_explore:radar_station"],
+        "reward_desc": "雷达捕捉到信号塔内部仍有微弱电磁信号，值得一探……",
+        "risk_desc": "塔内线路老化，可能有漏电危险",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_059_B",
+        "ops": ["add_credit:10"],
+        "reward_desc": "在外围拆了些金属零件",
+        "risk_desc": "收获有限",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_023": [
+      {
+        "result_key": "RES_EVT_023_A",
+        "ops": ["add_relation:3"],
+        "reward_desc": "孩子们抱着玩偶跑回围墙里，远远传来笑声。陶夏的眼眶有点红。",
+        "risk_desc": "",
+        "set_flags": ["flag_doll_gifted"],
+        "clear_flags": ["flag_doll_found"]
+      },
+      {
+        "result_key": "RES_EVT_023_B",
+        "ops": ["consume_goods:food_can:1", "add_relation:1"],
+        "reward_desc": "孩子们小心翼翼地接过罐头，最大的那个认真地鞠了一躬。",
+        "risk_desc": "消耗了 1 罐头食品",
+        "set_flags": [],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_023_C",
+        "ops": [],
+        "reward_desc": "孩子们目送货车远去，最小的那个挥了挥手。",
+        "risk_desc": "",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_039": [
+      {
+        "result_key": "RES_EVT_039_A",
+        "ops": ["add_credit:-80", "add_relation:2"],
+        "reward_desc": "孟回将地图郑重地交到你手里——上面标注了一条失落已久的商路。",
+        "risk_desc": "花费 80 块",
+        "set_flags": ["flag_last_map_bought", "flag_hidden_route_ready"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_039_B",
+        "ops": ["consume_goods:old_book:2", "add_relation:3"],
+        "reward_desc": "孟回翻阅旧书时露出了久违的笑容——「这些比钱值钱多了。」地图归你了。",
+        "risk_desc": "消耗 2 旧书",
+        "set_flags": ["flag_last_map_bought", "flag_hidden_route_ready"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_039_C",
+        "ops": [],
+        "reward_desc": "孟回叹了口气，把地图收回了怀里。",
+        "risk_desc": "",
+        "set_flags": [],
+        "clear_flags": []
+      }
+    ],
+    "RS_EVT_048": [
+      {
+        "result_key": "RES_EVT_048_A",
+        "ops": ["add_fuel:-12", "add_credit:150", "add_relation:4"],
+        "reward_desc": "这条失落的商路连接了两个被遗忘的聚落——他们愿意用丰厚报酬换取稳定的补给线。",
+        "risk_desc": "路况艰难，大量燃料消耗",
+        "set_flags": ["flag_lost_route_found"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_EVT_048_B",
+        "ops": [],
+        "reward_desc": "在地图上做了标记。也许下次路过可以再试试。",
+        "risk_desc": "",
+        "set_flags": [],
+        "clear_flags": []
+      }
     ]
   },
   "chains": [
@@ -1861,7 +2146,8 @@
       "start_combat:ambush_heavy": "进入车载迎击（赏金猎人）",
       "start_explore:abandoned_warehouse": "进入探索战（废弃仓库）",
       "start_explore:old_clinic": "进入探索战（旧诊所）",
-      "start_explore:military_outpost": "进入探索战（军事哨站）"
+      "start_explore:military_outpost": "进入探索战（军事哨站）",
+      "start_explore:radar_station": "进入探索战（废弃雷达站）"
     },
     "localization_note": "前端正文建议独立到 event_text 或本地化表，不与数值配置混写。"
   }

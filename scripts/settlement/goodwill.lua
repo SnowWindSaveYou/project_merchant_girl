@@ -70,4 +70,29 @@ function M.is_unlocked(goodwill, feature)
     return false
 end
 
+-- ============================================================
+-- 势力好感溢出
+-- ============================================================
+local Factions -- 延迟加载，避免循环依赖
+
+--- 好感变动后调用：同势力其他聚落获得 50% 溢出
+---@param state table
+---@param settlement_id string  发生好感变动的聚落
+---@param delta number          原始变动量（正或负）
+function M.apply_faction_spillover(state, settlement_id, delta)
+    if delta == 0 then return end
+    if not Factions then
+        Factions = require("settlement/factions")
+    end
+    local siblings = Factions.get_siblings(settlement_id)
+    local spill = math.floor(delta * 0.5 + 0.5)
+    if spill == 0 then return end
+    for _, sid in ipairs(siblings) do
+        local sett = state.settlements[sid]
+        if sett then
+            sett.goodwill = (sett.goodwill or 0) + spill
+        end
+    end
+end
+
 return M

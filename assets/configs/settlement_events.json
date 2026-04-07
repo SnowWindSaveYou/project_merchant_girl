@@ -1,0 +1,284 @@
+{
+  "meta": {
+    "description": "聚落内事件配置 — 到达聚落时按概率触发的本地事件"
+  },
+  "events": [
+    {
+      "id": "SE_FARM_001",
+      "title": "害虫入侵",
+      "settlement": "greenhouse",
+      "description": "温室的二号区突然爆发了虫害，沈禾正焦头烂额。",
+      "goodwill_min": 0,
+      "weight": 60,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "帮忙清除虫害",
+          "ops": ["add_goodwill:greenhouse:4", "add_fatigue:15"],
+          "result_text": "你和沈禾忙了半天，虫害终于控制住了。"
+        },
+        {
+          "text": "提供一些杀虫药剂",
+          "ops": ["add_goodwill:greenhouse:3", "add_credits:-10"],
+          "result_text": "沈禾感激地接过药剂，承诺下次给你们留些新鲜蔬菜。"
+        }
+      ]
+    },
+    {
+      "id": "SE_FARM_002",
+      "title": "丰收季节",
+      "settlement": "greenhouse",
+      "description": "温室的蔬果大丰收，沈禾邀请大家分享成果。",
+      "goodwill_min": 20,
+      "weight": 50,
+      "cooldown": 6,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "和大家一起庆祝",
+          "ops": ["add_goodwill:greenhouse:3", "add_relation_taoxia:1", "add_fatigue:-10"],
+          "result_text": "难得的热闹时刻。陶夏吃得满嘴番茄汁，笑得很开心。"
+        },
+        {
+          "text": "趁机低价采购一批",
+          "ops": ["add_goodwill:greenhouse:1", "add_credits:-15", "add_cargo:food_canned:3"],
+          "result_text": "沈禾给了个友情价，你的货舱多了几箱蔬果罐头。"
+        }
+      ]
+    },
+    {
+      "id": "SE_TECH_001",
+      "title": "信号干扰",
+      "settlement": "tower",
+      "description": "塔台的通讯设备受到不明信号干扰，韩策需要帮忙排查。",
+      "goodwill_min": 0,
+      "weight": 60,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "协助排查干扰源",
+          "ops": ["add_goodwill:tower:4", "add_fatigue:15"],
+          "result_text": "花了不少时间，最终定位到是一台废弃的信号塔在自动发射。"
+        },
+        {
+          "text": "提供从路上捡到的电子元件",
+          "ops": ["add_goodwill:tower:3", "add_credits:-10"],
+          "result_text": "韩策用你提供的元件修复了滤波器，干扰被成功屏蔽。"
+        }
+      ]
+    },
+    {
+      "id": "SE_TECH_002",
+      "title": "数据整理",
+      "settlement": "tower",
+      "description": "韩策正在整理大量灾前的通讯记录，人手不够。",
+      "goodwill_min": 20,
+      "weight": 50,
+      "cooldown": 6,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "帮忙分类整理",
+          "ops": ["add_goodwill:tower:3", "add_relation_linli:1", "add_fatigue:10"],
+          "result_text": "林砾对那些旧世界的通讯记录很感兴趣，帮了韩策很大的忙。"
+        },
+        {
+          "text": "不了，赶时间",
+          "ops": [],
+          "result_text": "韩策面无表情地点了点头，继续独自工作。"
+        }
+      ]
+    },
+    {
+      "id": "SE_SCAV_001",
+      "title": "物资清点",
+      "settlement": "ruins_camp",
+      "description": "伍拾七的手下刚从外面拉回了一批杂货，需要人帮忙清点。",
+      "goodwill_min": 0,
+      "weight": 60,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "帮忙清点，顺便看看有没有好货",
+          "ops": ["add_goodwill:ruins_camp:3", "add_credits:10"],
+          "result_text": "清点过程中发现了一些有价值的零件，伍拾七大方地分了你一份。"
+        },
+        {
+          "text": "直接问伍拾七买",
+          "ops": ["add_goodwill:ruins_camp:1", "add_credits:-20", "add_cargo:machine_parts:2"],
+          "result_text": "伍拾七开了个价，虽然不便宜但货真价实。"
+        }
+      ]
+    },
+    {
+      "id": "SE_SCAV_002",
+      "title": "营地纠纷",
+      "settlement": "ruins_camp",
+      "description": "营地里两拨人因为物资分配吵了起来，伍拾七不在。",
+      "goodwill_min": 20,
+      "weight": 50,
+      "cooldown": 6,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "出面调解",
+          "ops": ["add_goodwill:ruins_camp:5", "add_relation_linli:1"],
+          "result_text": "林砾条理清晰地分析了情况，双方都服气了。伍拾七回来后对你竖了个拇指。"
+        },
+        {
+          "text": "别人的事不好插手",
+          "ops": [],
+          "result_text": "纠纷最后闹到了伍拾七那里，不过跟你没什么关系。"
+        }
+      ]
+    },
+    {
+      "id": "SE_SCHOLAR_001",
+      "title": "古书修缮",
+      "settlement": "bell_tower",
+      "description": "白述发现了一批受潮的古籍，急需晾晒和修复。",
+      "goodwill_min": 0,
+      "weight": 60,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "帮忙修复古籍",
+          "ops": ["add_goodwill:bell_tower:4", "add_fatigue:10"],
+          "result_text": "白述一边修书一边跟你讲述书中记载的旧世界故事，受益匪浅。"
+        },
+        {
+          "text": "提供一些防潮用品",
+          "ops": ["add_goodwill:bell_tower:3", "add_credits:-8"],
+          "result_text": "白述感激地收下了防潮剂，仔细地为每一本书做了保护。"
+        }
+      ]
+    },
+    {
+      "id": "SE_SCHOLAR_002",
+      "title": "失窃的抄本",
+      "settlement": "bell_tower",
+      "description": "书院的一份重要抄本不翼而飞，白述怀疑是外来的流民拿走的。",
+      "goodwill_min": 20,
+      "weight": 50,
+      "cooldown": 6,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "帮忙追查",
+          "ops": ["add_goodwill:bell_tower:5", "add_relation_linli:2"],
+          "result_text": "你们最终在聚落外围找回了抄本——流民只是想学认字，并非偷窃。白述沉默良久。"
+        },
+        {
+          "text": "建议加强安保",
+          "ops": ["add_goodwill:bell_tower:2"],
+          "result_text": "白述叹了口气：\"知识本应共享，但确实需要更妥善的保管。\""
+        }
+      ]
+    },
+
+    {
+      "id": "SE_OUTPOST_GF_001",
+      "title": "灌溉渠堵塞",
+      "settlement": "greenhouse_farm",
+      "description": "外围农场的灌溉渠被泥沙堵塞了，赵苗一个人清理不过来。",
+      "goodwill_min": 0,
+      "weight": 60,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "卷起袖子帮忙清理",
+          "ops": ["add_goodwill:greenhouse_farm:4", "add_fatigue:15"],
+          "result_text": "赵苗感激地递过一条毛巾：\"太谢谢了！渠通了庄稼就有救了！\""
+        },
+        {
+          "text": "教赵苗做个简易过滤装置",
+          "ops": ["add_goodwill:greenhouse_farm:3", "add_goodwill:greenhouse:1"],
+          "result_text": "赵苗认真地记下了每一步，说要把这个方法告诉师父。"
+        }
+      ]
+    },
+    {
+      "id": "SE_OUTPOST_DO_001",
+      "title": "设备过热",
+      "settlement": "dome_outpost",
+      "description": "穹顶哨站的信号中继器温度过高，程远担心它随时会烧毁。",
+      "goodwill_min": 0,
+      "weight": 60,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "帮忙搭建临时散热装置",
+          "ops": ["add_goodwill:dome_outpost:4", "add_fatigue:10"],
+          "result_text": "程远用你们提供的材料搭了个风冷系统，温度终于降了下来。"
+        },
+        {
+          "text": "建议先降低发射功率",
+          "ops": ["add_goodwill:dome_outpost:2", "add_goodwill:tower:1"],
+          "result_text": "程远调低了功率，虽然信号弱了但至少设备保住了。他把情况报告给了韩策。"
+        }
+      ]
+    },
+    {
+      "id": "SE_OUTPOST_MC_001",
+      "title": "隧道漏水",
+      "settlement": "metro_camp",
+      "description": "地铁隧道的一段墙壁开始渗水，阿锈担心会影响存放的设备。",
+      "goodwill_min": 0,
+      "weight": 60,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "帮忙搬运设备到干燥区域",
+          "ops": ["add_goodwill:metro_camp:4", "add_fatigue:15"],
+          "result_text": "阿锈一边搬一边碎碎念：\"这些宝贝可不能泡水……谢啦！\""
+        },
+        {
+          "text": "用车上的防水材料堵漏",
+          "ops": ["add_goodwill:metro_camp:5", "add_credits:-10"],
+          "result_text": "阿锈眼睛一亮：\"这材料好！能撑到雨季过去！\""
+        }
+      ]
+    },
+    {
+      "id": "SE_OUTPOST_OC_001",
+      "title": "流民求助",
+      "settlement": "old_church",
+      "description": "一群流民来到旧教堂寻求庇护，苏墨不知道该怎么办。",
+      "goodwill_min": 0,
+      "weight": 60,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "帮忙安置流民",
+          "ops": ["add_goodwill:old_church:5", "add_fatigue:10", "add_credits:-15"],
+          "result_text": "你帮苏墨腾出了教堂的侧廊，给流民们找了临时住处。苏墨默默点头致谢。"
+        },
+        {
+          "text": "建议苏墨联系白述求助",
+          "ops": ["add_goodwill:old_church:3", "add_goodwill:bell_tower:2"],
+          "result_text": "苏墨犹豫了一下，最终决定去钟楼请白述来帮忙。"
+        }
+      ]
+    }
+  ]
+}

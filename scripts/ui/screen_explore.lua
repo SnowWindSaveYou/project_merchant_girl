@@ -210,7 +210,7 @@ function M._build_explore_view(state)
     })
 
     -- 动作按钮
-    local actions = Explore.get_actions(explore)
+    local actions = Explore.get_actions(state, explore)
     for _, act in ipairs(actions) do
         local variant = "secondary"
         if act.id == "extract" then variant = "primary" end

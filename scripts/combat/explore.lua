@@ -4,6 +4,7 @@
 local Config  = require("combat/combat_config")
 local ItemUse = require("economy/item_use")
 local Goods   = require("economy/goods")
+local Modules = require("truck/modules")
 
 local M = {}
 
@@ -64,6 +65,11 @@ function M.create(state, room_id)
 
     local ammo_count = state.truck.cargo["ammo"] or 0
 
+    -- 体力动态化：基于卡车耐久，雷达加成额外体力
+    local base_hp = 40 + math.floor(state.truck.durability * 0.1)
+    local radar_bonus = Modules.get_hidden_bonus(state)  -- 0 or 0.15
+    local hp_max = math.floor(base_hp * (1 + radar_bonus) + 0.5)
+
     return {
         room_id     = room_id,
         room        = template,
@@ -75,11 +81,12 @@ function M.create(state, room_id)
 
         -- 玩家状态
         ammo_available = ammo_count,
-        player_hp      = 50,  -- 探索行动中的临时 HP（映射到耐久）
-        player_hp_max  = 50,
+        player_hp      = hp_max,
+        player_hp_max  = hp_max,
 
         -- 累计结果
-        items_found     = {},  -- { [goods_id] = count }
+        items_found     = {},  -- { [goods_id] = count } 搜到的（延迟入包）
+        items_committed = {},  -- { [goods_id] = count } 最终实际获得的
         total_dmg_taken = 0,
         hazards_faced   = 0,
 
@@ -109,9 +116,10 @@ end
 -- ============================================================
 
 --- 返回当前阶段可用的动作列表
+---@param state table 游戏状态（用于检查物品库存）
 ---@param explore table
 ---@return table[] actions { id, name, icon, desc, available }
-function M.get_actions(explore)
+function M.get_actions(state, explore)
     local actions = {}
 
     if explore.phase == M.Phase.EXPLORING then
@@ -126,6 +134,18 @@ function M.get_actions(explore)
                     available = true,
                 })
             end
+        end
+
+        -- 使用医疗包（有医疗包且 HP 未满时可用）
+        local med_count = state.truck.cargo["medicine"] or 0
+        if med_count > 0 and explore.player_hp < explore.player_hp_max then
+            table.insert(actions, {
+                id   = "use_medicine",
+                name = "使用医疗包",
+                icon = "💊",
+                desc = "恢复 20 点体力（剩余 " .. med_count .. " 个）",
+                available = true,
+            })
         end
 
         -- 撤离选项（始终可用）
@@ -173,6 +193,8 @@ function M.execute_action(state, explore, action_id)
         return M._do_flee(state, explore)
     elseif action_id == "fight" then
         return M._do_fight(state, explore)
+    elseif action_id == "use_medicine" then
+        return M._do_use_medicine(state, explore)
     elseif action_id:sub(1, 5) == "loot_" then
         local idx = tonumber(action_id:sub(6))
         if idx then
@@ -181,6 +203,33 @@ function M.execute_action(state, explore, action_id)
     end
 
     return { narration = "无效操作", phase_changed = false, finished = false }
+end
+
+-- ============================================================
+-- 使用医疗包
+-- ============================================================
+
+function M._do_use_medicine(state, explore)
+    local med_count = state.truck.cargo["medicine"] or 0
+    if med_count <= 0 then
+        return { narration = "没有医疗包了", phase_changed = false, finished = false }
+    end
+    if explore.player_hp >= explore.player_hp_max then
+        return { narration = "体力已满，不需要治疗", phase_changed = false, finished = false }
+    end
+
+    ItemUse.consume(state, "medicine", 1)
+    local heal = 20
+    local old_hp = explore.player_hp
+    explore.player_hp = math.min(explore.player_hp_max, explore.player_hp + heal)
+    local actual_heal = explore.player_hp - old_hp
+
+    table.insert(explore.log, "使用医疗包（+" .. actual_heal .. " HP）")
+    return {
+        narration = "💊 使用了一个医疗包，恢复了 " .. actual_heal .. " 点体力。\n当前体力：" .. explore.player_hp .. "/" .. explore.player_hp_max,
+        phase_changed = false,
+        finished = false,
+    }
 end
 
 -- ============================================================
@@ -197,11 +246,12 @@ function M._do_loot(state, explore, crate_idx)
     explore.crates_opened = explore.crates_opened + 1
     local narration = {}
 
-    -- 掷骰获取物品
+    -- 掷骰获取物品（延迟入包：先记录到 items_found，结算时才写入 state）
+    -- 雷达加成：提高搜刮物发现概率
+    local radar_bonus = Modules.get_hidden_bonus(state)  -- 0 or 0.15
     local found = {}
     for _, loot in ipairs(crate.loot) do
-        if math.random() < loot.chance then
-            ItemUse.add(state, loot.id, loot.count)
+        if math.random() < math.min(loot.chance + radar_bonus, 0.95) then
             explore.items_found[loot.id] = (explore.items_found[loot.id] or 0) + loot.count
             local g = Goods.get(loot.id)
             table.insert(found, (g and g.name or loot.id) .. " x" .. loot.count)
@@ -341,6 +391,10 @@ function M._do_fight(state, explore)
     if explore.player_hp <= 0 then
         explore.phase = M.Phase.RESULT
         explore.outcome = "wounded_retreat"
+
+        -- 负伤撤退只保留少量搜刮物
+        M._commit_loot(state, explore, 0.3)
+
         table.insert(narration, "")
         table.insert(narration, "伤势过重，不得不紧急撤离！")
 
@@ -373,7 +427,10 @@ function M._do_flee(state, explore)
     explore.phase = M.Phase.RESULT
     explore.outcome = "fled"
 
-    local narration = { "紧急撤离！丢下了还没搜完的物资。" }
+    -- 逃跑只保留一半搜刮物
+    M._commit_loot(state, explore, 0.5)
+
+    local narration = { "紧急撤离！部分物资散落在逃跑途中。" }
 
     -- 逃跑受到一次攻击
     if explore.active_enemy then
@@ -395,12 +452,34 @@ function M._do_flee(state, explore)
 end
 
 -- ============================================================
+-- 搜刮物提交（延迟入包：按比例实际写入 state）
+-- ============================================================
+
+--- 将搜刮物按 fraction 比例写入游戏状态
+---@param state table
+---@param explore table
+---@param fraction number 0~1，1.0=全部保留，0.5=保留一半
+function M._commit_loot(state, explore, fraction)
+    explore.items_committed = {}
+    for gid, count in pairs(explore.items_found) do
+        local actual = math.floor(count * fraction + 0.5)
+        if actual > 0 then
+            ItemUse.add(state, gid, actual)
+            explore.items_committed[gid] = actual
+        end
+    end
+end
+
+-- ============================================================
 -- 正常撤离
 -- ============================================================
 
 function M._do_extract(state, explore)
     explore.phase = M.Phase.RESULT
     explore.outcome = "success"
+
+    -- 提交全部搜刮物
+    M._commit_loot(state, explore, 1.0)
 
     -- 映射探索中受到的伤害到货车耐久
     if explore.total_dmg_taken > 0 then
@@ -409,9 +488,9 @@ function M._do_extract(state, explore)
     end
 
     local narration = { "安全撤离了" .. explore.room.name .. "。" }
-    if next(explore.items_found) then
+    if next(explore.items_committed) then
         table.insert(narration, "本次收获：")
-        for gid, cnt in pairs(explore.items_found) do
+        for gid, cnt in pairs(explore.items_committed) do
             local g = Goods.get(gid)
             table.insert(narration, "  · " .. (g and g.name or gid) .. " x" .. cnt)
         end
@@ -448,14 +527,24 @@ function M.get_summary(explore)
         table.insert(lines, "面对危险，选择了紧急撤离。")
     end
 
-    -- 物品收获
-    if next(explore.items_found) then
+    -- 物品收获（显示实际提交的物品）
+    local committed = explore.items_committed or {}
+    if next(committed) then
         table.insert(lines, "")
         table.insert(lines, "获得物资：")
-        for gid, cnt in pairs(explore.items_found) do
+        for gid, cnt in pairs(committed) do
             local g = Goods.get(gid)
-            table.insert(lines, "  " .. (g and g.name or gid) .. " x" .. cnt)
+            local found_cnt = explore.items_found[gid] or cnt
+            local suffix = ""
+            if found_cnt > cnt then
+                suffix = "（搜到 " .. found_cnt .. "，丢失 " .. (found_cnt - cnt) .. "）"
+            end
+            table.insert(lines, "  " .. (g and g.name or gid) .. " x" .. cnt .. suffix)
         end
+    elseif next(explore.items_found) then
+        -- 搜到了但全部丢失
+        table.insert(lines, "")
+        table.insert(lines, "搜到的物资全部遗落……")
     end
 
     if explore.total_dmg_taken > 0 then

@@ -86,10 +86,15 @@ end
 -- 各聚落擅长出产的商品（出发地可提供的货源）
 -- ============================================================
 local SETTLEMENT_GOODS = {
-    greenhouse = { "food_can", "water", "medicine" },
-    tower      = { "circuit", "fuel_cell", "metal_scrap" },
-    ruins_camp = { "metal_scrap", "ammo", "smoke_bomb" },
-    bell_tower = { "old_book", "music_disc", "medicine" },
+    greenhouse      = { "food_can", "water", "medicine" },
+    tower           = { "circuit", "fuel_cell", "metal_scrap" },
+    ruins_camp      = { "metal_scrap", "ammo", "smoke_bomb" },
+    bell_tower      = { "old_book", "music_disc", "medicine" },
+    -- 前哨站（继承首都商品池，各有特色）
+    greenhouse_farm = { "food_can", "water", "medicine" },
+    dome_outpost    = { "circuit", "fuel_cell", "metal_scrap" },
+    metro_camp      = { "metal_scrap", "ammo", "smoke_bomb" },
+    old_church      = { "old_book", "music_disc", "medicine" },
 }
 
 -- ============================================================

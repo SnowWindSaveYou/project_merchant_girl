@@ -46,10 +46,15 @@ function M.new()
 
         -- 聚落
         settlements = {
-            tower      = { goodwill = 0,  visited = false, reputation = 100 },
-            greenhouse = { goodwill = 10, visited = true,  reputation = 100 },
-            ruins_camp = { goodwill = 0,  visited = false, reputation = 100 },
-            bell_tower = { goodwill = 0,  visited = false, reputation = 100 },
+            tower            = { goodwill = 0,  visited = false, reputation = 100 },
+            greenhouse       = { goodwill = 10, visited = true,  reputation = 100 },
+            ruins_camp       = { goodwill = 0,  visited = false, reputation = 100 },
+            bell_tower       = { goodwill = 0,  visited = false, reputation = 100 },
+            -- 前哨站（Phase 11）
+            greenhouse_farm  = { goodwill = 5,  visited = false, reputation = 100 },
+            dome_outpost     = { goodwill = 0,  visited = false, reputation = 100 },
+            metro_camp       = { goodwill = 0,  visited = false, reputation = 100 },
+            old_church       = { goodwill = 0,  visited = false, reputation = 100 },
         },
 
         -- 角色
@@ -73,8 +78,12 @@ function M.new()
 
         -- 叙事
         narrative = {
-            story_flags = {},
-            memories    = {},
+            story_flags        = {},
+            memories           = {},
+            campfire_cooldowns = {},  -- { ["CF_001"] = 2 }
+            campfire_count     = 0,   -- 累计篝火次数
+            npc_cooldowns      = {},  -- { ["NPC_001"] = 2 }
+            npc_visit_count    = {},  -- { ["shen_he"] = 3 }
         },
 
         -- 全局旗标

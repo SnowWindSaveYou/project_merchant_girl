@@ -35,29 +35,34 @@ function M.create(state, activeTab, screenName, router)
                 -- shop 映射到 home tab，但点击 home 仍应导航回首页
                 if tab.id == screenName then return end
 
-                -- 旅行中：只切换显示页面，不修改 flow.phase
-                -- 否则会把 TRAVELLING 改成 IDLE/MAP/PREPARE，导致旅行中断
-                local travelling = Flow.get_phase(state) == Flow.Phase.TRAVELLING
+                local ok, err = pcall(function()
+                    -- 旅行中：只切换显示页面，不修改 flow.phase
+                    -- 否则会把 TRAVELLING 改成 IDLE/MAP/PREPARE，导致旅行中断
+                    local travelling = Flow.get_phase(state) == Flow.Phase.TRAVELLING
 
-                if tab.id == "home" then
-                    if not travelling then
-                        Flow.back_to_idle(state)
+                    if tab.id == "home" then
+                        if not travelling then
+                            Flow.back_to_idle(state)
+                        end
+                        router.navigate("home")
+                    elseif tab.id == "map" then
+                        if not travelling then
+                            Flow.enter_map(state)
+                        end
+                        router.navigate("map")
+                    elseif tab.id == "orders" then
+                        if not travelling then
+                            Flow.enter_prepare(state)
+                        end
+                        router.navigate("orders")
+                    elseif tab.id == "cargo" then
+                        router.navigate("cargo")
+                    elseif tab.id == "truck" then
+                        router.navigate("truck")
                     end
-                    router.navigate("home")
-                elseif tab.id == "map" then
-                    if not travelling then
-                        Flow.enter_map(state)
-                    end
-                    router.navigate("map")
-                elseif tab.id == "orders" then
-                    if not travelling then
-                        Flow.enter_prepare(state)
-                    end
-                    router.navigate("orders")
-                elseif tab.id == "cargo" then
-                    router.navigate("cargo")
-                elseif tab.id == "truck" then
-                    router.navigate("truck")
+                end)
+                if not ok then
+                    print("[ShellBottom] ERROR in tab '" .. tab.id .. "' onClick: " .. tostring(err))
                 end
             end,
             children = {

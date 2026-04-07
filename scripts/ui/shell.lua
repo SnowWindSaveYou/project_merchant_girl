@@ -20,6 +20,7 @@ local SHELLED = {
     shop       = true,
     route_plan = true,
     truck      = true,
+    quest_log  = true,
 }
 
 --- 页面名 → 底栏高亮 tab 映射
@@ -31,6 +32,7 @@ local SCREEN_TO_TAB = {
     shop       = "home",        -- 交易所从据点进入，属于首页 tab
     route_plan = "orders",      -- 路线规划是委托流程的延续
     truck      = "truck",
+    quest_log  = "home",        -- 任务日志从首页进入
 }
 
 --- 判断页面是否需要 Shell 包裹
