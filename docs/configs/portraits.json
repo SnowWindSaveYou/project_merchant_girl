@@ -1,0 +1,32 @@
+{
+    "protagonists": {
+        "linli": {
+            "name": "林砾",
+            "color": [142, 178, 210, 255],
+            "bgColor": [42, 52, 58, 240],
+            "portrait": "image/linli_portrait_20260405231808.png"
+        },
+        "taoxia": {
+            "name": "陶夏",
+            "color": [218, 168, 102, 255],
+            "bgColor": [58, 48, 36, 240],
+            "portrait": "image/taoxia_portrait_v2_20260407120520.png"
+        }
+    },
+
+    "npc_portraits": {
+        "shen_he":  "image/portrait_shen_he_20260406000120.png",
+        "han_ce":   "image/portrait_han_ce_20260406000106.png",
+        "wu_shiqi": "image/portrait_wu_shiqi_20260406000058.png",
+        "bai_shu":  "image/portrait_bai_shu_20260406000056.png",
+        "meng_hui": "image/portrait_meng_hui_20260406000106.png",
+        "ming_sha": "image/portrait_ming_sha_20260406000227.png"
+    },
+
+    "faction_portraits": {
+        "farm":    "image/portrait_faction_farm_20260406000212.png",
+        "tech":    "image/portrait_faction_tech_20260406000259.png",
+        "scav":    "image/portrait_faction_scav_20260406000214.png",
+        "scholar": "image/portrait_faction_scholar_20260406000214.png"
+    }
+}

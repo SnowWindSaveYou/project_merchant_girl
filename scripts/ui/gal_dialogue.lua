@@ -28,7 +28,7 @@ local PROTAGONIST_PORTRAITS = {
         name     = "陶夏",
         color    = { 218, 168, 102, 255 },
         bgColor  = { 58, 48, 36, 240 },
-        portrait = "image/taoxia_portrait_20260405231808.png",
+        portrait = "image/taoxia_portrait_v2_20260407120520.png",
     },
 }
 
@@ -356,11 +356,10 @@ function M.createHistoryView(opts)
                     marginRight = isRight and 4 or 0,
                 },
                 UI.Panel {
-                    maxWidth = "78%",
+                    width = "75%",
                     padding = 10,
                     backgroundColor = cfg.bgColor,
                     borderRadius = 8,
-                    flexShrink = 1,
                     children = {
                         UI.Label {
                             text = s.text or "",
@@ -368,7 +367,6 @@ function M.createHistoryView(opts)
                             fontColor = { 220, 215, 208, 255 },
                             lineHeight = 1.5,
                             whiteSpace = "normal",
-                            flexShrink = 1,
                         },
                     },
                 },
