@@ -1,7 +1,8 @@
 --- NPC 对话页面（使用通用 Gal 模块）
 local Gal        = require("ui/gal_dialogue")
 local NpcManager = require("narrative/npc_manager")
-local Goodwill   = require("settlement/goodwill")
+local Graph      = require("map/world_graph")
+
 
 local M = {}
 ---@type table
@@ -20,6 +21,22 @@ local session = {
 -- ============================================================
 -- 页面入口
 -- ============================================================
+
+-- 获取对话背景：dialogue.background > 当前聚落 node.bg > nil
+local function resolve_background(state, dialogue)
+    if dialogue and dialogue.background then
+        return dialogue.background
+    end
+    -- fallback：当前位置的聚落背景
+    local loc = state and state.map and state.map.current_location
+    if loc then
+        local node = Graph.get_node(loc)
+        if node and node.bg then
+            return node.bg
+        end
+    end
+    return nil
+end
 
 function M.create(state, params, r)
     router = r
@@ -48,26 +65,13 @@ function M.create(state, params, r)
     if params.show_result then
         session.result = params.result_data
 
-        -- 好感度信息
-        local extraInfo = {}
-        if session.npc then
-            local sett = state.settlements[session.npc.settlement]
-            if sett then
-                local gwInfo = Goodwill.get_info(sett.goodwill or 0)
-                table.insert(extraInfo, {
-                    text  = session.npc.name .. " 好感: " .. math.floor(sett.goodwill or 0) .. " (" .. gwInfo.name .. ")",
-                    color = session.npc.color,
-                })
-            end
-        end
-
         local returnTarget = session.return_to
         return Gal.createResultView({
-            dialogue  = session.dialogue,
-            result    = session.result,
-            npc       = session.npc,
-            extraInfo = extraInfo,
-            onClose   = function()
+            dialogue   = session.dialogue,
+            result     = session.result,
+            npc        = session.npc,
+            background = resolve_background(state, session.dialogue),
+            onClose    = function()
                 session.dialogue  = nil
                 session.npc       = nil
                 session.npc_id    = nil
@@ -97,10 +101,11 @@ function M.create(state, params, r)
     end
 
     return Gal.createDialogueView({
-        dialogue  = session.dialogue,
-        step      = session.step,
-        npc       = session.npc,
-        onAdvance = function()
+        dialogue   = session.dialogue,
+        step       = session.step,
+        npc        = session.npc,
+        background = resolve_background(state, session.dialogue),
+        onAdvance  = function()
             session.step = session.step + 1
             router.navigate("npc", { _continue = true })
         end,

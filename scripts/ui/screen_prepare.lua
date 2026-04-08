@@ -157,8 +157,8 @@ function M.create(state, params, r)
             text = "规划路线并出发",
             variant = "primary", width = "100%", height = 48,
             onClick = function(self)
-                Flow.enter_route_plan(state)
-                router.navigate("route_plan")
+                Flow.enter_map(state)
+                router.navigate("map", { mode = "route_plan" })
             end,
         })
     end

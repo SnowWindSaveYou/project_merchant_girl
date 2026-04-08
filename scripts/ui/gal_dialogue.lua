@@ -142,6 +142,7 @@ end
 ---  opts.onChoice    function(i) 选择的回调
 ---  opts.onHistory   function  点击 LOG 的回调
 ---  opts.onClose     function  点击关闭的回调
+---  opts.background  string|nil  背景图路径（CG 场景）
 ---@return table UI element
 function M.createDialogueView(opts)
     local d       = opts.dialogue
@@ -217,138 +218,156 @@ function M.createDialogueView(opts)
     end
 
     -- ── 整页布局：立绘全屏底层，对话框半透明叠在前面 ──
+    local bgImage = opts.background
+    local galChildren = {}
+
+    -- ▼ CG 背景层（有背景图时显示）
+    if bgImage then
+        table.insert(galChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute",
+            left = 0, top = 0,
+            backgroundImage = bgImage,
+            backgroundFit = "cover",
+        })
+    end
+
+    -- ▼ 立绘层（absolute 全屏背景，对话框自然遮挡下半身）
+    -- 面板宽 95% → contain 按宽适配 → 人物很大
+    -- 面板高 95% → 人物居中后自然落在屏幕中上部
+    -- 对话框 (前景层) 的不透明背景覆盖下半身，无需 overflow:hidden
+    table.insert(galChildren, UI.Panel {
+        width = "100%", height = "100%",
+        position = "absolute",
+        left = 0, top = 0,
+        children = {
+            -- 左侧立绘（偏左放置）
+            UI.Panel {
+                width = "95%", height = "95%",
+                backgroundImage = leftCfg.portrait,
+                backgroundFit = "contain",
+                imageTint = leftDim and { 80, 80, 80, 160 } or nil,
+                position = "absolute",
+                left = "-22%",
+                top = "3%",
+            },
+            -- 右侧立绘（偏右放置）
+            UI.Panel {
+                width = "95%", height = "95%",
+                backgroundImage = rightCfg.portrait,
+                backgroundFit = "contain",
+                imageTint = rightDim and { 80, 80, 80, 160 } or nil,
+                position = "absolute",
+                right = "-22%",
+                top = "3%",
+            },
+        },
+    })
+
+    -- ▼ 前景 UI 层（normal flow，顶栏 + 弹性空白 + 底部对话框）
+    -- 顶栏
+    table.insert(galChildren, UI.Panel {
+        width = "100%", height = 44,
+        flexDirection = "row",
+        justifyContent = "space-between",
+        alignItems = "center",
+        paddingLeft = 16, paddingRight = 8,
+        backgroundColor = { 22, 19, 16, 180 },
+        children = {
+            UI.Panel {
+                flexDirection = "row", gap = 8, alignItems = "center",
+                flexShrink = 1,
+                children = topLeftChildren,
+            },
+            UI.Panel {
+                flexDirection = "row", gap = 2,
+                children = {
+                    UI.Button {
+                        text = "LOG",
+                        variant = "ghost",
+                        width = 48, height = 32,
+                        fontSize = 11,
+                        onClick = function(self)
+                            if opts.onHistory then opts.onHistory() end
+                        end,
+                    },
+                    UI.Button {
+                        text = "X",
+                        variant = "ghost",
+                        width = 36, height = 32,
+                        fontSize = 13,
+                        onClick = function(self)
+                            if opts.onClose then opts.onClose() end
+                        end,
+                    },
+                },
+            },
+        },
+    })
+
+    -- 空白区域（固定占 55%，让立绘在此区域透出）
+    table.insert(galChildren, UI.Panel { height = "55%" })
+
+    -- 底部对话框（占剩余 ~40% 空间，覆盖立绘下半身）
+    -- 点击对话框即可推进对话（未读完时）
+    local dialogueBoxChildren = {
+        -- 说话人名字
+        UI.Panel {
+            paddingLeft = 6, paddingRight = 6,
+            paddingTop = 2, paddingBottom = 2,
+            backgroundColor = curCfg.bgColor,
+            borderRadius = 4,
+            alignSelf = "flex-start",
+            children = {
+                UI.Label {
+                    text = curCfg.name,
+                    fontSize = 13,
+                    fontColor = curCfg.color,
+                },
+            },
+        },
+        -- 对话文字
+        UI.Label {
+            text = curText,
+            fontSize = 15,
+            fontColor = { 225, 220, 210, 255 },
+            lineHeight = 1.7,
+            whiteSpace = "normal",
+        },
+    }
+    -- 操作区（仅在有选项时显示）
+    if allShown then
+        table.insert(dialogueBoxChildren, UI.Panel {
+            width = "100%",
+            flexDirection = "row",
+            justifyContent = "center",
+            alignItems = "center",
+            gap = 8,
+            marginTop = 6,
+            children = actionChildren,
+        })
+    end
+
+    table.insert(galChildren, UI.Panel {
+        width = "100%",
+        flexGrow = 1,
+        backgroundColor = { 15, 13, 10, 240 },
+        borderTopWidth = 1,
+        borderColor = { 80, 65, 40, 80 },
+        paddingLeft = 20, paddingRight = 20,
+        paddingTop = 16, paddingBottom = 20,
+        gap = 8,
+        onClick = (not allShown) and function(self)
+            if opts.onAdvance then opts.onAdvance() end
+        end or nil,
+        children = dialogueBoxChildren,
+    })
+
     return UI.Panel {
         id = "galScreen",
         width = "100%", height = "100%",
         backgroundColor = { 18, 15, 12, 255 },
-        children = {
-            -- ▼ 立绘层（absolute 全屏背景，对话框自然遮挡下半身）
-            -- 面板宽 95% → contain 按宽适配 → 人物很大
-            -- 面板高 95% → 人物居中后自然落在屏幕中上部
-            -- 对话框 (前景层) 的不透明背景覆盖下半身，无需 overflow:hidden
-            UI.Panel {
-                width = "100%", height = "100%",
-                position = "absolute",
-                left = 0, top = 0,
-                children = {
-                    -- 左侧立绘（偏左放置）
-                    UI.Panel {
-                        width = "95%", height = "95%",
-                        backgroundImage = leftCfg.portrait,
-                        backgroundFit = "contain",
-                        imageTint = leftDim and { 80, 80, 80, 160 } or nil,
-                        position = "absolute",
-                        left = "-22%",
-                        top = "3%",
-                    },
-                    -- 右侧立绘（偏右放置）
-                    UI.Panel {
-                        width = "95%", height = "95%",
-                        backgroundImage = rightCfg.portrait,
-                        backgroundFit = "contain",
-                        imageTint = rightDim and { 80, 80, 80, 160 } or nil,
-                        position = "absolute",
-                        right = "-22%",
-                        top = "3%",
-                    },
-                },
-            },
-
-            -- ▼ 前景 UI 层（normal flow，顶栏 + 弹性空白 + 底部对话框）
-            -- 顶栏
-            UI.Panel {
-                width = "100%", height = 44,
-                flexDirection = "row",
-                justifyContent = "space-between",
-                alignItems = "center",
-                paddingLeft = 16, paddingRight = 8,
-                backgroundColor = { 22, 19, 16, 180 },
-                children = {
-                    UI.Panel {
-                        flexDirection = "row", gap = 8, alignItems = "center",
-                        flexShrink = 1,
-                        children = topLeftChildren,
-                    },
-                    UI.Panel {
-                        flexDirection = "row", gap = 2,
-                        children = {
-                            UI.Button {
-                                text = "LOG",
-                                variant = "ghost",
-                                width = 48, height = 32,
-                                fontSize = 11,
-                                onClick = function(self)
-                                    if opts.onHistory then opts.onHistory() end
-                                end,
-                            },
-                            UI.Button {
-                                text = "X",
-                                variant = "ghost",
-                                width = 36, height = 32,
-                                fontSize = 13,
-                                onClick = function(self)
-                                    if opts.onClose then opts.onClose() end
-                                end,
-                            },
-                        },
-                    },
-                },
-            },
-
-            -- 空白区域（固定占 55%，让立绘在此区域透出）
-            UI.Panel { height = "55%" },
-
-            -- 底部对话框（占剩余 ~40% 空间，覆盖立绘下半身）
-            -- 点击对话框即可推进对话（未读完时）
-            UI.Panel {
-                width = "100%",
-                flexGrow = 1,
-                backgroundColor = { 15, 13, 10, 240 },
-                borderTopWidth = 1,
-                borderColor = { 80, 65, 40, 80 },
-                paddingLeft = 20, paddingRight = 20,
-                paddingTop = 16, paddingBottom = 20,
-                gap = 8,
-                onClick = (not allShown) and function(self)
-                    if opts.onAdvance then opts.onAdvance() end
-                end or nil,
-                children = {
-                    -- 说话人名字
-                    UI.Panel {
-                        paddingLeft = 6, paddingRight = 6,
-                        paddingTop = 2, paddingBottom = 2,
-                        backgroundColor = curCfg.bgColor,
-                        borderRadius = 4,
-                        alignSelf = "flex-start",
-                        children = {
-                            UI.Label {
-                                text = curCfg.name,
-                                fontSize = 13,
-                                fontColor = curCfg.color,
-                            },
-                        },
-                    },
-                    -- 对话文字
-                    UI.Label {
-                        text = curText,
-                        fontSize = 15,
-                        fontColor = { 225, 220, 210, 255 },
-                        lineHeight = 1.7,
-                        whiteSpace = "normal",
-                    },
-                    -- 操作区（仅在有选项时显示）
-                    allShown and UI.Panel {
-                        width = "100%",
-                        flexDirection = "row",
-                        justifyContent = "center",
-                        alignItems = "center",
-                        gap = 8,
-                        marginTop = 6,
-                        children = actionChildren,
-                    } or nil,
-                },
-            },
-        },
+        children = galChildren,
     }
 end
 
@@ -537,18 +556,7 @@ function M.createResultView(opts)
         })
     end
 
-    -- ops 效果摘要
-    if result.ops_log and #result.ops_log > 0 then
-        table.insert(cardChildren, UI.Label {
-            text = table.concat(result.ops_log, "  "),
-            fontSize = 11,
-            fontColor = { 130, 125, 115, 255 },
-            textAlign = "center",
-            whiteSpace = "normal",
-        })
-    end
-
-    -- 额外信息（如好感度、关系阶段等）
+    -- 额外信息（仅限玩家可见的提示）
     if opts.extraInfo then
         for _, info in ipairs(opts.extraInfo) do
             table.insert(cardChildren, UI.Label {
@@ -571,52 +579,66 @@ function M.createResultView(opts)
         end,
     })
 
+    local resultChildren = {}
+
+    -- ▼ CG 背景层（有背景图时显示）
+    local bgImage = opts.background
+    if bgImage then
+        table.insert(resultChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute",
+            left = 0, top = 0,
+            backgroundImage = bgImage,
+            backgroundFit = "cover",
+        })
+    end
+
+    -- ▼ 立绘层（absolute 全屏背景）
+    table.insert(resultChildren, UI.Panel {
+        width = "100%", height = "100%",
+        position = "absolute",
+        left = 0, top = 0,
+        children = {
+            UI.Panel {
+                width = "95%", height = "95%",
+                backgroundImage = leftCfg.portrait,
+                backgroundFit = "contain",
+                position = "absolute",
+                left = "-22%",
+                top = "3%",
+            },
+            UI.Panel {
+                width = "95%", height = "95%",
+                backgroundImage = rightCfg.portrait,
+                backgroundFit = "contain",
+                position = "absolute",
+                right = "-22%",
+                top = "3%",
+            },
+        },
+    })
+
+    -- ▼ 弹性空白
+    table.insert(resultChildren, UI.Panel { flexGrow = 1, flexBasis = 0 })
+
+    -- ▼ 结果卡片（半透明叠在立绘前面）
+    table.insert(resultChildren, UI.Panel {
+        width = "100%",
+        backgroundColor = { 15, 13, 10, 200 },
+        borderTopWidth = 1,
+        borderColor = { 80, 65, 40, 80 },
+        padding = 20,
+        gap = 10,
+        alignItems = "center",
+        children = cardChildren,
+    })
+
     return UI.Panel {
         id = "galScreen",
         width = "100%", height = "100%",
         backgroundColor = { 18, 15, 12, 255 },
         justifyContent = "flex-end",
-        children = {
-            -- ▼ 立绘层（absolute 全屏背景）
-            UI.Panel {
-                width = "100%", height = "100%",
-                position = "absolute",
-                left = 0, top = 0,
-                children = {
-                    UI.Panel {
-                        width = "95%", height = "95%",
-                        backgroundImage = leftCfg.portrait,
-                        backgroundFit = "contain",
-                        position = "absolute",
-                        left = "-22%",
-                        top = "3%",
-                    },
-                    UI.Panel {
-                        width = "95%", height = "95%",
-                        backgroundImage = rightCfg.portrait,
-                        backgroundFit = "contain",
-                        position = "absolute",
-                        right = "-22%",
-                        top = "3%",
-                    },
-                },
-            },
-
-            -- ▼ 弹性空白
-            UI.Panel { flexGrow = 1, flexBasis = 0 },
-
-            -- ▼ 结果卡片（半透明叠在立绘前面）
-            UI.Panel {
-                width = "100%",
-                backgroundColor = { 15, 13, 10, 200 },
-                borderTopWidth = 1,
-                borderColor = { 80, 65, 40, 80 },
-                padding = 20,
-                gap = 10,
-                alignItems = "center",
-                children = cardChildren,
-            },
-        },
+        children = resultChildren,
     }
 end
 

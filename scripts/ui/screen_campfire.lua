@@ -1,7 +1,8 @@
 --- 篝火对话页面（使用通用 Gal 模块）
-local Gal      = require("ui/gal_dialogue")
-local Campfire = require("narrative/campfire")
-local Goods    = require("economy/goods")
+local Gal          = require("ui/gal_dialogue")
+local Campfire     = require("narrative/campfire")
+local Goods        = require("economy/goods")
+local Graph        = require("map/world_graph")
 
 local M = {}
 ---@type table
@@ -18,6 +19,21 @@ local session = {
 -- ============================================================
 -- 页面入口
 -- ============================================================
+
+-- 获取对话背景：dialogue.background > 当前聚落 node.bg > nil
+local function resolve_background(state, dialogue)
+    if dialogue and dialogue.background then
+        return dialogue.background
+    end
+    local loc = state and state.map and state.map.current_location
+    if loc then
+        local node = Graph.get_node(loc)
+        if node and node.bg then
+            return node.bg
+        end
+    end
+    return nil
+end
 
 function M.create(state, params, r)
     router = r
@@ -41,16 +57,12 @@ function M.create(state, params, r)
 
     if params.show_result then
         session.result = params.result_data
-        -- 关系阶段信息
-        local stage, label = Campfire.get_relation_stage(state)
         return Gal.createResultView({
-            dialogue = session.dialogue,
-            result   = session.result,
-            npc      = nil,  -- 篝火无 NPC
-            extraInfo = {
-                { text = "关系: " .. label, color = { 218, 168, 102, 255 } },
-            },
-            onClose = function()
+            dialogue   = session.dialogue,
+            result     = session.result,
+            npc        = nil,
+            background = resolve_background(state, session.dialogue),
+            onClose    = function()
                 session.dialogue = nil
                 session.result   = nil
                 router.navigate("home")
@@ -82,11 +94,12 @@ function M.create(state, params, r)
     end
 
     return Gal.createDialogueView({
-        dialogue  = session.dialogue,
-        step      = session.step,
-        npc       = nil,  -- 篝火无 NPC，使用林砾 + 陶夏
-        topInfo   = topInfo,
-        onAdvance = function()
+        dialogue   = session.dialogue,
+        step       = session.step,
+        npc        = nil,  -- 篝火无 NPC，使用林砾 + 陶夏
+        topInfo    = topInfo,
+        background = resolve_background(state, session.dialogue),
+        onAdvance  = function()
             session.step = session.step + 1
             router.navigate("campfire", { _continue = true })
         end,

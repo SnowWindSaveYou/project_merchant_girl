@@ -2,8 +2,9 @@
   "dialogues": [
     {
       "id": "SD_PROLOGUE_01",
-      "title": "出发前夜",
+      "title": "残骸",
       "type": "main_story",
+      "background": "image/cg_prologue_wreckage_20260408134221.png",
       "chapter": 0,
       "node_types": ["any"],
       "relation_stage": "any",
@@ -12,21 +13,25 @@
       "required_flags": [],
       "forbidden_flags": ["sd_prologue_01_done"],
       "steps": [
-        { "speaker": "narrator", "text": "温室社区的边界。一辆改装过的旧货车停在检查站外。" },
-        { "speaker": "taoxia", "text": "检查完了吗？我数了三遍，八箱罐头，四桶净水，两包医用纱布。" },
-        { "speaker": "linli", "text": "……油够跑两个来回。轮胎前天换过。发动机……还行。" },
-        { "speaker": "taoxia", "text": "『还行』？林砾，你能不能给点信心？" },
-        { "speaker": "linli", "text": "出发前乐观的人，往往回不来。" },
-        { "speaker": "taoxia", "text": "哇，好扫兴。" },
-        { "speaker": "narrator", "text": "温室社区的守卫打开了铁门。外面是灰蒙蒙的旷野。" },
-        { "speaker": "taoxia", "text": "好了——行商陶夏和林砾，正式出发！" },
-        { "speaker": "linli", "text": "…………保持车距。" }
+        { "speaker": "narrator", "text": "废土公路。货车在颠簸中前行，灰色的天空压得很低。" },
+        { "speaker": "taoxia", "text": "林砾，停车。前面……路边有东西。" },
+        { "speaker": "narrator", "text": "一辆烧毁的货车横在路肩。车身焦黑，货箱炸开，零件和罐头散落一地。" },
+        { "speaker": "linli", "text": "……是行商的车。烧了不超过两天。" },
+        { "speaker": "taoxia", "text": "怎么看出来的？" },
+        { "speaker": "linli", "text": "轮胎还在冒烟。地上的罐头标签没被风沙盖住。" },
+        { "speaker": "taoxia", "text": "是路匪干的吗……？" },
+        { "speaker": "linli", "text": "不好说。也可能是机械故障引发的火灾。但——" },
+        { "speaker": "narrator", "text": "林砾蹲下看了看车门。锁扣是从外面被撬开的。" },
+        { "speaker": "linli", "text": "……不是事故。" },
+        { "speaker": "taoxia", "text": "……我们会不会也——" },
+        { "speaker": "linli", "text": "不会。走吧，别在这里停太久。" },
+        { "speaker": "narrator", "text": "陶夏最后看了一眼那辆残骸。驾驶座上什么都没有——连人都没有。" }
       ],
       "choices": [
         {
-          "text": "「走吧。」",
+          "text": "继续前进。",
           "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
-          "result_text": "引擎轰鸣，货车驶入废土。身后的铁门缓缓关上。",
+          "result_text": "引擎重新发动。残骸在后视镜里越来越小，最终消失在灰尘里。",
           "set_flags": ["sd_prologue_01_done"]
         }
       ]
@@ -43,15 +48,15 @@
       "required_flags": ["sd_prologue_01_done"],
       "forbidden_flags": ["sd_prologue_02_done"],
       "steps": [
-        { "speaker": "narrator", "text": "第一晚。两个人坐在货车旁边的篝火前，谁都没先开口。" },
-        { "speaker": "taoxia", "text": "……比想象中安静。" },
-        { "speaker": "linli", "text": "安静是好事。不安静的时候才该担心。" },
-        { "speaker": "taoxia", "text": "林砾。" },
-        { "speaker": "linli", "text": "嗯？" },
-        { "speaker": "taoxia", "text": "我们为什么出来跑商？你想过吗？" },
+        { "speaker": "narrator", "text": "第一晚。两个人坐在货车旁边的篝火前。火苗映着各自的脸。" },
+        { "speaker": "taoxia", "text": "……还在想白天那辆车。" },
+        { "speaker": "linli", "text": "别想了。想也没用。" },
+        { "speaker": "taoxia", "text": "那个驾驶座上空着的……人去哪了？" },
+        { "speaker": "linli", "text": "……不知道。" },
+        { "speaker": "narrator", "text": "沉默了一会儿。篝火噼啪作响。远处有什么动物叫了一声。" },
+        { "speaker": "taoxia", "text": "林砾，我们为什么出来跑商？你想过吗？" },
         { "speaker": "linli", "text": "……你问我？是你拉我出来的。" },
-        { "speaker": "taoxia", "text": "我知道。但我想听你的理由。" },
-        { "speaker": "narrator", "text": "篝火噼啪作响。远处有什么动物叫了一声。" }
+        { "speaker": "taoxia", "text": "我知道。但看到那辆车之后……我想听你的理由。" }
       ],
       "choices": [
         {

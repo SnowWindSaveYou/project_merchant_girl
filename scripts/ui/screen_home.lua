@@ -182,110 +182,26 @@ end
 -- ============================================================
 -- 据点视图：上半插画 + 下半信息卡 & 按钮
 -- ============================================================
+-- 成长目标弹窗状态
+local _showProgressPopup = false
+
 function createSettlementView(state, curNode)
     local nodeId = curNode and curNode.id or ""
     local theme  = SETTLEMENT_THEMES[nodeId] or DEFAULT_THEME
     local activeOrders = OrderBook.get_active(state)
     local isSettlement = curNode and curNode.type == "settlement"
 
-    -- 节点类型图标
-    local typeIcons = {
-        settlement = "🏘", resource = "📦", transit = "🔀",
-        hazard = "⚠", story = "📡",
-    }
-    local nodeIcon = curNode and (typeIcons[curNode.type] or "") or ""
+    -- CG 背景图（从节点 bg 字段获取）
+    local bgImage = curNode and curNode.bg or nil
 
-    -- ── 上半部：据点插画区 ──
-    local illustrationPanel = UI.Panel {
-        id = "settlementIllustration",
-        width = "100%", flexGrow = 1, flexShrink = 1,
-        minHeight = 120,
-        backgroundColor = theme.bg,
-        justifyContent = "center", alignItems = "center",
-        gap = 8,
-        children = {
-            UI.Label {
-                text = theme.icon,
-                fontSize = 56,
-                textAlign = "center",
-            },
-            UI.Label {
-                text = curNode and curNode.name or "未知区域",
-                fontSize = Theme.sizes.font_title,
-                fontColor = theme.accent,
-                textAlign = "center",
-            },
-            UI.Label {
-                text = curNode and curNode.desc or "",
-                fontSize = Theme.sizes.font_small,
-                fontColor = Theme.colors.text_secondary,
-                textAlign = "center",
-                paddingLeft = 24, paddingRight = 24,
-            },
-        },
-    }
-
-    -- ── 下半部：信息卡 + 按钮列表 ──
+    -- ── 下半部：操作按钮列表 ──
     local lowerChildren = {}
 
-    -- 信息卡片：位置 + 类型
-    table.insert(lowerChildren, UI.Panel {
-        width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
-        borderWidth = 1, borderColor = Theme.colors.border,
-        flexDirection = "row", justifyContent = "space-between", alignItems = "center",
-        children = {
-            UI.Panel {
-                flexDirection = "row", alignItems = "center", gap = 6,
-                children = {
-                    UI.Label {
-                        text = nodeIcon,
-                        fontSize = Theme.sizes.font_large,
-                    },
-                    UI.Label {
-                        text = curNode and curNode.name or "未知",
-                        fontSize = Theme.sizes.font_large,
-                        fontColor = Theme.colors.text_primary,
-                    },
-                },
-            },
-            UI.Label {
-                text = isSettlement and "聚落" or (curNode and curNode.type or ""),
-                fontSize = Theme.sizes.font_small,
-                fontColor = Theme.colors.text_dim,
-            },
-        },
-    })
-
-    -- 活跃订单摘要
-    if #activeOrders > 0 then
-        table.insert(lowerChildren, UI.Panel {
-            width = "100%", padding = 10,
-            backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
-            flexDirection = "row", justifyContent = "space-between", alignItems = "center",
-            children = {
-                UI.Label {
-                    text = "活跃订单",
-                    fontSize = Theme.sizes.font_small,
-                    fontColor = Theme.colors.text_secondary,
-                },
-                UI.Label {
-                    text = #activeOrders .. " 个待配送",
-                    fontSize = Theme.sizes.font_small,
-                    fontColor = Theme.colors.accent,
-                },
-            },
-        })
-    end
-
-    -- 积压警告
+    -- 积压警告（保留，重要信息）
     local backlogInfo = OrderBook.get_backlog_info(state)
     if backlogInfo.level ~= "normal" or backlogInfo.consecutive_expires >= 2 then
         table.insert(lowerChildren, createBacklogWarning(backlogInfo))
     end
-
-    -- ── 成长目标卡片 ──
-    table.insert(lowerChildren, createProgressCard(state))
 
     -- ── 操作按钮区 ──
     if isSettlement then
@@ -520,8 +436,8 @@ function createSettlementView(state, curNode)
                 width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
-                    Flow.enter_route_plan(state)
-                    router.navigate("route_plan")
+                    Flow.enter_map(state)
+                    router.navigate("map", { mode = "route_plan" })
                 end,
             })
         end
@@ -561,8 +477,8 @@ function createSettlementView(state, curNode)
                 width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
-                    Flow.enter_route_plan(state)
-                    router.navigate("route_plan")
+                    Flow.enter_map(state)
+                    router.navigate("map", { mode = "route_plan" })
                 end,
             })
         end
@@ -604,19 +520,189 @@ function createSettlementView(state, curNode)
         id = "settlementActions",
         width = "100%",
         padding = Theme.sizes.padding, gap = 10,
+        paddingTop = 10,
         overflow = "scroll",
+        backgroundColor = { 16, 18, 20, 200 },
+        borderTopLeftRadius = Theme.sizes.radius,
+        borderTopRightRadius = Theme.sizes.radius,
         children = lowerChildren,
     }
 
-    -- ── 组装 ──
+    -- ── 组装：全屏背景 + 内容叠层 ──
+    local rootChildren = {}
+
+    -- 层 1：CG 背景（全屏绝对定位）
+    if bgImage then
+        table.insert(rootChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundImage = bgImage,
+            backgroundFit = "cover",
+        })
+        -- 底部渐变遮罩（让下方按钮区可读）
+        table.insert(rootChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundColor = { 0, 0, 0, 0 },
+            backgroundGradient = {
+                direction = "to-bottom",
+                colors = {
+                    { 0, 0, 0, 0 },       -- 顶部完全透明
+                    { 0, 0, 0, 0 },       -- 中上段透明
+                    { 0, 0, 0, 60 },      -- 中段微渐变
+                    { 16, 18, 20, 140 },  -- 底部较淡（按钮区自带底色）
+                },
+            },
+        })
+    end
+
+    -- 层 2：顶部聚落信息卡（半透明背景框 + 名称 + 描述）
+    local nodeName = curNode and curNode.name or "未知区域"
+    local nodeDesc = curNode and curNode.desc or ""
+    table.insert(rootChildren, UI.Panel {
+        width = "100%",
+        paddingTop = 8, paddingLeft = 12, paddingRight = 12, paddingBottom = 4,
+        children = {
+            (function()
+                local infoChildren = {
+                    UI.Panel {
+                        width = "100%",
+                        flexDirection = "row", justifyContent = "space-between", alignItems = "center",
+                        children = {
+                            UI.Panel {
+                                flexDirection = "row", alignItems = "center", gap = 6,
+                                children = {
+                                    UI.Label {
+                                        text = theme.icon,
+                                        fontSize = 20,
+                                    },
+                                    UI.Label {
+                                        text = nodeName,
+                                        fontSize = Theme.sizes.font_large,
+                                        fontColor = { 255, 255, 255, 230 },
+                                    },
+                                },
+                            },
+                            UI.Label {
+                                text = isSettlement and "聚落" or (curNode and curNode.type or ""),
+                                fontSize = Theme.sizes.font_small,
+                                fontColor = { 255, 255, 255, 120 },
+                            },
+                        },
+                    },
+                }
+                if nodeDesc ~= "" then
+                    table.insert(infoChildren, UI.Label {
+                        text = nodeDesc,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = { 255, 255, 255, 160 },
+                    })
+                end
+                return UI.Panel {
+                    width = "100%",
+                    padding = 10,
+                    backgroundColor = { 0, 0, 0, 140 },
+                    borderRadius = Theme.sizes.radius,
+                    gap = 4,
+                    children = infoChildren,
+                }
+            end)(),
+        },
+    })
+
+    -- 层 3：中间弹性留白（让背景图可见）
+    table.insert(rootChildren, UI.Panel { flexGrow = 1, flexBasis = 0 })
+
+    -- 层 4：悬浮按钮行（成长目标 + 活跃订单）
+    local floatingButtons = {}
+    -- 成长目标按钮
+    table.insert(floatingButtons, UI.Button {
+        text = "📊 成长目标",
+        variant = "secondary",
+        height = 32,
+        fontSize = Theme.sizes.font_small,
+        backgroundColor = { 30, 34, 40, 200 },
+        borderColor = theme.accent,
+        borderWidth = 1,
+        borderRadius = 16,
+        onClick = function(self)
+            _showProgressPopup = not _showProgressPopup
+            router.navigate("home")
+        end,
+    })
+    -- 活跃订单按钮
+    if #activeOrders > 0 then
+        table.insert(floatingButtons, UI.Button {
+            text = "📋 订单 " .. #activeOrders,
+            variant = "secondary",
+            height = 32,
+            fontSize = Theme.sizes.font_small,
+            backgroundColor = { 30, 34, 40, 200 },
+            borderColor = Theme.colors.accent,
+            borderWidth = 1,
+            borderRadius = 16,
+            onClick = function(self)
+                Flow.enter_prepare(state)
+                router.navigate("orders")
+            end,
+        })
+    end
+    table.insert(rootChildren, UI.Panel {
+        width = "100%",
+        paddingLeft = 12, paddingRight = 12, paddingBottom = 4,
+        flexDirection = "row", gap = 8,
+        justifyContent = "flex-end",
+        children = floatingButtons,
+    })
+
+    -- 层 5：按钮列表区域
+    table.insert(rootChildren, lowerPanel)
+
+    -- 层 6：成长目标弹窗（全屏遮罩 + 卡片）
+    if _showProgressPopup then
+        table.insert(rootChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundColor = { 0, 0, 0, 160 },
+            justifyContent = "center", alignItems = "center",
+            padding = 20,
+            onClick = function(self)
+                _showProgressPopup = false
+                router.navigate("home")
+            end,
+            children = {
+                UI.Panel {
+                    width = "100%", maxHeight = "80%",
+                    backgroundColor = Theme.colors.bg_primary,
+                    borderRadius = Theme.sizes.radius,
+                    borderWidth = 1, borderColor = Theme.colors.border,
+                    padding = 4,
+                    overflow = "scroll",
+                    onClick = function(self) end,  -- 阻止穿透关闭
+                    children = {
+                        createProgressCard(state),
+                        UI.Button {
+                            text = "关闭",
+                            variant = "secondary",
+                            width = "100%", height = 40,
+                            marginTop = 8,
+                            fontSize = Theme.sizes.font_normal,
+                            onClick = function(self)
+                                _showProgressPopup = false
+                                router.navigate("home")
+                            end,
+                        },
+                    },
+                },
+            },
+        })
+    end
+
     return UI.Panel {
         id = "homeScreen",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
-        children = {
-            illustrationPanel,
-            lowerPanel,
-        },
+        backgroundColor = bgImage and { 16, 18, 20, 255 } or Theme.colors.bg_primary,
+        children = rootChildren,
     }
 end
 

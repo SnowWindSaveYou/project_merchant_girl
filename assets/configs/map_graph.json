@@ -5,6 +5,7 @@
       "name": "温室社区",
       "type": "settlement",
       "desc": "以旧生态穹顶为核心的农业聚落",
+      "bg": "image/bg_greenhouse_20260408143733.png",
       "x": 80,
       "y": 400
     },
@@ -13,6 +14,7 @@
       "name": "外围农场",
       "type": "settlement",
       "desc": "温室社区南侧的露天耕地，种植抗辐射作物",
+      "bg": "image/bg_greenhouse_farm_20260408143801.png",
       "x": 120,
       "y": 530
     },
@@ -37,6 +39,7 @@
       "name": "北穹塔台",
       "type": "settlement",
       "desc": "建在旧防空观测塔群上的技术聚落",
+      "bg": "image/bg_tower_20260408143731.png",
       "x": 500,
       "y": 80
     },
@@ -45,6 +48,7 @@
       "name": "穹顶哨站",
       "type": "settlement",
       "desc": "塔台技术派在西南方向设立的前沿观测站",
+      "bg": "image/bg_dome_outpost_20260408143742.png",
       "x": 380,
       "y": 140
     },
@@ -69,6 +73,7 @@
       "name": "废墟游民营地",
       "type": "settlement",
       "desc": "塌陷商场周边的流动型拾荒聚落",
+      "bg": "image/bg_ruins_camp_20260408143726.png",
       "x": 550,
       "y": 450
     },
@@ -77,6 +82,7 @@
       "name": "地铁营地",
       "type": "settlement",
       "desc": "废弃地铁隧道内的拾荒者据点，善于修理旧物",
+      "bg": "image/bg_metro_camp_20260408143725.png",
       "x": 620,
       "y": 520
     },
@@ -101,6 +107,7 @@
       "name": "钟楼书院",
       "type": "settlement",
       "desc": "围绕旧钟楼建立的学者聚落，收藏大量末世前书籍",
+      "bg": "image/bg_bell_tower_20260408143735.png",
       "x": 750,
       "y": 250
     },
@@ -109,6 +116,7 @@
       "name": "旧教堂",
       "type": "settlement",
       "desc": "钟楼书院东南的废弃教堂，被学者们改造为分院",
+      "bg": "image/bg_old_church_20260408143736.png",
       "x": 820,
       "y": 350
     },

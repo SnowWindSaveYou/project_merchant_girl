@@ -91,6 +91,12 @@ function M.new()
             npc_visit_count    = {},  -- { ["shen_he"] = 3 }
         },
 
+        -- 自动计划设置
+        auto_plan = {
+            refuel_threshold = 30,   -- 油量低于此百分比时经过聚落自动补充（0=关闭）
+            auto_accept_orders = false, -- 经过聚落是否自动接取顺路单
+        },
+
         -- 全局旗标
         flags = {},
 

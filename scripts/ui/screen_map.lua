@@ -33,6 +33,7 @@ local mapMode = {
     activePlan = nil,           -- 当前显示的 plan
     waypoints  = {},            -- 手动模式途经点
     manualPlan = nil,           -- 手动模式路线
+    destList   = nil,           -- 多目的地列表（从订单页进入时使用）
 }
 
 -- 底部面板引用
@@ -44,8 +45,8 @@ local routePanel_ = nil
 local explorePanel_ = nil
 -- 折叠状态
 local exploreCollapsed_ = {
-    unknown = false,  -- 默认展开
-    known   = false,  -- 默认展开
+    unknown = true,   -- 默认折叠
+    known   = true,   -- 默认折叠
 }
 
 -- 边类型 & 危险等级显示
@@ -105,6 +106,9 @@ local modal_ = nil
 
 -- 情报图层开关
 local intelLayerVisible_ = false
+
+-- 自动计划按钮 hitbox（drawIntelToggle 中更新）
+local autoPlanBtn_ = { x = 0, y = 0, w = 0, h = 0 }
 
 -- ============================================================
 -- 策略名称 & 颜色映射
@@ -173,6 +177,27 @@ local function findNodeAt(lx, ly, known)
             if dSq < bestDSq then
                 bestDSq = dSq
                 bestId  = node.id
+            end
+        end
+    end
+    return bestId
+end
+
+--- 查找逻辑坐标下的可探索未知邻居节点
+local function findAdjacentUnknownNodeAt(lx, ly)
+    if not state_ then return nil end
+    local current = state_.map.current_location
+    local unknowns = Graph.get_unknown_neighbors(current, state_)
+    local bestId, bestDSq = nil, HIT_R_SQ
+    for _, adj in ipairs(unknowns) do
+        local node = Graph.get_node(adj.to)
+        if node then
+            local sx, sy = w2s(node.x, node.y)
+            local dx, dy = lx - sx, ly - sy
+            local dSq = dx * dx + dy * dy
+            if dSq < bestDSq then
+                bestDSq = dSq
+                bestId  = adj.to
             end
         end
     end
@@ -261,7 +286,7 @@ end
 -- ============================================================
 -- 绘制：节点
 -- ============================================================
-local function drawNodes(nvg, known, current, destSet, time)
+local function drawNodes(nvg, known, current, destSet, time, adjacentUnknowns)
     for _, node in ipairs(Graph.NODES) do
         local sx, sy = w2s(node.x, node.y)
         local isKnown = known[node.id]
@@ -270,16 +295,41 @@ local function drawNodes(nvg, known, current, destSet, time)
         local isSel   = cam.selected == node.id
 
         if not isKnown then
-            -- 未知节点：柔和小圆 + 问号
-            nvgBeginPath(nvg)
-            nvgCircle(nvg, sx, sy, NODE_R * 0.55)
-            fc(nvg, Theme.colors.map_unknown)
-            nvgFill(nvg)
-            nvgFontFaceId(nvg, cam.font)
-            nvgFontSize(nvg, 11)
-            nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
-            fc(nvg, Theme.colors.map_label_text, 120)
-            nvgText(nvg, sx, sy, "?", nil)
+            local isAdjacent = adjacentUnknowns and adjacentUnknowns[node.id]
+            if isAdjacent then
+                -- 可探索未知节点：更大、脉冲光环、可点击
+                local pulse = 0.4 + 0.6 * math.abs(math.sin(time * 1.5))
+                -- 呼吸光环
+                nvgBeginPath(nvg)
+                nvgCircle(nvg, sx, sy, NODE_R * 0.85 + 3 * math.sin(time * 1.5))
+                fc(nvg, Theme.colors.warning, math.floor(35 * pulse))
+                nvgFill(nvg)
+                -- 节点圆
+                nvgBeginPath(nvg)
+                nvgCircle(nvg, sx, sy, NODE_R * 0.75)
+                fc(nvg, { 55, 48, 30, 200 })
+                nvgFill(nvg)
+                sc(nvg, Theme.colors.warning, math.floor(160 * pulse))
+                nvgStrokeWidth(nvg, 1.5)
+                nvgStroke(nvg)
+                -- 问号
+                nvgFontFaceId(nvg, cam.font)
+                nvgFontSize(nvg, 14)
+                nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+                fc(nvg, Theme.colors.warning, 220)
+                nvgText(nvg, sx, sy, "?", nil)
+            else
+                -- 远处未知节点：柔和小圆 + 问号
+                nvgBeginPath(nvg)
+                nvgCircle(nvg, sx, sy, NODE_R * 0.55)
+                fc(nvg, Theme.colors.map_unknown)
+                nvgFill(nvg)
+                nvgFontFaceId(nvg, cam.font)
+                nvgFontSize(nvg, 11)
+                nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+                fc(nvg, Theme.colors.map_label_text, 120)
+                nvgText(nvg, sx, sy, "?", nil)
+            end
         else
             local col = isCur  and Theme.colors.map_current
                      or isDest and Theme.colors.map_dest
@@ -574,6 +624,31 @@ local function drawIntelToggle(nvg)
             iy = iy + 22
         end
     end
+
+    -- 自动计划悬浮按钮（在情报区域下方）
+    local apY = by + bh + 6
+    if intelLayerVisible_ and #intels > 0 then
+        apY = apY + #intels * 22 + 4
+    end
+    local apW, apH = 96, 28
+    autoPlanBtn_.x = bx
+    autoPlanBtn_.y = apY
+    autoPlanBtn_.w = apW
+    autoPlanBtn_.h = apH
+
+    nvgBeginPath(nvg)
+    nvgRoundedRect(nvg, bx, apY, apW, apH, 14)
+    fc(nvg, Theme.colors.bg_secondary)
+    nvgFill(nvg)
+    sc(nvg, Theme.colors.accent, 100)
+    nvgStrokeWidth(nvg, 1)
+    nvgStroke(nvg)
+
+    nvgFontFaceId(nvg, cam.font)
+    nvgFontSize(nvg, 11)
+    nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+    fc(nvg, Theme.colors.accent)
+    nvgText(nvg, bx + apW / 2, apY + apH / 2, "⚙ 自动计划", nil)
 end
 
 -- ============================================================
@@ -897,6 +972,63 @@ local function drawMap(nvg, layout)
     drawGrid(nvg)
     drawEdges(nvg, known)
 
+    -- 绘制当前位置到可探索未知节点的虚线路径
+    local adjacentUnknowns = {}
+    local isTravellingNow = Flow.get_phase(state_) == Flow.Phase.TRAVELLING
+    if not isTravellingNow then
+        local unknowns_list = Graph.get_unknown_neighbors(current, state_)
+        for _, adj in ipairs(unknowns_list) do
+            adjacentUnknowns[adj.to] = true
+        end
+        local curNode = Graph.get_node(current)
+        if curNode then
+            for _, adj in ipairs(unknowns_list) do
+                local targetNode = Graph.get_node(adj.to)
+                if targetNode then
+                    local x1, y1 = w2s(curNode.x, curNode.y)
+                    local x2, y2 = w2s(targetNode.x, targetNode.y)
+                    local edge = adj.edge
+                    local pulse = 0.5 + 0.5 * math.abs(math.sin(time * 1.2))
+                    local alpha = math.floor(120 * pulse)
+
+                    -- 按边类型选颜色和虚线样式，与已知边风格一致
+                    if edge and edge.type == "main_road" then
+                        sc(nvg, Theme.colors.map_road, alpha)
+                        nvgStrokeWidth(nvg, 2.5)
+                        dashedLine(nvg, x1, y1, x2, y2, 8, 5)
+                    elseif edge and edge.type == "shortcut" then
+                        sc(nvg, Theme.colors.map_shortcut, alpha)
+                        nvgStrokeWidth(nvg, 2)
+                        dashedLine(nvg, x1, y1, x2, y2, 3, 5)
+                    else
+                        sc(nvg, Theme.colors.map_path, alpha)
+                        nvgStrokeWidth(nvg, 2)
+                        dashedLine(nvg, x1, y1, x2, y2, 6, 5)
+                    end
+
+                    -- 中点标签：耗时 + 危险标记
+                    if edge then
+                        local mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+                        nvgBeginPath(nvg)
+                        nvgRoundedRect(nvg, mx - 18, my - 8, 36, 16, 8)
+                        fc(nvg, Theme.colors.map_edge_label_bg, math.floor(180 * pulse))
+                        nvgFill(nvg)
+                        nvgFontFaceId(nvg, cam.font)
+                        nvgFontSize(nvg, 10)
+                        nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+                        fc(nvg, Theme.colors.map_label_text, alpha)
+                        nvgText(nvg, mx, my, edge.travel_time_sec .. "s", nil)
+                        if edge.danger == "danger" then
+                            fc(nvg, Theme.colors.danger, alpha)
+                            nvgFontSize(nvg, 12)
+                            nvgText(nvg, mx, my - 14, "⚠", nil)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     -- 路线高亮（在边之上、节点之下）
     local isTravelling = state_ and Flow.get_phase(state_) == Flow.Phase.TRAVELLING
     if isTravelling and state_.flow.route_plan then
@@ -910,7 +1042,7 @@ local function drawMap(nvg, layout)
         drawWaypoints(nvg, mapMode.waypoints)
     end
 
-    drawNodes(nvg, known, current, destSet, time)
+    drawNodes(nvg, known, current, destSet, time, adjacentUnknowns)
 
     -- 情报图层（在节点之上，裁剪区域内）
     drawIntelLayer(nvg, time)
@@ -1175,6 +1307,244 @@ end
 -- ============================================================
 -- 格式化秒数
 -- ============================================================
+-- ============================================================
+-- Modal 弹窗：未知节点探索
+-- ============================================================
+local function openUnknownNodeModal(nodeId)
+    if not modal_ or not state_ then return end
+    local node = Graph.get_node(nodeId)
+    if not node then return end
+    local current = state_.map.current_location
+    local edge = Graph.get_edge(current, nodeId)
+    if not edge then return end
+
+    -- 条件探索旗标检查
+    local flagLocked = false
+    if node.explore_flag then
+        local flags = state_.flags or {}
+        flagLocked = not flags[node.explore_flag]
+    end
+
+    local title = flagLocked and ("🔒 " .. node.name) or "❓ 未知区域"
+    modal_:SetTitle(title)
+    modal_:ClearContent()
+
+    if flagLocked then
+        modal_:AddContent(UI.Label {
+            text = "需要更多情报才能前往此区域",
+            fontSize = Theme.sizes.font_normal,
+            fontColor = Theme.colors.text_dim,
+            marginBottom = 8,
+        })
+    else
+        modal_:AddContent(UI.Label {
+            text = "前方是未探索的区域，是否前往探索？",
+            fontSize = Theme.sizes.font_normal,
+            fontColor = Theme.colors.text_secondary,
+            marginBottom = 8,
+        })
+    end
+
+    -- 路线信息
+    local fuelOk = state_.truck.fuel >= edge.fuel_cost
+    local dColor = DANGER_COLOR[edge.danger] or Theme.colors.text_dim
+
+    modal_:AddContent(UI.Panel {
+        width = "100%", padding = 10,
+        backgroundColor = Theme.colors.bg_secondary,
+        borderRadius = Theme.sizes.radius_small,
+        gap = 4,
+        children = {
+            UI.Panel {
+                width = "100%", flexDirection = "row",
+                justifyContent = "space-between",
+                children = {
+                    UI.Label {
+                        text = EDGE_LABEL[edge.type] or edge.type,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = Theme.colors.text_secondary,
+                    },
+                    UI.Label {
+                        text = edge.travel_time_sec .. "秒 · 燃料" .. edge.fuel_cost,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = Theme.colors.text_secondary,
+                    },
+                },
+            },
+            UI.Panel {
+                width = "100%", flexDirection = "row",
+                justifyContent = "space-between",
+                children = {
+                    UI.Label {
+                        text = "危险等级",
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = Theme.colors.text_dim,
+                    },
+                    UI.Label {
+                        text = DANGER_STR[edge.danger] or "?",
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = dColor,
+                    },
+                },
+            },
+        },
+    })
+
+    -- 燃料状态提示
+    if not fuelOk then
+        modal_:AddContent(UI.Label {
+            text = "⛽ 当前燃料 " .. math.floor(state_.truck.fuel) .. "%，需要 " .. edge.fuel_cost .. "%",
+            fontSize = Theme.sizes.font_small,
+            fontColor = Theme.colors.danger,
+            marginTop = 4,
+        })
+    end
+
+    -- 操作按钮
+    local canExplore = fuelOk and not flagLocked
+    modal_:AddContent(UI.Button {
+        text = flagLocked and "🔒 需要情报" or (fuelOk and "前往探索" or "燃料不足"),
+        variant = canExplore and "primary" or "secondary",
+        width = "100%", height = 40, marginTop = 8,
+        disabled = not canExplore,
+        onClick = function(self)
+            modal_:Close()
+            local ok, err = Flow.start_exploration(state_, nodeId)
+            if ok then
+                router_.navigate("home")
+            else
+                print("[Explore] " .. (err or "failed"))
+            end
+        end,
+    })
+
+    modal_:Open()
+end
+
+-- ============================================================
+-- Modal 弹窗：自动计划设置
+-- ============================================================
+local openAutoPlanModal  -- forward declaration
+openAutoPlanModal = function()
+    if not modal_ or not state_ then return end
+
+    -- 确保 auto_plan 存在（兼容旧存档）
+    if not state_.auto_plan then
+        state_.auto_plan = { refuel_threshold = 30, auto_accept_orders = false }
+    end
+    local ap = state_.auto_plan
+
+    modal_:SetSize("md")
+    modal_:SetTitle("⚙ 自动计划")
+    modal_:ClearContent()
+
+    modal_:AddContent(UI.Label {
+        text = "经过聚落时自动执行的操作",
+        fontSize = Theme.sizes.font_small,
+        fontColor = Theme.colors.text_dim,
+        marginBottom = 8,
+    })
+
+    -- ── 1. 自动补油设置 ──
+    -- 先创建 Label 实例以便在 Slider onChange 中直接引用
+    local fuelValueLabel = UI.Label {
+        text = ap.refuel_threshold > 0 and (ap.refuel_threshold .. "%") or "关闭",
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.accent,
+        width = 42,
+        textAlign = "right",
+    }
+
+    modal_:AddContent(UI.Panel {
+        width = "100%", padding = 10,
+        backgroundColor = Theme.colors.bg_secondary,
+        borderRadius = Theme.sizes.radius_small,
+        gap = 6, marginBottom = 8,
+        children = {
+            UI.Label {
+                text = "⛽ 自动补充燃料",
+                fontSize = Theme.sizes.font_normal,
+                fontColor = Theme.colors.text_primary,
+            },
+            UI.Label {
+                text = "油量低于设定值时，经过聚落自动补满",
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_dim,
+            },
+            UI.Panel {
+                width = "100%", flexDirection = "row",
+                alignItems = "center", gap = 8, marginTop = 4,
+                children = {
+                    UI.Slider {
+                        flex = 1, height = 28,
+                        min = 0, max = 80, step = 5,
+                        value = ap.refuel_threshold,
+                        onChange = function(self, v)
+                            local val = math.floor(v / 5 + 0.5) * 5
+                            ap.refuel_threshold = val
+                            fuelValueLabel:SetText(val > 0 and (val .. "%") or "关闭")
+                        end,
+                    },
+                    fuelValueLabel,
+                },
+            },
+        },
+    })
+
+    -- ── 2. 自动接单设置 ──
+    modal_:AddContent(UI.Panel {
+        width = "100%", padding = 10,
+        backgroundColor = Theme.colors.bg_secondary,
+        borderRadius = Theme.sizes.radius_small,
+        gap = 6,
+        children = {
+            UI.Label {
+                text = "📦 自动接取顺路单",
+                fontSize = Theme.sizes.font_normal,
+                fontColor = Theme.colors.text_primary,
+            },
+            UI.Label {
+                text = "经过聚落时自动接取运力允许的顺路订单",
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_dim,
+            },
+            UI.Panel {
+                width = "100%", flexDirection = "row",
+                alignItems = "center", justifyContent = "space-between",
+                marginTop = 4,
+                children = {
+                    UI.Label {
+                        text = "自动接单",
+                        fontSize = Theme.sizes.font_normal,
+                        fontColor = Theme.colors.text_secondary,
+                    },
+                    UI.Button {
+                        text = ap.auto_accept_orders and "已开启" or "已关闭",
+                        variant = ap.auto_accept_orders and "primary" or "secondary",
+                        width = 72, height = 32,
+                        onClick = function(self)
+                            ap.auto_accept_orders = not ap.auto_accept_orders
+                            openAutoPlanModal()
+                        end,
+                    },
+                },
+            },
+        },
+    })
+
+    modal_:AddContent(UI.Button {
+        text = "确定",
+        variant = "primary",
+        width = "100%", height = 40, marginTop = 12,
+        onClick = function(self)
+            modal_:SetSize("sm")
+            modal_:Close()
+        end,
+    })
+
+    modal_:Open()
+end
+
 local function formatTime(seconds)
     local m = math.floor(seconds / 60)
     local s = seconds % 60
@@ -1210,13 +1580,22 @@ rebuildPanel = function()
 
     if mapMode.state == MapState.ROUTE_PREVIEW then
         local plan = mapMode.activePlan
-        local targetNode = Graph.get_node(mapMode.target)
-        local targetName = targetNode and targetNode.name or mapMode.target or "?"
 
-        -- 标题行
-        local titleText = isTravelling
-            and ("🚚 改道 → " .. targetName)
-            or ("目标: " .. targetName)
+        -- 标题行（支持多目的地）
+        local titleText
+        if mapMode.destList and #mapMode.destList > 1 then
+            local names = {}
+            for _, d in ipairs(mapMode.destList) do
+                table.insert(names, Graph.get_node_name(d))
+            end
+            titleText = "配送: " .. table.concat(names, " → ")
+        else
+            local targetNode = Graph.get_node(mapMode.target)
+            local targetName = targetNode and targetNode.name or mapMode.target or "?"
+            titleText = isTravelling
+                and ("🚚 改道 → " .. targetName)
+                or ("目标: " .. targetName)
+        end
         routePanel_:AddChild(UI.Panel {
             width = "100%", flexDirection = "row",
             justifyContent = "space-between", alignItems = "center",
@@ -1706,7 +2085,40 @@ enterRoutePreview = function(nodeId)
     mapMode.activePlan = mapMode.plans.fastest
     mapMode.waypoints = {}
     mapMode.manualPlan = nil
+    mapMode.destList = nil
     cam.selected = nodeId
+    rebuildPanel()
+end
+
+--- 从订单页进入的路线规划（支持多目的地）
+local enterOrderRoutePreview = function()
+    local destSet = OrderBook.get_destination_set(state_)
+    local destList = {}
+    for d, _ in pairs(destSet) do table.insert(destList, d) end
+    if #destList == 0 then return end
+
+    -- 单目的地：复用标准路线预览
+    if #destList == 1 then
+        mapMode.destList = destList
+        enterRoutePreview(destList[1])
+        mapMode.destList = destList
+        return
+    end
+
+    -- 多目的地：为每种策略生成多点串联路线
+    mapMode.state = MapState.ROUTE_PREVIEW
+    mapMode.target = destList[1]
+    mapMode.strategy = "fastest"
+    mapMode.destList = destList
+    mapMode.plans = {
+        fastest  = RoutePlanner.auto_plan_multi(state_, destList, "fastest"),
+        safest   = RoutePlanner.auto_plan_multi(state_, destList, "safest"),
+        balanced = RoutePlanner.auto_plan_multi(state_, destList, "balanced"),
+    }
+    mapMode.activePlan = mapMode.plans.fastest
+    mapMode.waypoints = {}
+    mapMode.manualPlan = nil
+    cam.selected = nil
     rebuildPanel()
 end
 
@@ -1746,6 +2158,7 @@ exitToBase = function()
     mapMode.activePlan = nil
     mapMode.waypoints = {}
     mapMode.manualPlan = nil
+    mapMode.destList = nil
     cam.selected = nil
     rebuildPanel()
 end
@@ -1820,17 +2233,31 @@ local function handleInput(dt)
             return
         end
 
+        -- 自动计划按钮点击判定
+        local ab = autoPlanBtn_
+        if cx >= ab.x and cx <= ab.x + ab.w and cy >= ab.y and cy <= ab.y + ab.h then
+            openAutoPlanModal()
+            inp.wasDown = isDown
+            return
+        end
+
         if inMapArea(cx, cy) then
             local known = state_.map.known_nodes or {}
             local nodeId = findNodeAt(cx, cy, known)
 
             if mapMode.state == MapState.BROWSE then
-                -- 浏览模式：点击节点打开弹窗
+                -- 浏览模式：点击已知节点打开弹窗，点击可探索未知节点打开探索弹窗
                 if nodeId then
                     cam.selected = nodeId
                     openNodeModal(nodeId)
                 else
-                    cam.selected = nil
+                    -- 检查是否点击了相邻的未知节点
+                    local unknownId = findAdjacentUnknownNodeAt(cx, cy)
+                    if unknownId then
+                        openUnknownNodeModal(unknownId)
+                    else
+                        cam.selected = nil
+                    end
                 end
 
             elseif mapMode.state == MapState.ROUTE_PREVIEW then
@@ -1918,6 +2345,7 @@ function M.create(state, params, r)
     mapMode.activePlan = nil
     mapMode.waypoints  = {}
     mapMode.manualPlan = nil
+    mapMode.destList   = nil
 
     -- 预估画布尺寸（避免首帧 cam 值为默认值导致输入失效）
     local uiScale = UI.GetScale()
@@ -1947,6 +2375,7 @@ function M.create(state, params, r)
         closeOnEscape = true,
         onClose = function(self)
             cam.selected = nil
+            self:SetSize("sm")
         end,
     }
 
@@ -1974,6 +2403,11 @@ function M.create(state, params, r)
         borderColor = Theme.colors.border,
         gap = 0,
     }
+
+    -- 如果从订单页带着 route_plan 模式进入，自动进入路线规划
+    if params and params.mode == "route_plan" then
+        enterOrderRoutePreview()
+    end
 
     return UI.Panel {
         id = "mapScreen",

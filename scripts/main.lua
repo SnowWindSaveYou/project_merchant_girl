@@ -38,6 +38,7 @@ local ScreenIntel       = require("ui/screen_intel")
 local ScreenBlackMarket = require("ui/screen_black_market")
 local DialoguePool      = require("narrative/dialogue_pool")
 local NpcDialoguePool   = require("narrative/npc_dialogue_pool")
+local Flags             = require("core/flags")
 local WanderingNpc      = require("narrative/wandering_npc")
 local Farm              = require("settlement/farm")
 local Intel             = require("settlement/intel")
@@ -243,7 +244,17 @@ function Start()
         if phase ~= Flow.Phase.TRAVELLING then
             gameState.flow.phase = Flow.Phase.IDLE
         end
-        Router.navigate("home")
+        -- 序章未完成时自动触发（新游戏或中途退出后重进）
+        if not Flags.has(gameState, "sd_prologue_01_done") then
+            local prologue = DialoguePool.get("SD_PROLOGUE_01")
+            if prologue then
+                Router.navigate("campfire", { dialogue = prologue, consumed = false })
+            else
+                Router.navigate("home")
+            end
+        else
+            Router.navigate("home")
+        end
     end
 
     -- 5. 主循环
