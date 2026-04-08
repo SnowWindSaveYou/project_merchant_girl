@@ -9,6 +9,8 @@ local Pricing             = require("economy/pricing")
 local Goodwill            = require("settlement/goodwill")
 local SettlementEventPool = require("events/settlement_event_pool")
 local WanderingNpc        = require("narrative/wandering_npc")
+local Chatter             = require("travel/chatter")
+local Radio               = require("travel/radio")
 
 local M = {}
 
@@ -64,6 +66,8 @@ function M.start_travel(state, plan)
     state.flow.phase = M.Phase.TRAVELLING
     state.flow.route_plan = plan
     state.flow.event_timer = EventScheduler.new_timer()
+    state.flow.chatter = Chatter.init()
+    state.flow.radio   = Radio.init()
 
     return true
 end
@@ -221,6 +225,8 @@ function M.start_exploration(state, target_node_id)
     state.flow.phase       = M.Phase.TRAVELLING
     state.flow.route_plan  = plan
     state.flow.event_timer = EventScheduler.new_timer()
+    state.flow.chatter     = Chatter.init()
+    state.flow.radio       = Radio.init()
 
     return true
 end
@@ -280,6 +286,8 @@ function M.finish_trip(state)
     state.flow.phase = M.Phase.SUMMARY
     state.flow.route_plan = nil
     state.flow.event_timer = nil
+    state.flow.chatter = nil
+    state.flow.radio   = nil
 
     return result
 end

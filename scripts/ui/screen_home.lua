@@ -16,10 +16,18 @@ local NpcManager          = require("narrative/npc_manager")
 local SettlementEventPool = require("events/settlement_event_pool")
 local WanderingNpc        = require("narrative/wandering_npc")
 local QuestLog            = require("narrative/quest_log")
+local Chatter             = require("travel/chatter")
+local Radio               = require("travel/radio")
 
 local M = {}
 ---@type table
 local router = nil
+
+-- 行驶中状态追踪（用于检测变化触发 UI 重建）
+local _prevChatterId  = nil
+local _prevRadioOn    = nil
+local _prevRadioCh    = nil
+local _prevBroadcastId = nil
 
 -- 地图节点 → 资源点探索房间 ID（Phase 06 连接）
 local NODE_EXPLORE_ROOM = {
@@ -52,6 +60,23 @@ function M.create(state, params, r)
     local location     = state.map.current_location
     local curNode      = Graph.get_node(location)
 
+    -- late-init：兼容老存档（行驶中加载但 flow 里没有 chatter/radio）
+    if isTravelling then
+        if not state.flow.chatter then
+            state.flow.chatter = Chatter.init()
+        end
+        if not state.flow.radio then
+            state.flow.radio = Radio.init()
+        end
+        -- 同步追踪变量到当前真实状态，避免首帧误判为"变化"导致无限重建
+        local initChat = Chatter.get_current(state)
+        _prevChatterId   = initChat and initChat.id or nil
+        _prevRadioOn     = Radio.is_on(state)
+        _prevRadioCh     = Radio.get_channel(state)
+        local initBr = Radio.get_current(state)
+        _prevBroadcastId = initBr and initBr.id or nil
+    end
+
     if isTravelling then
         return createTravelView(state)
     else
@@ -71,7 +96,37 @@ function M.update(state, dt, r)
     if not root then return end
 
     local progress = RoutePlanner.get_progress(plan)
+    local seg = RoutePlanner.get_current_segment(plan)
 
+    -- ── 驱动 Chatter / Radio ──
+    Chatter.update(state, dt, progress, seg)
+    Radio.update(state, dt)
+
+    -- ── 检测 Chatter / Radio 状态变化 → 重建 UI ──
+    local curChat = Chatter.get_current(state)
+    local chatId  = curChat and curChat.id or nil
+    local radioOn = Radio.is_on(state)
+    local radioCh = Radio.get_channel(state)
+    local curBroadcast = Radio.get_current(state)
+    local broadcastId  = curBroadcast and curBroadcast.id or nil
+
+    local needRebuild = false
+    if chatId ~= _prevChatterId then needRebuild = true end
+    if radioOn ~= _prevRadioOn then needRebuild = true end
+    if radioCh ~= _prevRadioCh then needRebuild = true end
+    if broadcastId ~= _prevBroadcastId then needRebuild = true end
+
+    _prevChatterId  = chatId
+    _prevRadioOn    = radioOn
+    _prevRadioCh    = radioCh
+    _prevBroadcastId = broadcastId
+
+    if needRebuild then
+        r.navigate("home")
+        return
+    end
+
+    -- ── 常规 UI 刷新（进度条 / 时间 / 路段） ──
     local bar = root:FindById("travelProgress")
     if bar then bar:SetValue(progress) end
 
@@ -79,7 +134,6 @@ function M.update(state, dt, r)
     if pct then pct:SetText(math.floor(progress * 100) .. "%") end
 
     -- 剩余时间
-    local seg = RoutePlanner.get_current_segment(plan)
     local remaining = 0
     if seg then
         remaining = math.max(0, seg.time_sec - (plan.segment_elapsed or 0))
@@ -548,6 +602,15 @@ function createTravelView(state)
         },
     })
 
+    -- ── 车内日常对话气泡 ──
+    local chatterWidget = createChatterBubble(state)
+    if chatterWidget then
+        table.insert(contentChildren, chatterWidget)
+    end
+
+    -- ── 收音机面板 ──
+    table.insert(contentChildren, createRadioPanel(state))
+
     -- 活跃订单列表
     if #activeOrders > 0 then
         table.insert(contentChildren, UI.Label {
@@ -876,6 +939,159 @@ function createBacklogWarning(info)
                 fontColor = Theme.colors.danger,
             },
         },
+    }
+end
+
+-- ============================================================
+-- 车内日常对话气泡（行驶中）
+-- 没有对话时返回 nil，不占布局空间
+-- ============================================================
+function createChatterBubble(state)
+    local cur = Chatter.get_current(state)
+    if not cur then return nil end
+
+    local speakerNames = { linli = "林砾", taoxia = "陶夏" }
+    local speakerColors = {
+        linli  = { 80, 140, 200, 255 },
+        taoxia = { 200, 130, 80, 255 },
+    }
+    local name  = speakerNames[cur.speaker] or cur.speaker
+    local color = speakerColors[cur.speaker] or Theme.colors.accent
+
+    local bubbleChildren = {
+        -- 说话人
+        UI.Label {
+            text = name,
+            fontSize = Theme.sizes.font_small,
+            fontColor = color,
+        },
+        -- 对话内容
+        UI.Label {
+            text = cur.text,
+            fontSize = Theme.sizes.font_normal,
+            fontColor = Theme.colors.text_primary,
+        },
+    }
+
+    -- 可回应的对话：显示回应按钮
+    if cur.response then
+        table.insert(bubbleChildren, UI.Button {
+            text = cur.response.label or "回应",
+            variant = "secondary",
+            height = 30,
+            fontSize = Theme.sizes.font_small,
+            onClick = function(self)
+                Chatter.respond(state)
+            end,
+        })
+    end
+
+    return UI.Panel {
+        width = "100%", padding = 10,
+        backgroundColor = { 32, 38, 48, 230 },
+        borderRadius = Theme.sizes.radius,
+        borderWidth = 1, borderColor = color,
+        gap = 4,
+        children = bubbleChildren,
+    }
+end
+
+-- ============================================================
+-- 收音机面板（行驶中始终显示，可开关）
+-- ============================================================
+function createRadioPanel(state)
+    local isOn    = Radio.is_on(state)
+    local channel = Radio.get_channel(state)
+    local cur     = Radio.get_current(state)
+
+    local radioChildren = {}
+
+    -- 顶栏：标题 + 开关按钮
+    table.insert(radioChildren, UI.Panel {
+        width = "100%", flexDirection = "row",
+        justifyContent = "space-between", alignItems = "center",
+        children = {
+            UI.Label {
+                text = "📻 收音机",
+                fontSize = Theme.sizes.font_small,
+                fontColor = isOn and Theme.colors.info or Theme.colors.text_dim,
+            },
+            UI.Button {
+                text = isOn and "关闭" or "开启",
+                variant = isOn and "secondary" or "primary",
+                height = 28,
+                fontSize = Theme.sizes.font_tiny,
+                onClick = function(self)
+                    Radio.toggle(state)
+                end,
+            },
+        },
+    })
+
+    if isOn then
+        -- 频道切换行
+        local channelButtons = {}
+        for _, ch in ipairs(Radio.CHANNELS) do
+            local isActive = (ch == channel)
+            table.insert(channelButtons, UI.Button {
+                text = Radio.CHANNEL_NAMES[ch] or ch,
+                variant = isActive and "primary" or "secondary",
+                height = 26,
+                fontSize = Theme.sizes.font_tiny,
+                flexGrow = 1,
+                onClick = function(self)
+                    Radio.switch_channel(state, ch)
+                end,
+            })
+        end
+        table.insert(radioChildren, UI.Panel {
+            width = "100%", flexDirection = "row", gap = 6,
+            children = channelButtons,
+        })
+
+        -- 当前播报内容
+        if cur then
+            table.insert(radioChildren, UI.Label {
+                text = cur.text,
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_primary,
+            })
+            -- 有奖励且未领取
+            if cur.reward and not cur.reward_claimed then
+                local rewardLabel = "领取"
+                if cur.reward.type == "credits" then
+                    rewardLabel = "领取 +$" .. tostring(cur.reward.value or 0)
+                elseif cur.reward.type == "info" then
+                    rewardLabel = "记下情报"
+                end
+                table.insert(radioChildren, UI.Button {
+                    text = rewardLabel,
+                    variant = "primary",
+                    height = 28,
+                    fontSize = Theme.sizes.font_tiny,
+                    onClick = function(self)
+                        Radio.claim_reward(state)
+                    end,
+                })
+            end
+        else
+            table.insert(radioChildren, UI.Label {
+                text = "...",
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_dim,
+                textAlign = "center",
+            })
+        end
+    end
+
+    return UI.Panel {
+        width = "100%", padding = 10,
+        backgroundColor = isOn and { 28, 36, 28, 220 } or { 36, 36, 36, 180 },
+        borderRadius = Theme.sizes.radius,
+        borderWidth = 1,
+        borderColor = isOn and { 60, 100, 60, 200 } or Theme.colors.border,
+        gap = 6,
+        children = radioChildren,
     }
 end
 

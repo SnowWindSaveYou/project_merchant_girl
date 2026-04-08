@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "type": "radio_broadcasts",
+    "version": "0.1.0",
+    "description": "收音机广播内容池。三个频道：mingsha（鸣砂播报）、settlement（聚落广播）、mystery（神秘信号）。"
+  },
+  "broadcasts": {
+    "mingsha": [
+      {
+        "id": "RADIO_MS_001",
+        "text": "这里是鸣砂，正在为旅途中的各位播报。今天的风向偏南，适合北行的朋友们。",
+        "weight": 50,
+        "duration": 10,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_002",
+        "text": "提醒各位行商：近期东段公路有落石报告，建议减速通过或绕行。",
+        "weight": 50,
+        "duration": 10,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_003",
+        "text": "今天给大家讲个故事。据说大灾变之前，人们可以用一个小盒子跟世界上任何人说话。他们管那个叫'手机'。",
+        "weight": 45,
+        "duration": 12,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_004",
+        "text": "收到一位匿名听众来信：'谢谢鸣砂，路上听到你的声音就觉得没那么孤单了。'……嗯，谢谢你。我也是。",
+        "weight": 40,
+        "duration": 12,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_005",
+        "text": "经过验证的情报：温室社区本周净水产量提高了两成。如果你手头有多余的零件，这是个好时机。",
+        "weight": 45,
+        "duration": 11,
+        "reward": { "type": "info", "value": "greenhouse_water_surplus", "desc": "获得情报：温室净水充裕" }
+      },
+      {
+        "id": "RADIO_MS_006",
+        "text": "有人在第七号废弃加油站附近看到了野鹿群。大灾变之后还有野鹿……这世界总还有些好东西。",
+        "weight": 40,
+        "duration": 11,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_007",
+        "text": "给跑商人的生存小知识：如果车辆过热，别急着打开散热盖。先熄火等十分钟，不然蒸汽会烫伤手。",
+        "weight": 45,
+        "duration": 12,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_008",
+        "text": "这里是鸣砂。祝每一位在路上的人，平安到达目的地。",
+        "weight": 50,
+        "duration": 8,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_009",
+        "text": "独家情报：北穹塔台最近在测试新型电池，据说续航是旧款的三倍。有兴趣的行商可以去看看。",
+        "weight": 35,
+        "duration": 11,
+        "reward": { "type": "info", "value": "tower_new_battery", "desc": "获得情报：塔台新电池" }
+      },
+      {
+        "id": "RADIO_MS_010",
+        "text": "今天的音乐时间。可惜我只有一张唱片，所以……又是这首。希望大家不嫌烦。",
+        "weight": 40,
+        "duration": 9,
+        "reward": null
+      }
+    ],
+    "settlement": [
+      {
+        "id": "RADIO_ST_001",
+        "text": "【温室社区广播】本周蔬菜产量稳定，欢迎各方行商前来采购。重复一遍——",
+        "weight": 50,
+        "duration": 10,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_002",
+        "text": "【北穹塔台通告】本月电力配额紧张，非必要交易请改至下月。感谢配合。",
+        "weight": 45,
+        "duration": 10,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_003",
+        "text": "【废墟营地通告】营地西区本周开放夜市。旧时代杂物、手工武器、情报交换，价高者得。",
+        "weight": 45,
+        "duration": 11,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_004",
+        "text": "【钟楼书院布告】本院近期征收旧书籍与胶卷，以物易物，优先交换医药。",
+        "weight": 45,
+        "duration": 10,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_005",
+        "text": "【温室社区广播】紧急通知：近期有人冒充行商混入社区，请各方提高警惕，核实证件。",
+        "weight": 40,
+        "duration": 11,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_006",
+        "text": "【北穹塔台通告】塔台工程部招募机械维修技工。提供食宿，报酬优厚。有意者请至三层接待处。",
+        "weight": 40,
+        "duration": 11,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_007",
+        "text": "【聚落联合公告】行商燃油补贴计划试行中，在任意聚落加油可享八折。数量有限，先到先得。",
+        "weight": 35,
+        "duration": 11,
+        "reward": { "type": "credits", "value": 15, "desc": "燃油补贴 +15 信用" }
+      },
+      {
+        "id": "RADIO_ST_008",
+        "text": "【废墟营地通告】捡到一只灰猫，花纹很特别。失主请到营地东口认领。不是失主也行，来摸摸也可以。",
+        "weight": 40,
+        "duration": 10,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_009",
+        "text": "【温室社区广播】即日起，对于信誉良好的行商提供优先装卸服务。感谢各位长期支持。",
+        "weight": 40,
+        "duration": 10,
+        "reward": null
+      }
+    ],
+    "mystery": [
+      {
+        "id": "RADIO_MY_001",
+        "text": "……嗞嗞……37……嗞嗞……北纬……嗞……听到的人……嗞嗞嗞……",
+        "weight": 50,
+        "duration": 8,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MY_002",
+        "text": "……（很轻的哼歌声）……嗞嗞……（沉默）……",
+        "weight": 45,
+        "duration": 7,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MY_003",
+        "text": "……重复……嗞……云层下方……嗞嗞……还有人活着……嗞……坐标……嗞嗞嗞……",
+        "weight": 40,
+        "duration": 9,
+        "reward": { "type": "flag", "value": "heard_mystery_signal_01", "desc": "记录了一段神秘坐标" }
+      },
+      {
+        "id": "RADIO_MY_004",
+        "text": "……嗞嗞嗞……（长时间静电噪音）……嗞……",
+        "weight": 55,
+        "duration": 6,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MY_005",
+        "text": "……不要……嗞嗞……往南走……嗞……那边已经……嗞嗞嗞……",
+        "weight": 40,
+        "duration": 8,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MY_006",
+        "text": "……嗞……频率……嗞嗞……147.3……嗞……能收到这个信号说明你的天线不错……嗞嗞……",
+        "weight": 35,
+        "duration": 10,
+        "reward": { "type": "credits", "value": 25, "desc": "信号解码奖励 +25 信用" }
+      },
+      {
+        "id": "RADIO_MY_007",
+        "text": "……（有节奏的敲击声，像莫尔斯电码）……嗞……嗞……",
+        "weight": 45,
+        "duration": 7,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MY_008",
+        "text": "……嗞嗞……如果有人……嗞……听到这段话……嗞嗞……我们在第九区……还在等……嗞嗞嗞……",
+        "weight": 35,
+        "duration": 10,
+        "reward": { "type": "flag", "value": "heard_district9_signal", "desc": "记录了第九区求援信号" }
+      }
+    ]
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "meta": {
+    "type": "chatter",
+    "version": "0.1.0",
+    "description": "行驶中车内日常对话池。speaker: taoxia/linli; response 可选。"
+  },
+  "dialogues": [
+    {
+      "id": "CHAT_001",
+      "speaker": "taoxia",
+      "text": "路上好安静啊……以前这条路上还能碰到流浪商队的。",
+      "weight": 50,
+      "duration": 8,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "现在只剩我们了。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_002",
+      "speaker": "taoxia",
+      "text": "你说，温室社区的番茄罐头为什么那么受欢迎？明明味道一般啊。",
+      "weight": 50,
+      "duration": 8,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_003",
+      "speaker": "linli",
+      "text": "……油压表刚才跳了一下。可能是路面震动，先记一下。",
+      "weight": 45,
+      "duration": 7,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_004",
+      "speaker": "taoxia",
+      "text": "嘿嘿，我刚才在货箱里发现一块旧巧克力包装纸。闻起来还有一点点甜味呢。",
+      "weight": 45,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "别乱翻货物啊。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_005",
+      "speaker": "linli",
+      "text": "这段路的路基还算结实。以前应该是省道。",
+      "weight": 40,
+      "duration": 7,
+      "edge_types": ["main_road", "highway"],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_006",
+      "speaker": "taoxia",
+      "text": "总觉得废墟游民营地的人看我们的眼神怪怪的……不过至少生意做得成。",
+      "weight": 40,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_007",
+      "speaker": "taoxia",
+      "text": "林砾，你有没有想过以后不跑商了做什么？",
+      "weight": 35,
+      "duration": 8,
+      "edge_types": [],
+      "progress_range": [0.2, 0.8],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "没想过。车能跑就继续跑。",
+        "effect": { "relation_linli": 1 }
+      }
+    },
+    {
+      "id": "CHAT_008",
+      "speaker": "linli",
+      "text": "……天色不太好。希望不是辐射云。",
+      "weight": 40,
+      "duration": 7,
+      "edge_types": ["shortcut", "hazard"],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_009",
+      "speaker": "taoxia",
+      "text": "出发啦！今天的货应该挺好卖的。",
+      "weight": 60,
+      "duration": 6,
+      "edge_types": [],
+      "progress_range": [0, 0.15],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_010",
+      "speaker": "taoxia",
+      "text": "快到了吧？我已经开始想象卸完货之后吃什么了。",
+      "weight": 55,
+      "duration": 8,
+      "edge_types": [],
+      "progress_range": [0.8, 1.0],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "先把货交了再说。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_011",
+      "speaker": "linli",
+      "text": "轮胎磨损比预期快了一点……下次该换备件了。",
+      "weight": 40,
+      "duration": 7,
+      "edge_types": [],
+      "progress_range": [0.4, 0.9],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_012",
+      "speaker": "taoxia",
+      "text": "你知道吗，钟楼那边有个老爷爷，收集了整整一墙的旧唱片。下次去了我想再听听。",
+      "weight": 35,
+      "duration": 10,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_013",
+      "speaker": "linli",
+      "text": "陶夏，别把脚搁在仪表台上。",
+      "weight": 45,
+      "duration": 6,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "好嘛好嘛~",
+        "effect": { "relation_linli": 1, "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_014",
+      "speaker": "taoxia",
+      "text": "这条路两边都是旧楼，感觉随时会塌下来……开快点吧？",
+      "weight": 45,
+      "duration": 8,
+      "edge_types": ["shortcut", "hazard"],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_015",
+      "speaker": "taoxia",
+      "text": "哇，刚才路过的那片废墟好大……以前是个商场吗？",
+      "weight": 40,
+      "duration": 8,
+      "edge_types": [],
+      "progress_range": [0.3, 0.7],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_016",
+      "speaker": "linli",
+      "text": "走一半了。油耗正常。",
+      "weight": 50,
+      "duration": 5,
+      "edge_types": [],
+      "progress_range": [0.45, 0.55],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_017",
+      "speaker": "taoxia",
+      "text": "林砾你困不困？要不要我讲个笑话？……算了我讲的笑话你从来不笑。",
+      "weight": 40,
+      "duration": 10,
+      "edge_types": [],
+      "progress_range": [0.2, 0.8],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "讲吧。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_018",
+      "speaker": "linli",
+      "text": "到站前把送货单再对一遍。别又搞错了。",
+      "weight": 50,
+      "duration": 7,
+      "edge_types": [],
+      "progress_range": [0.85, 1.0],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    }
+  ]
+}
