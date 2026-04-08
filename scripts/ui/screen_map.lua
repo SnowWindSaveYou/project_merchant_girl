@@ -68,6 +68,7 @@ local NODE_TYPE_LABEL = {
 -- 常量
 -- ============================================================
 local NODE_R        = 16      -- 节点圆半径
+local PIN_H         = 1.4     -- pin 头部圆心相对于尖端的偏移系数
 local HIT_R_SQ      = 26 * 26 -- 点击判定半径平方
 local DRAG_THRESH   = 5       -- 拖拽触发阈值(px)
 local ZOOM_MIN      = 0.6
@@ -172,7 +173,9 @@ local function findNodeAt(lx, ly, known)
     for _, node in ipairs(Graph.NODES) do
         if known[node.id] then
             local sx, sy = w2s(node.x, node.y)
-            local dx, dy = lx - sx, ly - sy
+            -- 检测中心对准 pin 头部圆心
+            local hcy = sy - NODE_R * PIN_H
+            local dx, dy = lx - sx, ly - hcy
             local dSq = dx * dx + dy * dy
             if dSq < bestDSq then
                 bestDSq = dSq
@@ -189,11 +192,13 @@ local function findAdjacentUnknownNodeAt(lx, ly)
     local current = state_.map.current_location
     local unknowns = Graph.get_unknown_neighbors(current, state_)
     local bestId, bestDSq = nil, HIT_R_SQ
+    local adjR = NODE_R * 0.65
     for _, adj in ipairs(unknowns) do
         local node = Graph.get_node(adj.to)
         if node then
             local sx, sy = w2s(node.x, node.y)
-            local dx, dy = lx - sx, ly - sy
+            local hcy = sy - adjR * PIN_H
+            local dx, dy = lx - sx, ly - hcy
             local dSq = dx * dx + dy * dy
             if dSq < bestDSq then
                 bestDSq = dSq
@@ -286,6 +291,32 @@ end
 -- ============================================================
 -- 绘制：节点
 -- ============================================================
+--- 绘制 pin（地图定位标记）形状路径——水滴形
+--- cx, cy 是 pin 尖端的位置，r 是头部圆的半径
+local function pinPath(nvg, cx, cy, r)
+    local headCY = cy - r * PIN_H  -- 头部圆心
+
+    nvgBeginPath(nvg)
+    nvgMoveTo(nvg, cx, cy)  -- 尖端
+
+    -- 右侧贝塞尔曲线：尖端 → 头部右侧（顺滑过渡）
+    nvgBezierTo(nvg,
+        cx + r * 0.4,  cy - r * 0.35,     -- cp1
+        cx + r,        headCY + r * 0.45,  -- cp2
+        cx + r,        headCY)             -- 到达圆的 3 点钟方向
+
+    -- 头部上半圆弧：右 → 上 → 左
+    nvgArc(nvg, cx, headCY, r, 0, math.pi, NVG_CCW)
+
+    -- 左侧贝塞尔曲线：头部左侧 → 尖端（顺滑过渡）
+    nvgBezierTo(nvg,
+        cx - r,        headCY + r * 0.45,
+        cx - r * 0.4,  cy - r * 0.35,
+        cx, cy)
+
+    nvgClosePath(nvg)
+end
+
 local function drawNodes(nvg, known, current, destSet, time, adjacentUnknowns)
     for _, node in ipairs(Graph.NODES) do
         local sx, sy = w2s(node.x, node.y)
@@ -297,110 +328,132 @@ local function drawNodes(nvg, known, current, destSet, time, adjacentUnknowns)
         if not isKnown then
             local isAdjacent = adjacentUnknowns and adjacentUnknowns[node.id]
             if isAdjacent then
-                -- 可探索未知节点：更大、脉冲光环、可点击
+                -- 可探索未知节点：pin 样式、脉冲光环
                 local pulse = 0.4 + 0.6 * math.abs(math.sin(time * 1.5))
+                local adjR = NODE_R * 0.65
                 -- 呼吸光环
-                nvgBeginPath(nvg)
-                nvgCircle(nvg, sx, sy, NODE_R * 0.85 + 3 * math.sin(time * 1.5))
+                pinPath(nvg, sx, sy, adjR + 3 * math.sin(time * 1.5))
                 fc(nvg, Theme.colors.warning, math.floor(35 * pulse))
                 nvgFill(nvg)
-                -- 节点圆
-                nvgBeginPath(nvg)
-                nvgCircle(nvg, sx, sy, NODE_R * 0.75)
+                -- pin 本体
+                pinPath(nvg, sx, sy, adjR)
                 fc(nvg, { 55, 48, 30, 200 })
                 nvgFill(nvg)
                 sc(nvg, Theme.colors.warning, math.floor(160 * pulse))
                 nvgStrokeWidth(nvg, 1.5)
                 nvgStroke(nvg)
-                -- 问号
+                -- 问号（画在圆心位置）
+                local headCY = sy - adjR * PIN_H
                 nvgFontFaceId(nvg, cam.font)
-                nvgFontSize(nvg, 14)
+                nvgFontSize(nvg, 13)
                 nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
                 fc(nvg, Theme.colors.warning, 220)
-                nvgText(nvg, sx, sy, "?", nil)
+                nvgText(nvg, sx, headCY, "?", nil)
             else
-                -- 远处未知节点：柔和小圆 + 问号
-                nvgBeginPath(nvg)
-                nvgCircle(nvg, sx, sy, NODE_R * 0.55)
+                -- 远处未知节点：小 pin + 问号
+                local smallR = NODE_R * 0.4
+                pinPath(nvg, sx, sy, smallR)
                 fc(nvg, Theme.colors.map_unknown)
                 nvgFill(nvg)
+                local headCY = sy - smallR * PIN_H
                 nvgFontFaceId(nvg, cam.font)
-                nvgFontSize(nvg, 11)
+                nvgFontSize(nvg, 10)
                 nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
                 fc(nvg, Theme.colors.map_label_text, 120)
-                nvgText(nvg, sx, sy, "?", nil)
+                nvgText(nvg, sx, headCY, "?", nil)
             end
         else
-            local col = isCur  and Theme.colors.map_current
-                     or isDest and Theme.colors.map_dest
-                     or Theme.colors.map_node
+            -- 当前位置：红色、放大、浮动
+            local pinR = NODE_R
+            local pinY = sy  -- pin 尖端 y
+            local col
 
-            -- 脉冲光环（当前位置动态呼吸效果）
             if isCur then
-                local pulse = 0.4 + 0.6 * math.abs(math.sin(time * 1.8))
-                local pr = NODE_R + 6 + 3 * math.sin(time * 1.8)
+                col = { 220, 50, 50, 255 }  -- 红色
+                pinR = NODE_R * 1.35          -- 放大
+                -- 微微呼吸浮动（向上漂移，负值=上移）
+                local floatOff = -(math.sin(time * 2.0) * 0.5 + 0.5) * 4.0
+                pinY = sy + floatOff
+            elseif isDest then
+                col = Theme.colors.map_dest
+            else
+                col = Theme.colors.map_node
+            end
+
+            local headCY = pinY - pinR * PIN_H  -- pin 头部圆心
+
+            -- 投影（当前位置浮动时显示地面阴影，浮得越高阴影越淡越小）
+            if isCur then
+                local lift = (math.sin(time * 2.0) * 0.5 + 0.5)  -- 0~1, 1=最高
+                local shadowAlpha = 45 - 15 * lift
+                local shadowScale = 1.0 - 0.2 * lift
                 nvgBeginPath(nvg)
-                nvgCircle(nvg, sx, sy, pr)
-                fc(nvg, col, math.floor(45 * pulse))
-                nvgFill(nvg)
-            elseif isDest or isSel then
-                nvgBeginPath(nvg)
-                nvgCircle(nvg, sx, sy, NODE_R + 5)
-                fc(nvg, col, 45)
+                nvgEllipse(nvg, sx, sy + 2, pinR * 0.6 * shadowScale, pinR * 0.18 * shadowScale)
+                fc(nvg, { 0, 0, 0, math.floor(shadowAlpha) })
                 nvgFill(nvg)
             end
 
-            -- 选中圈
+            -- 脉冲光环
+            if isCur then
+                local pulse = 0.4 + 0.6 * math.abs(math.sin(time * 1.8))
+                pinPath(nvg, sx, pinY, pinR + 4 + 2 * math.sin(time * 1.8))
+                fc(nvg, col, math.floor(40 * pulse))
+                nvgFill(nvg)
+            elseif isDest or isSel then
+                pinPath(nvg, sx, pinY, pinR + 4)
+                fc(nvg, col, 40)
+                nvgFill(nvg)
+            end
+
+            -- 选中描边
             if isSel then
-                nvgBeginPath(nvg)
-                nvgCircle(nvg, sx, sy, NODE_R + 3)
+                pinPath(nvg, sx, pinY, pinR + 2)
                 sc(nvg, Theme.colors.text_primary, 170)
                 nvgStrokeWidth(nvg, 1.5)
                 nvgStroke(nvg)
             end
 
-            -- 节点底圆（米白衬底 + 深色描边）
-            nvgBeginPath(nvg)
-            nvgCircle(nvg, sx, sy, NODE_R)
+            -- pin 本体（填充 + 描边）
+            pinPath(nvg, sx, pinY, pinR)
             fc(nvg, Theme.colors.map_node_fill)
             nvgFill(nvg)
             sc(nvg, col, 220)
             nvgStrokeWidth(nvg, 2)
             nvgStroke(nvg)
 
-            -- 图标
+            -- 头部内圆（用主色填充，让 pin 头部有颜色）
+            local innerR = pinR * 0.7
+            nvgBeginPath(nvg)
+            nvgCircle(nvg, sx, headCY, innerR)
+            fc(nvg, col, 50)
+            nvgFill(nvg)
+
+            -- 图标（在 pin 头部圆心）
             nvgFontFaceId(nvg, cam.font)
-            nvgFontSize(nvg, 15)
+            nvgFontSize(nvg, isCur and 17 or 15)
             nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
             fc(nvg, col)
-            nvgText(nvg, sx, sy, NODE_ICON[node.type] or "●", nil)
+            nvgText(nvg, sx, headCY, NODE_ICON[node.type] or "●", nil)
 
-            -- 名称标签（衬底 + 深色文字）
-            nvgFontSize(nvg, 11)
-            nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_TOP)
-            -- 先绘制衬底
+            -- 名称标签（在 pin 头部上方）
+            nvgFontSize(nvg, isCur and 12 or 11)
+            nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_BOTTOM)
             local tw = nvgTextBounds(nvg, 0, 0, node.name, nil)
             local lbx = sx - tw / 2 - 3
-            local lby = sy + NODE_R + 2
+            local lby = headCY - pinR - 2
             nvgBeginPath(nvg)
-            nvgRoundedRect(nvg, lbx, lby, tw + 6, 14, 3)
+            nvgRoundedRect(nvg, lbx, lby - 14, tw + 6, 16, 3)
             fc(nvg, Theme.colors.map_label_bg)
             nvgFill(nvg)
             fc(nvg, Theme.colors.map_label_text)
-            nvgText(nvg, sx, sy + NODE_R + 4, node.name, nil)
+            nvgText(nvg, sx, lby, node.name, nil)
 
-            -- 角标
-            if isCur then
-                nvgFontSize(nvg, 13)
-                nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_BOTTOM)
-                fc(nvg, col)
-                nvgText(nvg, sx, sy - NODE_R - 2, "📍", nil)
-            end
+            -- 目的地角标
             if isDest then
                 nvgFontSize(nvg, 11)
                 nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_BOTTOM)
                 fc(nvg, Theme.colors.accent)
-                nvgText(nvg, sx + NODE_R * 0.6, sy - NODE_R * 0.6, "🎯", nil)
+                nvgText(nvg, sx + pinR * 0.5, headCY - pinR * 0.5, "🎯", nil)
             end
         end
     end
@@ -480,31 +533,32 @@ local function drawIntelLayer(nvg, time)
                       or Graph.get_node(info.target_settlement)
             if node then
                 local sx, sy = w2s(node.x, node.y)
-                -- 脉冲光圈
+                local hcy = sy - NODE_R * PIN_H  -- pin 头部圆心
+                -- 脉冲光圈（围绕 pin 头部）
                 local pulse = 0.5 + 0.5 * math.abs(math.sin(time * 2.2))
                 nvgBeginPath(nvg)
-                nvgCircle(nvg, sx, sy, NODE_R + 10 + 3 * math.sin(time * 2.2))
+                nvgCircle(nvg, sx, hcy, NODE_R + 6 + 3 * math.sin(time * 2.2))
                 fc(nvg, Theme.colors.intel_tip, math.floor(50 * pulse))
                 nvgFill(nvg)
                 -- 星标图标
                 nvgFontSize(nvg, 16)
                 nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_BOTTOM)
                 fc(nvg, Theme.colors.intel_tip)
-                nvgText(nvg, sx + NODE_R + 2, sy - NODE_R, "💰", nil)
+                nvgText(nvg, sx + NODE_R + 2, hcy - NODE_R + 2, "💰", nil)
                 -- 商品标签
                 local Goods_mod = require("economy/goods")
                 local g = Goods_mod.get(info.target_goods)
                 if g then
                     nvgFontSize(nvg, 9)
-                    nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_TOP)
+                    nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_BOTTOM)
                     local lbl = "急需" .. g.name
                     local tw = nvgTextBounds(nvg, 0, 0, lbl, nil)
                     nvgBeginPath(nvg)
-                    nvgRoundedRect(nvg, sx - tw / 2 - 3, sy - NODE_R - 18, tw + 6, 13, 3)
+                    nvgRoundedRect(nvg, sx - tw / 2 - 3, hcy - NODE_R - 16, tw + 6, 13, 3)
                     fc(nvg, { 180, 50, 40, 200 })
                     nvgFill(nvg)
                     fc(nvg, { 255, 240, 220, 240 })
-                    nvgText(nvg, sx, sy - NODE_R - 17, lbl, nil)
+                    nvgText(nvg, sx, hcy - NODE_R - 4, lbl, nil)
                 end
             end
 
@@ -514,21 +568,22 @@ local function drawIntelLayer(nvg, time)
                       or Graph.get_node(info.target_settlement)
             if node then
                 local sx, sy = w2s(node.x, node.y)
+                local hcy = sy - NODE_R * PIN_H  -- pin 头部圆心
                 nvgFontSize(nvg, 14)
                 nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_BOTTOM)
                 fc(nvg, Theme.colors.intel_price)
-                nvgText(nvg, sx + NODE_R + 2, sy - NODE_R + 6, "📊", nil)
-                -- 标签
+                nvgText(nvg, sx + NODE_R + 2, hcy, "📊", nil)
+                -- 标签（放在 pin 尖端下方）
                 nvgFontSize(nvg, 9)
                 nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_TOP)
                 local lbl = "物价已掌握"
                 local tw = nvgTextBounds(nvg, 0, 0, lbl, nil)
                 nvgBeginPath(nvg)
-                nvgRoundedRect(nvg, sx - tw / 2 - 3, sy + NODE_R + 18, tw + 6, 13, 3)
+                nvgRoundedRect(nvg, sx - tw / 2 - 3, sy + 4, tw + 6, 13, 3)
                 fc(nvg, { 140, 110, 30, 180 })
                 nvgFill(nvg)
                 fc(nvg, { 255, 245, 220, 240 })
-                nvgText(nvg, sx, sy + NODE_R + 19, lbl, nil)
+                nvgText(nvg, sx, sy + 5, lbl, nil)
             end
 
         elseif info.type == "security" then
@@ -838,9 +893,10 @@ local function drawWaypoints(nvg, waypoints)
         local node = Graph.get_node(wpId)
         if node then
             local sx, sy = w2s(node.x, node.y)
-            -- 外圈
+            local hcy = sy - NODE_R * PIN_H  -- pin 头部圆心
+            -- 外圈（围绕 pin 头部）
             nvgBeginPath(nvg)
-            nvgCircle(nvg, sx, sy, NODE_R + 6)
+            nvgCircle(nvg, sx, hcy, NODE_R + 6)
             sc(nvg, Theme.colors.map_waypoint)
             nvgStrokeWidth(nvg, 2)
             nvgStroke(nvg)
@@ -849,7 +905,7 @@ local function drawWaypoints(nvg, waypoints)
             nvgFontSize(nvg, 10)
             nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
             fc(nvg, Theme.colors.map_waypoint)
-            nvgText(nvg, sx + NODE_R + 8, sy - NODE_R - 2, tostring(i), nil)
+            nvgText(nvg, sx + NODE_R + 8, hcy - NODE_R, tostring(i), nil)
         end
     end
 end

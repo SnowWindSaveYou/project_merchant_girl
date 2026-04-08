@@ -30,7 +30,7 @@ local PROTAGONIST_PORTRAITS = {
         name     = "陶夏",
         color    = { 218, 168, 102, 255 },
         bgColor  = { 58, 48, 36, 240 },
-        portrait = "image/taoxia_portrait_v2_20260407120520.png",
+        portrait = "image/taoxia_portrait_v3.png",
     },
 }
 
