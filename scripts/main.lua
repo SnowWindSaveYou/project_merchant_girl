@@ -42,6 +42,7 @@ local WanderingNpc      = require("narrative/wandering_npc")
 local Farm              = require("settlement/farm")
 local Intel             = require("settlement/intel")
 local BlackMarket       = require("settlement/black_market")
+local MainStory         = require("narrative/main_story")
 
 -- 游戏状态
 ---@type table
@@ -285,6 +286,12 @@ function handleTripFinish()
     Intel.earn_route_data(gameState, segCount, hadShortcut)
     Intel.tick_intel(gameState)
     BlackMarket.refresh(gameState)
+
+    -- 主线章节推进检查 (Phase 4)
+    local advanced, newChapter = MainStory.check_advance(gameState)
+    if advanced and newChapter then
+        print("[Main] Chapter advanced to: " .. newChapter.name .. " - " .. newChapter.subtitle)
+    end
 
     Router.navigate("summary", {
         result = result,

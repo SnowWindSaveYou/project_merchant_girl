@@ -25,6 +25,7 @@ local Intel               = require("settlement/intel")
 local BlackMarket         = require("settlement/black_market")
 local Flags               = require("core/flags")
 local UnlockStories       = require("narrative/unlock_stories")
+local MainStory           = require("narrative/main_story")
 
 local M = {}
 ---@type table
@@ -1030,6 +1031,45 @@ function createProgressCard(state)
                 text = trips .. " 趟",
                 fontSize = Theme.sizes.font_small,
                 fontColor = Theme.colors.text_primary,
+            },
+        },
+    })
+
+    -- 0. 主线章节（置顶）
+    local chName, chSub = MainStory.get_display(state)
+    local hints = MainStory.get_progress_hints(state)
+    local hintParts = {}
+    for _, h in ipairs(hints) do
+        if not h.done then
+            table.insert(hintParts, h.progress and (h.text .. " " .. h.progress) or h.text)
+        end
+    end
+    local hintText = #hintParts > 0
+        and ("下一章: " .. hintParts[1])
+        or ""
+    table.insert(items, 1, UI.Panel {
+        width = "100%", flexDirection = "row",
+        justifyContent = "space-between", alignItems = "center",
+        children = {
+            UI.Label {
+                text = "📖 " .. chName,
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.accent,
+            },
+            UI.Panel {
+                flexDirection = "row", gap = 4, alignItems = "center",
+                children = {
+                    UI.Label {
+                        text = chSub,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = Theme.colors.text_primary,
+                    },
+                    hintText ~= "" and UI.Label {
+                        text = hintText,
+                        fontSize = Theme.sizes.font_tiny,
+                        fontColor = Theme.colors.text_secondary,
+                    } or nil,
+                },
             },
         },
     })

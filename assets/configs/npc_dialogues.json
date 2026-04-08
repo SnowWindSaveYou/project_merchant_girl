@@ -1628,6 +1628,282 @@
           "result_text": "白述眼中闪过一丝欣赏：\"难得有人对文献本身感兴趣。来，我给你看看原文。\"你们一起研读了整份清单，在地图上精确标注了坐标。"
         }
       ]
+    },
+
+    {
+      "id": "NPC_JW_001",
+      "npc_id": "ji_wei",
+      "title": "信号塔下的技术员",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_ji_wei_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "别碰那个！……抱歉，那是刚校准好的天线阵列。" },
+        { "speaker": "taoxia", "text": "好险，差点踢倒了。" },
+        { "speaker": "npc", "text": "我是季微，塔台的通讯技术员。韩策负责决策，我负责让设备跑起来。" },
+        { "speaker": "linli", "text": "整个塔台的通讯系统都是你在维护？" },
+        { "speaker": "npc", "text": "对。包括信号放大、频段调度、还有……偶尔帮韩策修他摔坏的数据板。" },
+        { "speaker": "npc", "text": "你们是行商吧？如果路上碰到电子元件——电容、晶振什么的——帮我带点回来。" }
+      ],
+      "choices": [
+        {
+          "text": "没问题，下次帮你留意",
+          "ops": ["add_goodwill:tower:5", "set_flag:npc_ji_wei_intro"],
+          "result_text": "季微从口袋里掏出一小截铜线缠成的挂件递给你：\"塔台的通行标记。以后来不用再登记了。\""
+        },
+        {
+          "text": "电子元件挺值钱的，价格怎么算",
+          "ops": ["add_goodwill:tower:2", "set_flag:npc_ji_wei_intro"],
+          "result_text": "季微推了推眼镜：\"公价收购。韩策不允许乱开价，我也不会。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_JW_002",
+      "npc_id": "ji_wei",
+      "title": "深夜的频段",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_ji_wei_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "你们知道吗，深夜两点到四点之间，短波能传得比白天远三倍。" },
+        { "speaker": "taoxia", "text": "所以你天天熬夜？" },
+        { "speaker": "npc", "text": "不全是为了工作。有时候……我会在那个时段扫描冷门频段。" },
+        { "speaker": "npc", "text": "偶尔能收到一些东西。音乐、朗读、甚至有人在讲笑话。" },
+        { "speaker": "linli", "text": "其他幸存者的广播？" },
+        { "speaker": "npc", "text": "大概是吧。虽然不知道他们在哪，但知道这个世界上还有人在说话……挺好的。" }
+      ],
+      "choices": [
+        {
+          "text": "能让我们也听听吗？",
+          "ops": ["add_goodwill:tower:4", "add_relation_linli:1"],
+          "result_text": "季微笑了笑，把耳机分了一个给你。杂音里隐约传来一段口琴的旋律，像是来自很远的地方。"
+        },
+        {
+          "text": "你有没有试过回复他们？",
+          "ops": ["add_goodwill:tower:3", "add_relation_taoxia:1"],
+          "result_text": "季微摇摇头：\"韩策不让。怕暴露塔台的位置。\"她低头看着仪表盘上跳动的信号灯，\"但我偷偷录了下来。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_JW_003",
+      "npc_id": "ji_wei",
+      "title": "焊接与星星",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_ji_wei_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "季微，你手上那些烫伤的痕迹……" },
+        { "speaker": "npc", "text": "焊接留下的。习惯了。灾后第一年什么工具都没有，我拿烧红的铁丝接线路。" },
+        { "speaker": "linli", "text": "……那时候你多大？" },
+        { "speaker": "npc", "text": "十五。韩策捡到我的时候，我正蹲在废墟里拆一个收音机。" },
+        { "speaker": "npc", "text": "他问我为什么拆。我说——我想听听外面还有没有声音。" },
+        { "speaker": "taoxia", "text": "然后他就把你带回塔台了？" },
+        { "speaker": "npc", "text": "嗯。他说'能拆的人也能装'。然后扔给我一堆烂设备让我修。" },
+        { "speaker": "npc", "text": "第一个修好的是天文台的望远镜。那晚我看到了好多星星……那是灾后我第一次觉得世界还没完。" }
+      ],
+      "choices": [
+        {
+          "text": "星星一直都在，只是需要有人抬头看",
+          "ops": ["add_goodwill:tower:5", "add_relation_linli:2"],
+          "result_text": "季微愣了一下，然后轻轻笑了：\"嗯。韩策也说过差不多的话。你们……挺像的。\""
+        },
+        {
+          "text": "下次我们一起看星星吧",
+          "ops": ["add_goodwill:tower:4", "add_relation_taoxia:2"],
+          "result_text": "季微点点头，指了指塔台最高层：\"那上面视野最好。不过……得等韩策不在的时候偷偷上去。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_JW_004",
+      "npc_id": "ji_wei",
+      "title": "加密频段",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_ji_wei_intro"],
+      "forbidden_flags": ["mem_ji_wei_encrypted"],
+      "steps": [
+        { "speaker": "npc", "text": "林砾，我截获了一段加密信号。不是普通的幸存者广播。" },
+        { "speaker": "linli", "text": "什么意思？" },
+        { "speaker": "npc", "text": "用的是灾前军用级加密协议。我花了三个月才破解了一小段。" },
+        { "speaker": "npc", "text": "内容是一组重复播放的编号和坐标。像是某种……自动引导信标。" },
+        { "speaker": "taoxia", "text": "引导谁？引导去哪？" },
+        { "speaker": "npc", "text": "不知道。但坐标指向西北方向，比我们已知的任何聚落都远。" },
+        { "speaker": "npc", "text": "我没跟韩策说。因为……如果那边真的有什么，他一定会派人去。我不想让人冒险。" }
+      ],
+      "choices": [
+        {
+          "text": "你应该告诉韩策，由他来判断",
+          "ops": ["add_goodwill:tower:8", "add_relation_linli:2", "set_flag:mem_ji_wei_encrypted"],
+          "result_text": "季微咬了咬嘴唇：\"……你说得对。他比我有判断力。\"她把解码笔记折好放进口袋。",
+          "memory": {
+            "id": "mem_ji_wei_encrypted",
+            "title": "加密信标",
+            "desc": "季微破解了一段军用加密信号，内容是指向西北方向未知坐标的自动引导信标。"
+          }
+        },
+        {
+          "text": "先别声张，我们路过那个方向时帮你确认",
+          "ops": ["add_goodwill:tower:5", "add_relation_taoxia:1", "set_flag:mem_ji_wei_encrypted"],
+          "result_text": "季微犹豫了一下，最终点了点头：\"好。但如果有任何危险，立刻回来。拜托了。\"",
+          "memory": {
+            "id": "mem_ji_wei_encrypted",
+            "title": "加密信标",
+            "desc": "季微破解了一段军用加密信号，指向西北方未知坐标，你们决定在路过时顺路确认。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_OG_001",
+      "npc_id": "old_gan",
+      "title": "温室的老人",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_old_gan_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "哦？来客人了。坐，喝碗热汤。" },
+        { "speaker": "taoxia", "text": "好香！这是什么汤？" },
+        { "speaker": "npc", "text": "野菜汤。加了点我自己晒的干菌菇。灾前我是厨师……现在嘛，有什么煮什么。" },
+        { "speaker": "linli", "text": "您是温室社区的……" },
+        { "speaker": "npc", "text": "老甘。叫我老甘就行。沈禾那丫头让我管后勤和仓储。说白了就是帮大家把日子安排好。" },
+        { "speaker": "npc", "text": "你们是行商吧？年轻人跑路不容易。先吃饱了再谈生意。" }
+      ],
+      "choices": [
+        {
+          "text": "谢谢老甘，汤真好喝",
+          "ops": ["add_goodwill:greenhouse:5", "set_flag:npc_old_gan_intro"],
+          "result_text": "老甘笑得皱纹都叠在了一起：\"好喝就多喝点。锅里还有。\""
+        },
+        {
+          "text": "生意要紧，先聊正事吧",
+          "ops": ["add_goodwill:greenhouse:2", "set_flag:npc_old_gan_intro"],
+          "result_text": "老甘不急不慢地把汤碗推过来：\"正事也得吃饱了才能谈。来，不差这几分钟。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_OG_002",
+      "npc_id": "old_gan",
+      "title": "灾前的味道",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_old_gan_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "npc", "text": "今天心情好，给你们做个好东西。" },
+        { "speaker": "taoxia", "text": "什么什么？" },
+        { "speaker": "npc", "text": "烤红薯。温室三号区刚收的。灾前街边到处都是，现在倒成了稀罕物。" },
+        { "speaker": "linli", "text": "……我小时候吃过。路边推车卖的那种。" },
+        { "speaker": "npc", "text": "对咯。那时候觉得普通得很，现在才知道——普通的日子才是最好的。" },
+        { "speaker": "taoxia", "text": "好烫好烫！但是好甜！" },
+        { "speaker": "npc", "text": "慢慢吃。红薯不会跑。" }
+      ],
+      "choices": [
+        {
+          "text": "谢谢老甘，有家的感觉",
+          "ops": ["add_goodwill:greenhouse:4", "add_relation_taoxia:2"],
+          "result_text": "老甘看着你们吃红薯的样子，自己也掰了一小块慢慢嚼。这一刻，温室里格外暖和。"
+        },
+        {
+          "text": "这手艺太好了，能教教我吗？",
+          "ops": ["add_goodwill:greenhouse:3", "add_relation_linli:1"],
+          "result_text": "老甘哈哈一笑：\"想学？行啊。不过得从削皮开始，我对徒弟要求可严了。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_OG_003",
+      "npc_id": "old_gan",
+      "title": "仓库的秩序",
+      "goodwill_min": 30,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["npc_old_gan_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "linli", "text": "老甘，温室的仓库整理得太整齐了。" },
+        { "speaker": "npc", "text": "那可不。灾后第一条活下去的规矩——东西放整齐，急用时才找得到。" },
+        { "speaker": "npc", "text": "以前厨房里也是这样，刀放哪、盐放哪、油放哪，闭着眼都能摸到。" },
+        { "speaker": "taoxia", "text": "我的背包就是一团乱……" },
+        { "speaker": "npc", "text": "行商更要讲究。货物理不清楚，交易的时候吃亏的是自己。" },
+        { "speaker": "npc", "text": "来，我教你们一套分类法。简单好用，我自己琢磨出来的。" }
+      ],
+      "choices": [
+        {
+          "text": "太实用了，谢谢老甘",
+          "ops": ["add_goodwill:greenhouse:4", "add_relation_linli:1"],
+          "result_text": "老甘拍拍手：\"记住了就行。别到时候又把药品和食物混一块儿。\""
+        },
+        {
+          "text": "您这套方法应该教给所有行商",
+          "ops": ["add_goodwill:greenhouse:3", "add_relation_taoxia:1"],
+          "result_text": "老甘摆摆手：\"算了，教了也记不住。你们能记住就不错了。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_OG_004",
+      "npc_id": "old_gan",
+      "title": "灾前的约定",
+      "goodwill_min": 60,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": ["npc_old_gan_intro"],
+      "forbidden_flags": ["mem_old_gan_promise"],
+      "steps": [
+        { "speaker": "npc", "text": "林砾丫头，过来坐。老甘跟你说个事。" },
+        { "speaker": "linli", "text": "什么事？" },
+        { "speaker": "npc", "text": "灾前……我有个老伙计，也是厨子。我们约好了，不管发生什么事，每年秋分在老城区的钟楼碰面。" },
+        { "speaker": "npc", "text": "灾后我去了三年。每年秋分，准时到。但他一直没出现。" },
+        { "speaker": "taoxia", "text": "……第四年呢？" },
+        { "speaker": "npc", "text": "第四年……钟楼塌了一半。我在废墟里找到一个生锈的铁盒子。" },
+        { "speaker": "npc", "text": "里面有一封信和一包种子。信上写着——'老甘，我先种上了，你来了就能吃到'。" },
+        { "speaker": "npc", "text": "种子是番茄的。现在温室一号区那些番茄……就是从那包种子长出来的。" }
+      ],
+      "choices": [
+        {
+          "text": "他没有失约，只是换了种方式赴约",
+          "ops": ["add_goodwill:greenhouse:8", "add_relation_linli:2", "set_flag:mem_old_gan_promise"],
+          "result_text": "老甘沉默了很久，然后用袖子擦了擦眼角：\"……对。他来了。他一直都在。\"",
+          "memory": {
+            "id": "mem_old_gan_promise",
+            "title": "秋分的约定",
+            "desc": "老甘讲述了灾前与老友的秋分之约。朋友虽已不在，但留下的番茄种子如今在温室里结果。"
+          }
+        },
+        {
+          "text": "这些番茄，我们会帮您带到更远的地方",
+          "ops": ["add_goodwill:greenhouse:6", "add_relation_taoxia:1", "set_flag:mem_old_gan_promise"],
+          "result_text": "老甘从围裙口袋里掏出一小包种子塞到你手里：\"带上。种到哪儿都行。就当……帮他走更远的路。\"",
+          "memory": {
+            "id": "mem_old_gan_promise",
+            "title": "秋分的约定",
+            "desc": "老甘将老友留下的番茄种子分给了你们，希望它们能被带到更远的聚落。"
+          }
+        }
+      ]
     }
   ]
 }

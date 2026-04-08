@@ -6,7 +6,8 @@ local DataLoader = require("data_loader/loader")
 
 local M = {}
 
-local CONFIG_PATH = "configs/guaji_random_events.json"
+local CONFIG_PATH       = "configs/guaji_random_events.json"
+local STORY_CONFIG_PATH = "configs/story_events.json"
 
 -- ============================================================
 -- 玩家可见描述文本（首批事件，后续迁移到 JSON 的 event_text 表）
@@ -28,6 +29,17 @@ local DESCRIPTIONS = {
     EVT_054 = "路边一栋半塌的建筑引起了陶夏的注意——里面可能还有没被搜刮干净的物资。",
     EVT_055 = "夜幕中突然传来摩托引擎的轰鸣，几束手电光从后方快速逼近。",
     EVT_056 = "林砾发现后视镜中一直跟着一辆装甲改装车，对方明显有备而来——是赏金猎人。",
+    -- 主线剧情事件
+    SEVT_001 = "货车发动的一瞬间，陶夏把车窗摇下来，风灌进来。林砾在副驾调整着后视镜。一切都是新的。",
+    SEVT_002 = "第一次在野外过夜。篝火映着两张年轻的脸，远处什么都看不见。",
+    SEVT_003 = "陶夏趴在方向盘上看地图，用笔圈了好几个没去过的地方。",
+    SEVT_004 = "路面上有一道深深的车辙印，已经长了草。不是你们留下的。",
+    SEVT_005 = "收拾营地时，一本翻开的笔记本从林砾的包里滑出来。",
+    SEVT_006 = "收音机里突然传出一段断断续续的求助信号，来自温室社区。",
+    SEVT_007 = "风吹过来几张泛黄的书页，上面的字迹工整得不像是末世的产物。",
+    SEVT_008 = "深夜赶路时，远方地平线上有一盏灯在有节奏地闪烁。",
+    SEVT_009 = "废墟方向升起了一缕炊烟，在灰色的天空下格外显眼。",
+    SEVT_010 = "篝火旁，陶夏掰着手指数你们去过的地方。四个聚落，四种活法。",
 }
 
 -- ============================================================
@@ -72,6 +84,42 @@ function M._load_config()
     M._build_chain_locks()
 
     print("[EventPool] Loaded " .. #M.EVENTS .. " events from config")
+
+    -- 加载主线剧情事件（合并到同一个池中）
+    M._load_story_events()
+end
+
+--- 加载主线剧情事件，合并到事件池
+function M._load_story_events()
+    local data = DataLoader.load(STORY_CONFIG_PATH)
+    if not data then
+        print("[EventPool] Story events config not found, skipping")
+        return
+    end
+
+    -- 合并 choice_sets / result_sets
+    for k, v in pairs(data.choice_sets or {}) do
+        M._choice_sets[k] = v
+    end
+    for k, v in pairs(data.result_sets or {}) do
+        M._result_sets[k] = v
+    end
+
+    local count = 0
+    for _, raw in ipairs(data.events or {}) do
+        local evt = M._build_event(raw)
+        evt.is_story = true  -- 标记为主线事件
+        evt.chapter  = raw.chapter
+        table.insert(M.EVENTS, evt)
+        M._events_by_id[evt.id] = evt
+        count = count + 1
+    end
+
+    if count > 0 then
+        -- 重新分析链式事件（主线事件也可能有链）
+        M._build_chain_locks()
+        print("[EventPool] Loaded " .. count .. " story events")
+    end
 end
 
 --- 将 JSON 原始数据转换为 UI 兼容的事件表

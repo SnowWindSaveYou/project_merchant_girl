@@ -5,7 +5,8 @@ local DataLoader = require("data_loader/loader")
 
 local M = {}
 
-local CONFIG_PATH = "configs/campfire_dialogues.json"
+local CONFIG_PATH       = "configs/campfire_dialogues.json"
+local STORY_CONFIG_PATH = "configs/story_dialogues.json"
 
 -- 内部数据
 M._dialogues    = {}   -- array of dialogue tables
@@ -55,6 +56,21 @@ function M._load()
     end
 
     print("[DialoguePool] Loaded " .. #M._dialogues .. " dialogues")
+
+    -- 加载主线剧情对话（合并到同一个池中）
+    local story_data = DataLoader.load(STORY_CONFIG_PATH)
+    if story_data then
+        local count = 0
+        for _, raw in ipairs(story_data.dialogues or {}) do
+            raw.is_story = true  -- 标记为主线对话
+            table.insert(M._dialogues, raw)
+            M._by_id[raw.id] = raw
+            count = count + 1
+        end
+        if count > 0 then
+            print("[DialoguePool] Loaded " .. count .. " story dialogues")
+        end
+    end
 end
 
 -- ============================================================

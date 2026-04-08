@@ -85,6 +85,24 @@ M.NPC_DATA = {
         bg         = {  38,  32,  42, 240 },
     },
     -- 聚落驻留 NPC（非领袖，有独立立绘和对话）
+    ji_wei = {
+        id         = "ji_wei",
+        name       = "季微",
+        settlement = "tower",
+        title      = "塔台技术员",
+        icon       = "📡",
+        color      = {  98, 138, 172, 255 },
+        bg         = {  28,  38,  52, 240 },
+    },
+    old_gan = {
+        id         = "old_gan",
+        name       = "老甘",
+        settlement = "greenhouse",
+        title      = "温室长者",
+        icon       = "🧓",
+        color      = { 128, 148, 108, 255 },
+        bg         = {  36,  46,  34, 240 },
+    },
     dao_yu = {
         id         = "dao_yu",
         name       = "刀鱼",

@@ -44,6 +44,8 @@ local NPC_PORTRAITS = {
     ming_sha  = "image/portrait_ming_sha_20260406000227.png",
     dao_yu    = "image/portrait_dao_yu_20260408072957.png",
     xie_ling  = "image/portrait_xie_ling_20260408073029.png",
+    ji_wei    = "image/portrait_ji_wei_20260408124639.png",
+    old_gan   = "image/portrait_old_gan_20260408124632.png",
 }
 
 --- 势力通用立绘（非领袖 NPC 使用）

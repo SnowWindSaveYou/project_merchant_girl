@@ -1,0 +1,281 @@
+{
+  "dialogues": [
+    {
+      "id": "SD_PROLOGUE_01",
+      "title": "出发前夜",
+      "type": "main_story",
+      "chapter": 0,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 999,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["sd_prologue_01_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "温室社区的边界。一辆改装过的旧货车停在检查站外。" },
+        { "speaker": "taoxia", "text": "检查完了吗？我数了三遍，八箱罐头，四桶净水，两包医用纱布。" },
+        { "speaker": "linli", "text": "……油够跑两个来回。轮胎前天换过。发动机……还行。" },
+        { "speaker": "taoxia", "text": "『还行』？林砾，你能不能给点信心？" },
+        { "speaker": "linli", "text": "出发前乐观的人，往往回不来。" },
+        { "speaker": "taoxia", "text": "哇，好扫兴。" },
+        { "speaker": "narrator", "text": "温室社区的守卫打开了铁门。外面是灰蒙蒙的旷野。" },
+        { "speaker": "taoxia", "text": "好了——行商陶夏和林砾，正式出发！" },
+        { "speaker": "linli", "text": "…………保持车距。" }
+      ],
+      "choices": [
+        {
+          "text": "「走吧。」",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
+          "result_text": "引擎轰鸣，货车驶入废土。身后的铁门缓缓关上。",
+          "set_flags": ["sd_prologue_01_done"]
+        }
+      ]
+    },
+    {
+      "id": "SD_PROLOGUE_02",
+      "title": "第一晚",
+      "type": "main_story",
+      "chapter": 0,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 999,
+      "cooldown": 99,
+      "required_flags": ["sd_prologue_01_done"],
+      "forbidden_flags": ["sd_prologue_02_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "第一晚。两个人坐在货车旁边的篝火前，谁都没先开口。" },
+        { "speaker": "taoxia", "text": "……比想象中安静。" },
+        { "speaker": "linli", "text": "安静是好事。不安静的时候才该担心。" },
+        { "speaker": "taoxia", "text": "林砾。" },
+        { "speaker": "linli", "text": "嗯？" },
+        { "speaker": "taoxia", "text": "我们为什么出来跑商？你想过吗？" },
+        { "speaker": "linli", "text": "……你问我？是你拉我出来的。" },
+        { "speaker": "taoxia", "text": "我知道。但我想听你的理由。" },
+        { "speaker": "narrator", "text": "篝火噼啪作响。远处有什么动物叫了一声。" }
+      ],
+      "choices": [
+        {
+          "text": "「总得有人在路上。」",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:2"],
+          "result_text": "陶夏没接话，但她笑了。林砾往火堆里添了根柴。",
+          "set_flags": ["sd_prologue_02_done", "motivation_duty"],
+          "memory": {
+            "id": "mem_first_night",
+            "title": "第一晚的篝火",
+            "desc": "第一次在废土上过夜。篝火前的第一次真正对话。"
+          }
+        },
+        {
+          "text": "「想看看外面什么样。」",
+          "ops": ["add_relation_taoxia:3"],
+          "result_text": "「我也是！」陶夏的眼睛亮了起来。林砾叹了口气，但嘴角弯了一下。",
+          "set_flags": ["sd_prologue_02_done", "motivation_curiosity"],
+          "memory": {
+            "id": "mem_first_night",
+            "title": "第一晚的篝火",
+            "desc": "第一次在废土上过夜。原来两个人都想看看外面的世界。"
+          }
+        },
+        {
+          "text": "「温室待不下去了。」",
+          "ops": ["add_relation_linli:3"],
+          "result_text": "林砾默默点了点头。陶夏没追问。有些事不需要解释。",
+          "set_flags": ["sd_prologue_02_done", "motivation_escape"],
+          "memory": {
+            "id": "mem_first_night",
+            "title": "第一晚的篝火",
+            "desc": "第一次在废土上过夜。有些出发的理由不需要说出来。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "SD_CH1_01",
+      "title": "第五趟",
+      "type": "main_story",
+      "chapter": 1,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 200,
+      "cooldown": 99,
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": ["sd_ch1_01_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "不知不觉已经跑了好几趟了。路开始变得熟悉。" },
+        { "speaker": "taoxia", "text": "我发现了一个规律——塔台的人爱买电池，温室的人爱买零件。" },
+        { "speaker": "linli", "text": "还有一个规律：你每次都把备用油桶放错位置。" },
+        { "speaker": "taoxia", "text": "那不叫放错！那叫……创意收纳！" },
+        { "speaker": "linli", "text": "上次刹车的时候，你的创意收纳砸到我脚了。" },
+        { "speaker": "taoxia", "text": "……好吧，我改。" }
+      ],
+      "choices": [
+        {
+          "text": "「路跑多了就熟了。」",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
+          "result_text": "两个人都不自觉地笑了。货车在熟悉的路上颠簸前行。",
+          "set_flags": ["sd_ch1_01_done"]
+        },
+        {
+          "text": "「应该试试新路线了。」",
+          "ops": ["add_relation_taoxia:2"],
+          "result_text": "陶夏立刻展开地图。林砾皱了皱眉，但没反对。",
+          "set_flags": ["sd_ch1_01_done"]
+        }
+      ]
+    },
+    {
+      "id": "SD_CH1_02",
+      "title": "记账本",
+      "type": "main_story",
+      "chapter": 1,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 180,
+      "cooldown": 99,
+      "required_flags": ["sd_ch1_01_done"],
+      "forbidden_flags": ["sd_ch1_02_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "夜里整理货物时，陶夏翻出了一本记账本。" },
+        { "speaker": "taoxia", "text": "哇，我们居然已经赚了这么多了！" },
+        { "speaker": "linli", "text": "减去油费、修车、过路费……" },
+        { "speaker": "taoxia", "text": "……好吧，没那么多。但至少没亏！" },
+        { "speaker": "linli", "text": "因为你跟温室的沈荷谈了个好价钱。虽然方法有点……" },
+        { "speaker": "taoxia", "text": "有点什么？" },
+        { "speaker": "linli", "text": "……有点不要脸。" },
+        { "speaker": "taoxia", "text": "那叫热情！做生意就得热情！" }
+      ],
+      "choices": [
+        {
+          "text": "「继续保持。」",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:2"],
+          "result_text": "陶夏得意地把账本收好。林砾无奈地摇了摇头。",
+          "set_flags": ["sd_ch1_02_done"]
+        },
+        {
+          "text": "「下次砍价温柔点。」",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:1"],
+          "result_text": "「温柔砍价？那不就是不砍吗！」陶夏抗议。林砾差点笑出来。",
+          "set_flags": ["sd_ch1_02_done"]
+        }
+      ]
+    },
+    {
+      "id": "SD_CH2_01",
+      "title": "四个名字",
+      "type": "main_story",
+      "chapter": 2,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 200,
+      "cooldown": 99,
+      "required_flags": ["ch1_done"],
+      "forbidden_flags": ["sd_ch2_01_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "陶夏在地图上标注了所有去过的聚落。四个名字，四种颜色。" },
+        { "speaker": "taoxia", "text": "北穹塔台，绿色。温室社区，蓝色。废墟营地，红色。钟楼书院，黄色。" },
+        { "speaker": "linli", "text": "为什么废墟是红色？" },
+        { "speaker": "taoxia", "text": "因为上次在那里差点被宰了。" },
+        { "speaker": "linli", "text": "是你自己非要去还价。" },
+        { "speaker": "taoxia", "text": "那个价格太离谱了！一桶净水换三倍的零件？" },
+        { "speaker": "linli", "text": "废墟的规矩和温室不一样。" },
+        { "speaker": "taoxia", "text": "嗯……每个地方都有自己的规矩。" },
+        { "speaker": "narrator", "text": "她的手指在四个名字之间画了几条线。像是在连接什么。" }
+      ],
+      "choices": [
+        {
+          "text": "「也许我们能把它们连起来。」",
+          "ops": ["add_relation_taoxia:2", "add_relation_linli:1"],
+          "result_text": "陶夏抬头看着你，眼神认真了起来。「你也这么想？」",
+          "set_flags": ["sd_ch2_01_done", "ch2_connector_idea"],
+          "memory": {
+            "id": "mem_four_names",
+            "title": "四个名字",
+            "desc": "陶夏在地图上标注了四个聚落。也许行商不只是买卖。"
+          }
+        },
+        {
+          "text": "「每个地方自有活法。」",
+          "ops": ["add_relation_linli:2"],
+          "result_text": "林砺点头。陶夏低头看着地图，安静了一会儿。",
+          "set_flags": ["sd_ch2_01_done"]
+        }
+      ]
+    },
+    {
+      "id": "SD_CH2_02",
+      "title": "收音机里的世界",
+      "type": "main_story",
+      "chapter": 2,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 180,
+      "cooldown": 99,
+      "required_flags": ["sd_ch2_01_done"],
+      "forbidden_flags": ["sd_ch2_02_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "车载收音机里断断续续传来鸣砂的声音。" },
+        { "speaker": "radio", "text": "……这里是鸣砂。各位行者晚安。今天有几则消息。" },
+        { "speaker": "radio", "text": "温室社区的灌溉系统修复进度良好。感谢近期送来配件的行商们。" },
+        { "speaker": "radio", "text": "北穹塔台将于下周开放限量数据交换窗口。有需要的行商请提前准备。" },
+        { "speaker": "radio", "text": "最后，提醒各位注意西南路段……近期有不明车队出没。保重。" },
+        { "speaker": "taoxia", "text": "不明车队……之前看到的那些车辙印？" },
+        { "speaker": "linli", "text": "也许吧。保持警惕就好。" }
+      ],
+      "choices": [
+        {
+          "text": "「鸣砂是谁？」",
+          "ops": ["add_relation_taoxia:1"],
+          "result_text": "「没人知道。」陶夏说，「但所有行商都听她的广播。像是……废土上唯一的新闻主播。」",
+          "set_flags": ["sd_ch2_02_done", "curious_about_mingsha"]
+        },
+        {
+          "text": "「不明车队……要小心。」",
+          "ops": ["add_relation_linli:2"],
+          "result_text": "林砾检查了一遍车门锁。陶夏把收音机音量调低了一点。",
+          "set_flags": ["sd_ch2_02_done"]
+        }
+      ]
+    },
+    {
+      "id": "SD_CH2_03",
+      "title": "信任的重量",
+      "type": "main_story",
+      "chapter": 2,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 160,
+      "cooldown": 99,
+      "required_flags": ["sd_ch2_02_done"],
+      "forbidden_flags": ["sd_ch2_03_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "某个傍晚。货车停在路边。两个人靠在车头看日落。" },
+        { "speaker": "taoxia", "text": "林砾，你有没有发现？每次我们去聚落，人们的眼神都不一样了。" },
+        { "speaker": "linli", "text": "因为我们送了他们需要的东西。" },
+        { "speaker": "taoxia", "text": "不只是东西。是……信任？" },
+        { "speaker": "linli", "text": "信任是慢慢攒的。一趟两趟不够。" },
+        { "speaker": "taoxia", "text": "但已经开始了，对吧？" },
+        { "speaker": "linli", "text": "……嗯。开始了。" },
+        { "speaker": "narrator", "text": "夕阳把两个人的影子拉得很长。废土上的天空其实也能很漂亮。" }
+      ],
+      "choices": [
+        {
+          "text": "「值得。」",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:2"],
+          "result_text": "没人回答，但两个人都知道对方在想什么。",
+          "set_flags": ["sd_ch2_03_done"],
+          "memory": {
+            "id": "mem_trust_weight",
+            "title": "信任的重量",
+            "desc": "日落时分。信任是一趟一趟跑出来的。"
+          }
+        },
+        {
+          "text": "安静地看完日落。",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
+          "result_text": "有些时刻不需要语言。",
+          "set_flags": ["sd_ch2_03_done"]
+        }
+      ]
+    }
+  ]
+}
