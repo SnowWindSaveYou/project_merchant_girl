@@ -122,6 +122,10 @@ function Start()
                 gameState.settlements[sid] = defaults
             end
         end
+        -- 隐藏聚落兼容（地图扩展）
+        if not gameState.settlements.underground_market then
+            gameState.settlements.underground_market = { goodwill = 0, visited = false, reputation = 100 }
+        end
         -- 叙事系统兼容
         if not gameState.narrative then
             gameState.narrative = {

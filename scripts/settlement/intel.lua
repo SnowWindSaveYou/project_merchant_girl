@@ -13,6 +13,7 @@ M.INTEL_TYPES = {
     price    = { name = "价格情报", desc = "目标聚落的当前物价趋势",   cost = 2, duration = 1 },
     security = { name = "安全预警", desc = "哪条路有掠夺者活动",       cost = 2, duration = 2 },
     tip      = { name = "商机情报", desc = "某聚落紧急需求某种商品",   cost = 3, duration = 1 },
+    location = { name = "位置情报", desc = "获取隐藏地点的坐标",       cost = 5, duration = 0, unlock = true },
 }
 
 --- 确保情报系统状态存在
@@ -144,6 +145,29 @@ function M.exchange(state, intel_type)
             "塔台需要医疗包，价格上浮 20%。",
         },
     }
+
+    -- 位置情报：解锁隐藏节点
+    if intel_type == "location" then
+        -- 查找尚未解锁的隐藏节点
+        local Graph = require("map/world_graph")
+        local known = state.map.known_nodes or {}
+        local candidates = {}
+        for _, node in ipairs(Graph.NODES) do
+            if node.hidden and not known[node.id] then
+                table.insert(candidates, node)
+            end
+        end
+        if #candidates == 0 then
+            return false, "没有更多可发现的隐藏地点"
+        end
+        local chosen = candidates[math.random(1, #candidates)]
+        -- 解锁该节点
+        state.map.known_nodes[chosen.id] = true
+        local text = "获得关键情报：" .. chosen.name .. " 的位置已标记在地图上！"
+        -- 位置情报不存入活跃列表（duration=0，一次性效果）
+        return true, text
+    end
+
     local pool = texts[intel_type] or { "暂无详细情报。" }
     local text = pool[math.random(1, #pool)]
 

@@ -7,6 +7,7 @@ local Flow       = require("core/flow")
 local RoutePlanner = require("map/route_planner")
 local CargoUtils = require("economy/cargo_utils")
 local EventPool  = require("events/event_pool")
+local Graph      = require("map/world_graph")
 local Goodwill   = require("settlement/goodwill")
 local Farm       = require("settlement/farm")
 local Intel      = require("settlement/intel")
@@ -259,6 +260,53 @@ function M._build(state)
         ),
     }
     table.insert(sections, M._sectionCard("货车", truckChildren))
+
+    -- ── 4.5 地图节点 ──
+    local mapChildren = {}
+    local knownCount = 0
+    local totalCount = #Graph.NODES
+    for _, node in ipairs(Graph.NODES) do
+        if state.map.known_nodes[node.id] then
+            knownCount = knownCount + 1
+        end
+    end
+    table.insert(mapChildren, UI.Label {
+        text = "已知节点: " .. knownCount .. " / " .. totalCount,
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.text_primary,
+    })
+    table.insert(mapChildren, UI.Panel {
+        width = "100%", flexDirection = "row", gap = 8, flexWrap = "wrap",
+        children = {
+            UI.Button {
+                text = "解锁全部节点", height = 36,
+                fontSize = Theme.sizes.font_small,
+                variant = "primary",
+                onClick = function()
+                    for _, node in ipairs(Graph.NODES) do
+                        state.map.known_nodes[node.id] = true
+                    end
+                    print("[Debug] All " .. totalCount .. " map nodes unlocked")
+                    M._refresh(state)
+                end,
+            },
+            UI.Button {
+                text = "重置为初始", height = 36,
+                fontSize = Theme.sizes.font_small,
+                variant = "danger",
+                onClick = function()
+                    state.map.known_nodes = {
+                        greenhouse = true,
+                        tower      = true,
+                        crossroads = true,
+                    }
+                    print("[Debug] Map nodes reset to initial 3")
+                    M._refresh(state)
+                end,
+            },
+        },
+    })
+    table.insert(sections, M._sectionCard("地图节点", mapChildren))
 
     -- ── 5. 聚落子系统调试 ──
     local settlementChildren = {}

@@ -235,13 +235,13 @@ local function drawEdges(nvg, known)
                 local mx, my = (x1 + x2) / 2, (y1 + y2) / 2
                 nvgBeginPath(nvg)
                 nvgRoundedRect(nvg, mx - 18, my - 8, 36, 16, 8)
-                fc(nvg, Theme.colors.bg_primary, 190)
+                fc(nvg, Theme.colors.map_edge_label_bg)
                 nvgFill(nvg)
 
                 nvgFontFaceId(nvg, cam.font)
                 nvgFontSize(nvg, 10)
                 nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
-                fc(nvg, Theme.colors.text_dim)
+                fc(nvg, Theme.colors.map_label_text)
                 nvgText(nvg, mx, my, e.travel_time_sec .. "s", nil)
 
                 if e.danger == "danger" then
@@ -266,7 +266,7 @@ local function drawNodes(nvg, known, current, destSet, time)
         local isSel   = cam.selected == node.id
 
         if not isKnown then
-            -- 未知节点：暗淡小圆 + 问号
+            -- 未知节点：柔和小圆 + 问号
             nvgBeginPath(nvg)
             nvgCircle(nvg, sx, sy, NODE_R * 0.55)
             fc(nvg, Theme.colors.map_unknown)
@@ -274,7 +274,7 @@ local function drawNodes(nvg, known, current, destSet, time)
             nvgFontFaceId(nvg, cam.font)
             nvgFontSize(nvg, 11)
             nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
-            fc(nvg, Theme.colors.text_dim, 100)
+            fc(nvg, Theme.colors.map_label_text, 120)
             nvgText(nvg, sx, sy, "?", nil)
         else
             local col = isCur  and Theme.colors.map_current
@@ -305,10 +305,10 @@ local function drawNodes(nvg, known, current, destSet, time)
                 nvgStroke(nvg)
             end
 
-            -- 节点底圆
+            -- 节点底圆（米白衬底 + 深色描边）
             nvgBeginPath(nvg)
             nvgCircle(nvg, sx, sy, NODE_R)
-            fc(nvg, Theme.colors.bg_card)
+            fc(nvg, Theme.colors.map_node_fill)
             nvgFill(nvg)
             sc(nvg, col, 220)
             nvgStrokeWidth(nvg, 2)
@@ -321,10 +321,18 @@ local function drawNodes(nvg, known, current, destSet, time)
             fc(nvg, col)
             nvgText(nvg, sx, sy, NODE_ICON[node.type] or "●", nil)
 
-            -- 名称标签
+            -- 名称标签（衬底 + 深色文字）
             nvgFontSize(nvg, 11)
             nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_TOP)
-            fc(nvg, Theme.colors.text_primary, 200)
+            -- 先绘制衬底
+            local tw = nvgTextBounds(nvg, 0, 0, node.name, nil)
+            local lbx = sx - tw / 2 - 3
+            local lby = sy + NODE_R + 2
+            nvgBeginPath(nvg)
+            nvgRoundedRect(nvg, lbx, lby, tw + 6, 14, 3)
+            fc(nvg, Theme.colors.map_label_bg)
+            nvgFill(nvg)
+            fc(nvg, Theme.colors.map_label_text)
             nvgText(nvg, sx, sy + NODE_R + 4, node.name, nil)
 
             -- 角标
@@ -352,11 +360,15 @@ local function drawLegend(nvg)
     local ly = cam.cy + 10
     local rowH = 16
 
-    -- 背景
+    -- 背景（米白半透明衬底）
     nvgBeginPath(nvg)
     nvgRoundedRect(nvg, lx - 8, ly - 6, 106, rowH * 3 + 20, 6)
-    fc(nvg, Theme.colors.bg_primary, 210)
+    fc(nvg, Theme.colors.map_legend_bg)
     nvgFill(nvg)
+    -- 细边框
+    sc(nvg, Theme.colors.map_road, 80)
+    nvgStrokeWidth(nvg, 1)
+    nvgStroke(nvg)
 
     nvgFontFaceId(nvg, cam.font)
     nvgFontSize(nvg, 10)
@@ -369,7 +381,7 @@ local function drawLegend(nvg)
     nvgBeginPath(nvg)
     nvgMoveTo(nvg, lx, y); nvgLineTo(nvg, lx + 22, y)
     nvgStroke(nvg)
-    fc(nvg, Theme.colors.text_secondary)
+    fc(nvg, Theme.colors.map_label_text)
     nvgText(nvg, lx + 28, y, "主干道", nil)
 
     -- 小径（虚线）
@@ -377,7 +389,7 @@ local function drawLegend(nvg)
     sc(nvg, Theme.colors.map_path)
     nvgStrokeWidth(nvg, 2)
     dashedLine(nvg, lx, y, lx + 22, y, 6, 4)
-    fc(nvg, Theme.colors.text_secondary)
+    fc(nvg, Theme.colors.map_label_text)
     nvgText(nvg, lx + 28, y, "小径", nil)
 
     -- 捷径（点线）
@@ -385,7 +397,7 @@ local function drawLegend(nvg)
     sc(nvg, Theme.colors.map_shortcut)
     nvgStrokeWidth(nvg, 2)
     dashedLine(nvg, lx, y, lx + 22, y, 3, 4)
-    fc(nvg, Theme.colors.text_secondary)
+    fc(nvg, Theme.colors.map_label_text)
     nvgText(nvg, lx + 28, y, "捷径(危)", nil)
 end
 
@@ -673,7 +685,7 @@ local function drawMap(nvg, layout)
     local destSet = OrderBook.get_destination_set(state_)
     local time    = os.clock()
 
-    -- 1) 背景
+    -- 1) 背景底色
     nvgBeginPath(nvg)
     nvgRect(nvg, cam.cx, cam.cy, cam.cw, cam.ch)
     fc(nvg, Theme.colors.map_bg)
@@ -682,6 +694,30 @@ local function drawMap(nvg, layout)
     -- 2) 裁剪到画布，绘制地图内容
     nvgSave(nvg)
     nvgIntersectScissor(nvg, cam.cx, cam.cy, cam.cw, cam.ch)
+
+    -- 2.1) 背景图（随地图缩放和平移）
+    if not cam.bgImage then
+        cam.bgImage = nvgCreateImage(nvg, "image/map_bg_light_20260408103138.png", 0)
+    end
+    if cam.bgImage and cam.bgImage > 0 then
+        -- 世界坐标范围约 0~930 x 0~600，留一些边距
+        local bgX, bgY    = w2s(-40, -40)
+        local bgX2, bgY2  = w2s(960, 640)
+        local bgW = bgX2 - bgX
+        local bgH = bgY2 - bgY
+        -- 将图片绘制区域裁剪到画布与图片的交集，避免边缘拉伸
+        local drawX = math.max(bgX, cam.cx)
+        local drawY = math.max(bgY, cam.cy)
+        local drawR = math.min(bgX + bgW, cam.cx + cam.cw)
+        local drawB = math.min(bgY + bgH, cam.cy + cam.ch)
+        if drawR > drawX and drawB > drawY then
+            local paint = nvgImagePattern(nvg, bgX, bgY, bgW, bgH, 0, cam.bgImage, 1.0)
+            nvgBeginPath(nvg)
+            nvgRect(nvg, drawX, drawY, drawR - drawX, drawB - drawY)
+            nvgFillPaint(nvg, paint)
+            nvgFill(nvg)
+        end
+    end
 
     drawGrid(nvg)
     drawEdges(nvg, known)
@@ -1294,11 +1330,26 @@ rebuildExplorePanel = function()
                 local fuelOk = state_.truck.fuel >= edge.fuel_cost
                 local dColor = DANGER_COLOR[edge.danger] or Theme.colors.text_dim
 
+                -- 检查目标节点是否有 explore_flag 条件锁
+                local targetDef = Graph.NODES[adj.to]
+                local flagLocked = false
+                if targetDef and targetDef.explore_flag then
+                    local flags = state_.flags or {}
+                    flagLocked = not flags[targetDef.explore_flag]
+                end
+
+                local canExplore = fuelOk and not flagLocked
+                local btnText = flagLocked and "🔒 需要情报"
+                    or (fuelOk and "探索" or "燃料不足")
+                local labelText = flagLocked and ("🔒 " .. (targetDef and targetDef.name or "未知区域"))
+                    or "❓ 未知区域"
+
                 explorePanel_:AddChild(UI.Panel {
                     width = "100%", padding = 10,
-                    backgroundColor = { 40, 36, 28, 220 },
+                    backgroundColor = flagLocked and { 30, 28, 26, 200 } or { 40, 36, 28, 220 },
                     borderRadius = Theme.sizes.radius_small,
-                    borderWidth = 1, borderColor = Theme.colors.warning,
+                    borderWidth = 1,
+                    borderColor = flagLocked and Theme.colors.text_dim or Theme.colors.warning,
                     flexDirection = "row", justifyContent = "space-between",
                     alignItems = "center",
                     children = {
@@ -1306,9 +1357,10 @@ rebuildExplorePanel = function()
                             flexShrink = 1, gap = 2,
                             children = {
                                 UI.Label {
-                                    text = "❓ 未知区域",
+                                    text = labelText,
                                     fontSize = Theme.sizes.font_normal,
-                                    fontColor = Theme.colors.text_primary,
+                                    fontColor = flagLocked and Theme.colors.text_dim
+                                        or Theme.colors.text_primary,
                                 },
                                 UI.Panel {
                                     flexDirection = "row", gap = 8,
@@ -1334,10 +1386,10 @@ rebuildExplorePanel = function()
                             },
                         },
                         UI.Button {
-                            text = fuelOk and "探索" or "燃料不足",
-                            variant = fuelOk and "primary" or "secondary",
+                            text = btnText,
+                            variant = canExplore and "primary" or "secondary",
                             height = 32, paddingLeft = 14, paddingRight = 14,
-                            disabled = not fuelOk,
+                            disabled = not canExplore,
                             onClick = function(self)
                                 local ok, err = Flow.start_exploration(state_, adj.to)
                                 if ok then

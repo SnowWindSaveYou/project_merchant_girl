@@ -279,6 +279,30 @@
           "result_text": "苏墨犹豫了一下，最终决定去钟楼请白述来帮忙。"
         }
       ]
+    },
+
+    {
+      "id": "SE_RUINS_003",
+      "title": "拾荒队的旧地图",
+      "settlement": "ruins_camp",
+      "description": "一支拾荒队从远方带回了一张残缺的旧地图，上面标注着一处灾前的地下档案馆。",
+      "goodwill_min": 40,
+      "weight": 30,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["unlock_old_archives"],
+      "choices": [
+        {
+          "text": "用物资交换地图上的坐标",
+          "ops": ["add_credits:-30", "unlock_route:old_archives", "set_flag:unlock_old_archives"],
+          "result_text": "你用三十个信用点换到了坐标抄本。拾荒队长拍了拍你的肩膀：\"小心那边的辐射。\""
+        },
+        {
+          "text": "提议组队一起去探索",
+          "ops": ["add_goodwill:ruins_camp:5", "unlock_route:old_archives", "set_flag:unlock_old_archives"],
+          "result_text": "拾荒队长想了想，点头同意：\"行，人多安全。这是坐标，到时候一起出发。\"他在你的地图上标记了旧档案馆的位置。"
+        }
+      ]
     }
   ]
 }

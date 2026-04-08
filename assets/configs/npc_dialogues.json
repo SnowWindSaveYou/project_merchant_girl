@@ -1564,6 +1564,70 @@
           "result_text": "谢令犹豫了一下：\"这是……别人的私事。但如果对找到云海高塔有帮助的话……我可以让你看抄本。\"她翻开笔记本，递了过来。"
         }
       ]
+    },
+
+    {
+      "id": "NPC_WU_005",
+      "npc_id": "wu_shiqi",
+      "title": "地下黑市的传闻",
+      "goodwill_min": 50,
+      "goodwill_max": 999,
+      "weight": 35,
+      "cooldown": 99,
+      "required_flags": ["npc_wu_shiqi_intro"],
+      "forbidden_flags": ["unlock_underground_market"],
+      "steps": [
+        { "speaker": "npc", "text": "嘿，跑了这么多趟，够意思。有个地方……你们该知道了。" },
+        { "speaker": "linli", "text": "什么地方？" },
+        { "speaker": "npc", "text": "地下黑市。旧地铁站下面改的，什么都有卖。" },
+        { "speaker": "npc", "text": "不是谁都能去的，得有人带路。入口在下水道迷宫深处，标记只有自己人才看得懂。" },
+        { "speaker": "taoxia", "text": "听起来像个好地方嘛。" },
+        { "speaker": "npc", "text": "好不好不知道，但便宜是真的便宜。当然……东西来路就别问了。" }
+      ],
+      "choices": [
+        {
+          "text": "谢了，我们会去看看",
+          "ops": ["add_goodwill:ruins_camp:5", "unlock_route:underground_market", "set_flag:unlock_underground_market"],
+          "result_text": "伍拾七在你的地图上比划了几下，标出了一个不起眼的入口位置。"
+        },
+        {
+          "text": "这种地方安全吗？",
+          "ops": ["add_goodwill:ruins_camp:3", "unlock_route:underground_market", "set_flag:unlock_underground_market"],
+          "result_text": "\"哪有绝对安全的地方。\"伍拾七耸了耸肩，\"但规矩是有的，进了门就别找麻烦就行。\"他还是在地图上标了位置。"
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_BS_005",
+      "npc_id": "bai_shu",
+      "title": "失落的信号站",
+      "goodwill_min": 45,
+      "goodwill_max": 999,
+      "weight": 35,
+      "cooldown": 99,
+      "required_flags": ["npc_bai_shu_intro"],
+      "forbidden_flags": ["unlock_signal_bunker"],
+      "steps": [
+        { "speaker": "npc", "text": "最近整理旧文献的时候，我发现了一份灾前的军事设施清单。" },
+        { "speaker": "linli", "text": "军事设施？" },
+        { "speaker": "npc", "text": "一个信号掩体。灾前用来做地下通讯中继的。" },
+        { "speaker": "npc", "text": "位置在边境探索区的深处。如果里面的设备还完好，也许能截获远处的无线电信号。" },
+        { "speaker": "taoxia", "text": "远处的信号？说不定能联系到其他幸存者社区！" },
+        { "speaker": "npc", "text": "正是如此。但那个区域很危险，你们要做好准备。" }
+      ],
+      "choices": [
+        {
+          "text": "把坐标给我，我们会去探索",
+          "ops": ["add_goodwill:bell_tower:5", "unlock_route:signal_bunker", "set_flag:unlock_signal_bunker"],
+          "result_text": "白述仔细地在你的地图上标注了信号掩体的位置：\"小心行事。那里虽然荒废已久，但谁知道还有什么在里面。\""
+        },
+        {
+          "text": "一起研究一下这份文献？",
+          "ops": ["add_goodwill:bell_tower:8", "add_relation_linli:1", "unlock_route:signal_bunker", "set_flag:unlock_signal_bunker"],
+          "result_text": "白述眼中闪过一丝欣赏：\"难得有人对文献本身感兴趣。来，我给你看看原文。\"你们一起研读了整份清单，在地图上精确标注了坐标。"
+        }
+      ]
     }
   ]
 }

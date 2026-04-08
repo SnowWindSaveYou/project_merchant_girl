@@ -201,6 +201,23 @@ function M.start_exploration(state, target_node_id)
         return false, "没有通路"
     end
 
+    -- 隐藏节点未解锁
+    local target_def = Graph.NODES[target_node_id]
+    if target_def and target_def.hidden then
+        local known = state.map.known_nodes or {}
+        if not known[target_node_id] then
+            return false, "未知区域，需要线索才能前往"
+        end
+    end
+
+    -- 条件探索旗标检查
+    if target_def and target_def.explore_flag then
+        local flags = state.flags or {}
+        if not flags[target_def.explore_flag] then
+            return false, "此区域暂时无法前往，需要更多情报"
+        end
+    end
+
     -- 燃料检查
     if state.truck.fuel < edge.fuel_cost then
         return false, "燃料不足"

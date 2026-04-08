@@ -55,6 +55,8 @@ function M.new()
             dome_outpost     = { goodwill = 0,  visited = false, reputation = 100 },
             metro_camp       = { goodwill = 0,  visited = false, reputation = 100 },
             old_church       = { goodwill = 0,  visited = false, reputation = 100 },
+            -- 隐藏聚落（通过 unlock_route 解锁后才可到达）
+            underground_market = { goodwill = 0, visited = false, reputation = 100 },
         },
 
         -- 角色
