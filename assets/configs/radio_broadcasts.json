@@ -75,6 +75,20 @@
         "weight": 40,
         "duration": 9,
         "reward": null
+      },
+      {
+        "id": "RADIO_MS_011",
+        "text": "有听众问我为什么叫'鸣砂'。因为沙漠里有一种沙丘，风吹过会发出低沉的嗡嗡声。像是大地在说话。我希望这个电台也是这样。",
+        "weight": 35,
+        "duration": 13,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_012",
+        "text": "今日行情：零件在北穹的收购价涨了一成，草药在温室依然走俏。各位行商量力而行。",
+        "weight": 45,
+        "duration": 10,
+        "reward": { "type": "info", "value": "parts_price_up_tower", "desc": "获得情报：塔台零件涨价" }
       }
     ],
     "settlement": [
@@ -140,6 +154,27 @@
         "weight": 40,
         "duration": 10,
         "reward": null
+      },
+      {
+        "id": "RADIO_ST_010",
+        "text": "【钟楼书院布告】本院修复了一台旧时代放映机。本周六晚公开放映，欢迎各方来客。座位有限，先到先坐。",
+        "weight": 40,
+        "duration": 11,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_011",
+        "text": "【废墟营地通告】上周丢失的那批药品已找回。感谢提供线索的行商，营地记住你的人情了。",
+        "weight": 40,
+        "duration": 10,
+        "reward": null
+      },
+      {
+        "id": "RADIO_ST_012",
+        "text": "【北穹塔台通告】天线阵列维护完毕，本周信号覆盖范围恢复正常。各方电台请校准频率。",
+        "weight": 45,
+        "duration": 10,
+        "reward": null
       }
     ],
     "mystery": [
@@ -198,6 +233,20 @@
         "weight": 35,
         "duration": 10,
         "reward": { "type": "flag", "value": "heard_district9_signal", "desc": "记录了第九区求援信号" }
+      },
+      {
+        "id": "RADIO_MY_009",
+        "text": "……嗞嗞……地下……嗞……还有光……嗞嗞……种子库……嗞……没有被毁……嗞嗞嗞……",
+        "weight": 35,
+        "duration": 9,
+        "reward": { "type": "flag", "value": "heard_seed_vault_signal", "desc": "记录了种子库信号" }
+      },
+      {
+        "id": "RADIO_MY_010",
+        "text": "……（一段旧时代的天气预报录音，播音员的声音清晰而平静）……嗞嗞……",
+        "weight": 45,
+        "duration": 8,
+        "reward": null
       }
     ]
   }

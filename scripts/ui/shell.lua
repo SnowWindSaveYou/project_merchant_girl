@@ -13,26 +13,34 @@ local M = {}
 
 --- 需要 Shell 包裹的页面
 local SHELLED = {
-    home       = true,
-    map        = true,
-    orders     = true,
-    cargo      = true,
-    shop       = true,
-    route_plan = true,
-    truck      = true,
-    quest_log  = true,
+    home         = true,
+    map          = true,
+    orders       = true,
+    cargo        = true,
+    shop         = true,
+    route_plan   = true,
+    truck        = true,
+    quest_log    = true,
+    archives     = true,
+    farm         = true,
+    intel        = true,
+    black_market = true,
 }
 
 --- 页面名 → 底栏高亮 tab 映射
 local SCREEN_TO_TAB = {
-    home       = "home",
-    map        = "map",
-    orders     = "orders",
-    cargo      = "cargo",
-    shop       = "home",        -- 交易所从据点进入，属于首页 tab
-    route_plan = "orders",      -- 路线规划是委托流程的延续
-    truck      = "truck",
-    quest_log  = "home",        -- 任务日志从首页进入
+    home         = "home",
+    map          = "map",
+    orders       = "orders",
+    cargo        = "cargo",
+    shop         = "home",        -- 交易所从据点进入，属于首页 tab
+    route_plan   = "orders",      -- 路线规划是委托流程的延续
+    truck        = "truck",
+    quest_log    = "home",        -- 任务日志从首页进入
+    archives     = "home",        -- 聚落子功能均从首页进入
+    farm         = "home",
+    intel        = "home",
+    black_market = "home",
 }
 
 --- 判断页面是否需要 Shell 包裹

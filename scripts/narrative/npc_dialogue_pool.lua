@@ -63,6 +63,8 @@ function M.filter(state, npc_id)
         cheng_yuan   = "dome_outpost",
         a_xiu        = "metro_camp",
         su_mo        = "old_church",
+        dao_yu       = "ruins_camp",
+        xie_ling     = "bell_tower",
     }
     -- 流浪 NPC 集合
     local WANDERING_NPCS = { meng_hui = true, ming_sha = true }

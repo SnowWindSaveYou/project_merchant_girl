@@ -116,9 +116,17 @@ end
 --- 开关收音机
 ---@param state table
 function M.toggle(state)
+    M.set_on(state, not M.is_on(state))
+end
+
+--- 显式设置收音机开关（幂等，防止移动端 touch+mouse 双触发）
+---@param state table
+---@param on boolean
+function M.set_on(state, on)
     local r = state.flow.radio
     if not r then return end
-    r.on = not r.on
+    if r.on == on then return end   -- 同值跳过，防双触发
+    r.on = on
     if r.on then
         -- 刚开启，重置定时器，短延迟后播第一条
         r.elapsed = 0

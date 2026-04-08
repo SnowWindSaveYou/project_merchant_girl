@@ -32,9 +32,16 @@ local ScreenTruck       = require("ui/screen_truck")
 local ScreenCampfire    = require("ui/screen_campfire")
 local ScreenNpc         = require("ui/screen_npc")
 local ScreenQuestLog    = require("ui/screen_quest_log")
+local ScreenArchives    = require("ui/screen_archives")
+local ScreenFarm        = require("ui/screen_farm")
+local ScreenIntel       = require("ui/screen_intel")
+local ScreenBlackMarket = require("ui/screen_black_market")
 local DialoguePool      = require("narrative/dialogue_pool")
 local NpcDialoguePool   = require("narrative/npc_dialogue_pool")
 local WanderingNpc      = require("narrative/wandering_npc")
+local Farm              = require("settlement/farm")
+local Intel             = require("settlement/intel")
+local BlackMarket       = require("settlement/black_market")
 
 -- 游戏状态
 ---@type table
@@ -134,6 +141,22 @@ function Start()
         if not gameState.narrative.npc_visit_count then
             gameState.narrative.npc_visit_count = {}
         end
+        -- 档案阅读记录兼容
+        if not gameState.narrative.archives_read then
+            gameState.narrative.archives_read = {}
+        end
+        -- 聚落子系统状态兼容（farm / intel / market）
+        local settSubs = {
+            greenhouse = { "farm",   { slots = {}, harvested = {} } },
+            tower      = { "intel",  { route_data = 0, active_intel = {}, total_exchanged = 0 } },
+            ruins_camp = { "market", { items = {}, last_refresh = 0, total_trades = 0, total_profit = 0 } },
+        }
+        for sid, def in pairs(settSubs) do
+            local sett = gameState.settlements[sid]
+            if sett and not sett[def[1]] then
+                sett[def[1]] = def[2]
+            end
+        end
         -- 流浪 NPC 位置兼容
         WanderingNpc.ensure_init(gameState)
         -- 货车模块兼容
@@ -195,6 +218,10 @@ function Start()
     Router.register("campfire",     ScreenCampfire)
     Router.register("npc",          ScreenNpc)
     Router.register("quest_log",    ScreenQuestLog)
+    Router.register("archives",     ScreenArchives)
+    Router.register("farm",         ScreenFarm)
+    Router.register("intel",        ScreenIntel)
+    Router.register("black_market", ScreenBlackMarket)
 
     -- 4. 初始页面
     local phase = Flow.get_phase(gameState)
@@ -233,6 +260,20 @@ function handleTripFinish()
     EventPool.tick_cooldowns(gameState)
     DialoguePool.tick_cooldowns(gameState)
     NpcDialoguePool.tick_cooldowns(gameState)
+
+    -- 聚落子系统行程钩子
+    Farm.advance_trip(gameState)
+    local plan = gameState.flow.route_plan
+    local segCount = plan and plan.segments and #plan.segments or 1
+    local hadShortcut = false
+    if plan and plan.segments then
+        for _, seg in ipairs(plan.segments) do
+            if seg.edge_type == "shortcut" then hadShortcut = true; break end
+        end
+    end
+    Intel.earn_route_data(gameState, segCount, hadShortcut)
+    Intel.tick_intel(gameState)
+    BlackMarket.refresh(gameState)
 
     Router.navigate("summary", {
         result = result,

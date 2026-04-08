@@ -14,6 +14,7 @@ local session = {
     step        = 0,
     result      = nil,
     showHistory = false,
+    return_to   = nil,
 }
 
 -- ============================================================
@@ -32,6 +33,7 @@ function M.create(state, params, r)
         session.step        = 1
         session.result      = nil
         session.showHistory = false
+        session.return_to   = params._return_to or nil
     end
 
     if params._continue then
@@ -59,17 +61,19 @@ function M.create(state, params, r)
             end
         end
 
+        local returnTarget = session.return_to
         return Gal.createResultView({
             dialogue  = session.dialogue,
             result    = session.result,
             npc       = session.npc,
             extraInfo = extraInfo,
             onClose   = function()
-                session.dialogue = nil
-                session.npc      = nil
-                session.npc_id   = nil
-                session.result   = nil
-                router.navigate("home")
+                session.dialogue  = nil
+                session.npc       = nil
+                session.npc_id    = nil
+                session.result    = nil
+                session.return_to = nil
+                router.navigate(returnTarget or "home")
             end,
         })
     end
@@ -116,9 +120,10 @@ function M.create(state, params, r)
             router.navigate("npc", { _toggle_history = true })
         end,
         onClose = function()
-            session.dialogue = nil
-            session.npc      = nil
-            session.npc_id   = nil
+            session.dialogue  = nil
+            session.npc       = nil
+            session.npc_id    = nil
+            session.return_to = nil
             router.navigate("home")
         end,
     })

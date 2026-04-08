@@ -238,6 +238,168 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": null
+    },
+    {
+      "id": "CHAT_019",
+      "speaker": "taoxia",
+      "text": "你有没有觉得……每次离开一个地方，再回来的时候它都变了一点点？",
+      "weight": 40,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0.3, 0.7],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "人也是。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_020",
+      "speaker": "linli",
+      "text": "后视镜松了。下次停车我紧一下。",
+      "weight": 45,
+      "duration": 6,
+      "edge_types": [],
+      "progress_range": [0.1, 0.5],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_021",
+      "speaker": "taoxia",
+      "text": "如果旧时代的人看到我们现在这样子，会怎么想？一辆破卡车装着半车罐头到处跑。",
+      "weight": 35,
+      "duration": 10,
+      "edge_types": [],
+      "progress_range": [0.2, 0.8],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_022",
+      "speaker": "linli",
+      "text": "……嗯？没事。刚走神了。",
+      "weight": 40,
+      "duration": 6,
+      "edge_types": [],
+      "progress_range": [0.4, 0.9],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "想什么呢？",
+        "effect": { "relation_linli": 1 }
+      }
+    },
+    {
+      "id": "CHAT_023",
+      "speaker": "taoxia",
+      "text": "我以前在钟楼看到过一本旧相册。里面的人笑得好开心，去海边度假什么的。那个叫'旅游'吧？",
+      "weight": 35,
+      "duration": 11,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_024",
+      "speaker": "taoxia",
+      "text": "肚子有点饿了……还有多久到啊？",
+      "weight": 50,
+      "duration": 6,
+      "edge_types": [],
+      "progress_range": [0.5, 0.85],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "忍忍。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_025",
+      "speaker": "linli",
+      "text": "这条小路比上次来的时候宽了一点。有人在维护。",
+      "weight": 40,
+      "duration": 7,
+      "edge_types": ["path"],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_026",
+      "speaker": "taoxia",
+      "text": "我在副驾发现了一颗螺丝。不知道是从哪掉下来的……要紧吗？",
+      "weight": 45,
+      "duration": 8,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "给我看看。",
+        "effect": { "relation_linli": 1 }
+      }
+    },
+    {
+      "id": "CHAT_027",
+      "speaker": "linli",
+      "text": "速度保持在四十左右。这个路况不能更快了。",
+      "weight": 45,
+      "duration": 7,
+      "edge_types": ["shortcut", "path"],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_028",
+      "speaker": "taoxia",
+      "text": "你说，如果有天所有路都修好了，世界是不是就算恢复正常了？",
+      "weight": 35,
+      "duration": 10,
+      "edge_types": ["main_road"],
+      "progress_range": [0.2, 0.8],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "也许吧。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_029",
+      "speaker": "taoxia",
+      "text": "下次路过温室的时候，帮我带一株薄荷苗回来好不好？我想种在车里。",
+      "weight": 35,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": {
+        "text": "车里种不活。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_030",
+      "speaker": "linli",
+      "text": "……前面有段下坡。坐稳了。",
+      "weight": 45,
+      "duration": 6,
+      "edge_types": [],
+      "progress_range": [0.3, 0.7],
+      "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
     }
   ]
 }

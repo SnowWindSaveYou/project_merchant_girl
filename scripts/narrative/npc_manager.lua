@@ -84,6 +84,25 @@ M.NPC_DATA = {
         color      = { 132, 112, 148, 255 },
         bg         = {  38,  32,  42, 240 },
     },
+    -- 聚落驻留 NPC（非领袖，有独立立绘和对话）
+    dao_yu = {
+        id         = "dao_yu",
+        name       = "刀鱼",
+        settlement = "ruins_camp",
+        title      = "少女拾荒者",
+        icon       = "🔪",
+        color      = { 188, 148,  92, 255 },
+        bg         = {  50,  40,  30, 240 },
+    },
+    xie_ling = {
+        id         = "xie_ling",
+        name       = "谢令",
+        settlement = "bell_tower",
+        title      = "书院抄录员",
+        icon       = "🖊",
+        color      = { 138, 118, 158, 255 },
+        bg         = {  40,  34,  44, 240 },
+    },
     -- 流浪 NPC（不绑定聚落，位置由 wandering_npc 管理）
     meng_hui = {
         id         = "meng_hui",
@@ -111,7 +130,7 @@ M.NPC_DATA = {
 -- 查询
 -- ============================================================
 
---- 根据聚落 ID 获取驻扎 NPC 数据
+--- 根据聚落 ID 获取驻扎 NPC 数据（兼容旧代码，返回第一个匹配）
 ---@param settlement_id string
 ---@return table|nil npc
 function M.get_npc_for_settlement(settlement_id)
@@ -121,6 +140,19 @@ function M.get_npc_for_settlement(settlement_id)
         end
     end
     return nil
+end
+
+--- 根据聚落 ID 获取所有驻扎 NPC 列表
+---@param settlement_id string
+---@return table[] npcs
+function M.get_npcs_for_settlement(settlement_id)
+    local result = {}
+    for _, npc in pairs(M.NPC_DATA) do
+        if npc.settlement == settlement_id then
+            table.insert(result, npc)
+        end
+    end
+    return result
 end
 
 --- 根据 NPC ID 获取数据

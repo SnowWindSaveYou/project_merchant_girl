@@ -1354,6 +1354,216 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "NPC_DY_001",
+      "npc_id": "dao_yu",
+      "title": "刀鱼的收藏",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_dao_yu_intro"],
+      "steps": [
+        { "speaker": "npc", "text": "嘿！你们又来啦！看看我今天找到了什么——" },
+        { "speaker": "narrator", "text": "刀鱼从挎包里掏出一个锈迹斑斑的小铁盒，得意地举起来。" },
+        { "speaker": "taoxia", "text": "这是什么？" },
+        { "speaker": "npc", "text": "不知道！但肯定是好东西！你看这上面还有字呢——嗯……'保质期'？这个词是什么意思？" },
+        { "speaker": "linli", "text": "……就是这东西可能已经过期了。" },
+        { "speaker": "npc", "text": "切，你们大人就是不懂。东西旧不代表没用嘛！" }
+      ],
+      "choices": [
+        {
+          "text": "让我看看，说不定真有好东西",
+          "ops": ["add_goodwill:ruins_camp:4", "set_flag:npc_dao_yu_intro"],
+          "result_text": "刀鱼高兴得眼睛都亮了，把铁盒塞到你手里：\"就说嘛！识货的人就是不一样！\""
+        },
+        {
+          "text": "下次找到东西先拿来给我看看",
+          "ops": ["add_goodwill:ruins_camp:3", "set_flag:npc_dao_yu_intro"],
+          "result_text": "刀鱼歪着头想了想：\"也行。但是看归看，好东西我可不卖便宜了啊！\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_DY_002",
+      "npc_id": "dao_yu",
+      "title": "画册里的城市",
+      "goodwill_min": 25,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 5,
+      "required_flags": ["npc_dao_yu_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "narrator", "text": "刀鱼坐在废铁堆上翻一本破旧的画册，听到脚步声赶紧藏起来。" },
+        { "speaker": "npc", "text": "没、没什么！就是随便翻翻！" },
+        { "speaker": "taoxia", "text": "那是什么画册？" },
+        { "speaker": "narrator", "text": "刀鱼犹豫了一下，还是把画册递了过来。里面画的是灾前城市的风景——高楼、公园、路灯。" },
+        { "speaker": "npc", "text": "……这些地方真的存在过吗？还是画的人编的？" },
+        { "speaker": "linli", "text": "存在过。我小时候见过。" },
+        { "speaker": "npc", "text": "真的？！那、那路灯到底是怎么亮的？画里面全是亮的，是有人每天去点蜡烛吗？" }
+      ],
+      "choices": [
+        {
+          "text": "是用电的，按一个开关就全亮了",
+          "ops": ["add_goodwill:ruins_camp:3", "add_relation_linli:1"],
+          "result_text": "刀鱼张大了嘴：\"按一下就全亮了……那得多少蜡烛才能换啊。\"她把画册收好，但这次没有藏——放在了能拿到的地方。"
+        },
+        {
+          "text": "有机会的话，带你去看看还剩下什么",
+          "ops": ["add_goodwill:ruins_camp:5", "add_relation_linli:1"],
+          "result_text": "刀鱼愣了好一会儿，然后使劲点头。她把画册翻到最后一页——上面有个小女孩在公园里放风筝。\"这个，我最想看。\"",
+          "memory": {
+            "id": "mem_dao_yu_album",
+            "title": "画册里的风筝",
+            "desc": "刀鱼珍藏的画册最后一页画着灾前公园里放风筝的小女孩。她从来没见过风筝。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "NPC_DY_003",
+      "npc_id": "dao_yu",
+      "title": "小向导的烦恼",
+      "goodwill_min": 40,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 5,
+      "required_flags": ["npc_dao_yu_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "narrator", "text": "刀鱼蹲在营地入口，用树枝在地上画着什么。" },
+        { "speaker": "taoxia", "text": "在干嘛呢？" },
+        { "speaker": "npc", "text": "画地图！老大说我要是能把废墟外围的路画清楚，就让我带队出去翻东西！" },
+        { "speaker": "npc", "text": "但是……我只知道哪儿有好东西，不知道怎么画在纸上。" },
+        { "speaker": "linli", "text": "你走过的路都记得？" },
+        { "speaker": "npc", "text": "当然！闭着眼都能走！就是画不出来嘛……线老是歪。" }
+      ],
+      "choices": [
+        {
+          "text": "我教你怎么用方位标注路线",
+          "ops": ["add_goodwill:ruins_camp:4", "add_relation_linli:2"],
+          "result_text": "刀鱼跟着学了半天，虽然画的线还是歪歪扭扭的，但起码能看出东南西北了。\"嘿嘿，等我画好了，第一个给你看！\""
+        },
+        {
+          "text": "你用嘴说，我来帮你画",
+          "ops": ["add_goodwill:ruins_camp:3", "add_relation_taoxia:1"],
+          "result_text": "刀鱼高兴地跳起来，噼里啪啦说了一大堆路线，陶夏奋笔疾书。画完的地图虽然潦草，但信息量惊人。"
+        }
+      ]
+    },
+
+    {
+      "id": "NPC_XL_001",
+      "npc_id": "xie_ling",
+      "title": "角落里的抄写员",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": ["npc_xie_ling_intro"],
+      "steps": [
+        { "speaker": "narrator", "text": "档案室角落里，谢令正埋头抄写，笔尖沙沙作响。" },
+        { "speaker": "taoxia", "text": "嗨！" },
+        { "speaker": "narrator", "text": "谢令吓了一跳，墨水滴在纸上，晕开一个黑点。" },
+        { "speaker": "npc", "text": "啊……你、你好。" },
+        { "speaker": "taoxia", "text": "抱歉吓到你了。你就是谢令？白述老师提到过你。" },
+        { "speaker": "npc", "text": "嗯……是我。你们是行商对吧？老师说你们会经常来……" },
+        { "speaker": "npc", "text": "那个、如果不忙的话……可以跟我说说外面的事吗？什么都行。" }
+      ],
+      "choices": [
+        {
+          "text": "当然！你想听什么？",
+          "ops": ["add_goodwill:bell_tower:5", "set_flag:npc_xie_ling_intro"],
+          "result_text": "谢令的眼睛一下子亮了起来，赶紧翻开一页新的笔记本：\"都想听！等等让我准备一下……\"她手忙脚乱地蘸墨，脸颊泛红。"
+        },
+        {
+          "text": "可以，但你也得给我讲讲档案里的东西",
+          "ops": ["add_goodwill:bell_tower:4", "set_flag:npc_xie_ling_intro"],
+          "result_text": "谢令认真地点了点头：\"好……那算是交换？我能讲的不多，但档案里有些内容可能对行商有用。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_XL_002",
+      "npc_id": "xie_ling",
+      "title": "外面的天空",
+      "goodwill_min": 25,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 5,
+      "required_flags": ["npc_xie_ling_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "narrator", "text": "谢令在整理一摞旧地图，看到你来了，赶紧把笔记本打开。" },
+        { "speaker": "npc", "text": "上次你说温室那边有一片向日葵田……是真的那么大吗？" },
+        { "speaker": "taoxia", "text": "嗯，差不多有半个足球场那么大。" },
+        { "speaker": "npc", "text": "足球场……" },
+        { "speaker": "narrator", "text": "谢令低头在笔记本上写了什么，又想了想，划掉重写。" },
+        { "speaker": "npc", "text": "我在档案里看过足球场的描述。很大的草坪对吧？那向日葵田有草坪的一半……" },
+        { "speaker": "npc", "text": "……其实我也不知道草坪有多大。" },
+        { "speaker": "linli", "text": "你没出过钟楼？" },
+        { "speaker": "npc", "text": "出过的……最远到过山脚下的溪边。但那已经是两年前了。" }
+      ],
+      "choices": [
+        {
+          "text": "下次进货的时候，带你去山脚走走",
+          "ops": ["add_goodwill:bell_tower:5", "add_relation_taoxia:1"],
+          "result_text": "谢令的笔停住了，抬头看着你，像是在确认你是不是认真的。然后她很轻很轻地点了点头。",
+          "memory": {
+            "id": "mem_xie_ling_outside",
+            "title": "走出钟楼的约定",
+            "desc": "你答应下次带谢令去山脚走走。她从来没有离开过钟楼方圆三公里以外的地方。"
+          }
+        },
+        {
+          "text": "我可以把看到的画下来给你",
+          "ops": ["add_goodwill:bell_tower:3", "add_relation_linli:1"],
+          "result_text": "谢令惊喜地说：\"真的？那太好了……我来准备空白的纸。\"她小心翼翼地从柜子里抽出几张还算平整的旧纸。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_XL_003",
+      "npc_id": "xie_ling",
+      "title": "未寄出的信",
+      "goodwill_min": 45,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 5,
+      "required_flags": ["npc_xie_ling_intro"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "narrator", "text": "谢令拿着一封泛黄的信封，站在窗边发呆。" },
+        { "speaker": "npc", "text": "啊……你来了。" },
+        { "speaker": "taoxia", "text": "那是什么？" },
+        { "speaker": "npc", "text": "整理旧档案时翻到的……一封没寄出的信。写给一个叫'云海高塔值班员'的人。" },
+        { "speaker": "npc", "text": "信上写了……很私人的事。好像是一个技术员写给同事的，说自己可能回不去了。" },
+        { "speaker": "linli", "text": "灾变前的？" },
+        { "speaker": "npc", "text": "应该是。信纸都脆了。我抄了一份备份，原件不敢再碰了。" },
+        { "speaker": "npc", "text": "你们跑的路线多……有没有听说过'云海高塔'？" }
+      ],
+      "choices": [
+        {
+          "text": "没听过，但我可以帮你留意",
+          "ops": ["add_goodwill:bell_tower:4", "set_flag:xie_ling_letter_quest"],
+          "result_text": "谢令小心地把信封收好：\"谢谢……虽然写信的人可能已经不在了，但也许这封信还是应该到达它要去的地方。\"",
+          "memory": {
+            "id": "mem_xie_ling_letter",
+            "title": "未寄出的信",
+            "desc": "谢令在旧档案中发现一封写给'云海高塔值班员'的未寄出信件。她希望有朝一日能把信送到。"
+          }
+        },
+        {
+          "text": "信的内容能给我看看吗？",
+          "ops": ["add_goodwill:bell_tower:2"],
+          "result_text": "谢令犹豫了一下：\"这是……别人的私事。但如果对找到云海高塔有帮助的话……我可以让你看抄本。\"她翻开笔记本，递了过来。"
+        }
+      ]
     }
   ]
 }

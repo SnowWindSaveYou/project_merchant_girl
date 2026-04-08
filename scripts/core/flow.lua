@@ -11,6 +11,7 @@ local SettlementEventPool = require("events/settlement_event_pool")
 local WanderingNpc        = require("narrative/wandering_npc")
 local Chatter             = require("travel/chatter")
 local Radio               = require("travel/radio")
+local Scenery             = require("travel/scenery")
 local Tracker             = require("analytics/tracker")
 local Skills              = require("character/skills")
 
@@ -70,6 +71,7 @@ function M.start_travel(state, plan)
     state.flow.event_timer = EventScheduler.new_timer()
     state.flow.chatter = Chatter.init()
     state.flow.radio   = Radio.init()
+    state.flow.scenery = Scenery.init()
 
     -- 埋点
     Tracker.milestone(state, "first_trip")
@@ -242,6 +244,7 @@ function M.start_exploration(state, target_node_id)
     state.flow.event_timer = EventScheduler.new_timer()
     state.flow.chatter     = Chatter.init()
     state.flow.radio       = Radio.init()
+    state.flow.scenery     = Scenery.init()
 
     -- 埋点
     Tracker.milestone(state, "first_explore")
@@ -313,6 +316,7 @@ function M.finish_trip(state)
     state.flow.event_timer = nil
     state.flow.chatter = nil
     state.flow.radio   = nil
+    state.flow.scenery = nil
 
     return result
 end

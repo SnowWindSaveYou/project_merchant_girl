@@ -10,6 +10,8 @@ local UI    = require("urhox-libs/UI")
 local Theme = require("ui/theme")
 local Factions = require("settlement/factions")
 
+local NpcManager = require("narrative/npc_manager")
+
 local M = {}
 
 -- ============================================================
@@ -40,6 +42,8 @@ local NPC_PORTRAITS = {
     bai_shu   = "image/portrait_bai_shu_20260406000056.png",
     meng_hui  = "image/portrait_meng_hui_20260406000106.png",
     ming_sha  = "image/portrait_ming_sha_20260406000227.png",
+    dao_yu    = "image/portrait_dao_yu_20260408072957.png",
+    xie_ling  = "image/portrait_xie_ling_20260408073029.png",
 }
 
 --- 势力通用立绘（非领袖 NPC 使用）
@@ -81,11 +85,21 @@ end
 -- 获取说话人显示配置
 -- ============================================================
 
+--- 判断 speaker 是否为 NPC（"npc" 或具体 NPC ID）
+local function is_npc_speaker(speaker)
+    if speaker == "npc" then return true end
+    if speaker == "narrator" then return false end
+    if PROTAGONIST_PORTRAITS[speaker] then return false end
+    -- 不是主角也不是旁白，检查是否是已注册的 NPC ID
+    return NpcManager.get_npc(speaker) ~= nil
+end
+
 --- 获取说话人的名字、颜色、立绘
----@param speaker string  "linli"|"taoxia"|"npc"
----@param npc table|nil   当 speaker=="npc" 时使用
+---@param speaker string  "linli"|"taoxia"|"npc"|"dao_yu"|"xie_ling"|...
+---@param npc table|nil   当 speaker=="npc" 时使用的主 NPC
 ---@return table  { name, color, bgColor, portrait }
 local function get_speaker_cfg(speaker, npc)
+    -- "npc" → 使用传入的主 NPC 数据
     if speaker == "npc" and npc then
         return {
             name     = npc.name or "???",
@@ -94,7 +108,22 @@ local function get_speaker_cfg(speaker, npc)
             portrait = get_npc_portrait(npc),
         }
     end
-    return PROTAGONIST_PORTRAITS[speaker] or PROTAGONIST_PORTRAITS.linli
+    -- 主角直接返回
+    if PROTAGONIST_PORTRAITS[speaker] then
+        return PROTAGONIST_PORTRAITS[speaker]
+    end
+    -- 具体 NPC ID → 查 NpcManager
+    local npcData = NpcManager.get_npc(speaker)
+    if npcData then
+        return {
+            name     = npcData.name or "???",
+            color    = npcData.color or { 180, 170, 150, 255 },
+            bgColor  = npcData.bg or { 45, 40, 35, 240 },
+            portrait = get_npc_portrait(npcData),
+        }
+    end
+    -- 兜底
+    return PROTAGONIST_PORTRAITS.linli
 end
 
 -- ============================================================
@@ -132,11 +161,13 @@ function M.createDialogueView(opts)
 
     if npc then
         -- NPC 模式：主角在左，NPC 在右
-        local protagonistKey = (curSpeakerKey ~= "npc") and curSpeakerKey or "linli"
+        local curIsNpc = is_npc_speaker(curSpeakerKey)
+        local protagonistKey = (not curIsNpc) and curSpeakerKey or "linli"
         leftCfg  = get_speaker_cfg(protagonistKey, nil)
-        rightCfg = get_speaker_cfg("npc", npc)
-        leftDim  = (curSpeakerKey == "npc")
-        rightDim = (curSpeakerKey ~= "npc")
+        -- 右侧立绘：当前说话的 NPC（可能是主 NPC 或具体 NPC ID）
+        rightCfg = curIsNpc and get_speaker_cfg(curSpeakerKey, npc) or get_speaker_cfg("npc", npc)
+        leftDim  = curIsNpc
+        rightDim = not curIsNpc
     else
         -- 篝火模式：林砾在左，陶夏在右
         leftCfg  = PROTAGONIST_PORTRAITS.linli
@@ -341,7 +372,7 @@ function M.createHistoryView(opts)
     for i = 1, curStep do
         local s   = steps[i]
         local cfg = get_speaker_cfg(s.speaker, npc)
-        local isRight = (s.speaker ~= "npc" and s.speaker == "linli")
+        local isRight = not is_npc_speaker(s.speaker) and s.speaker ~= "narrator"
 
         table.insert(bubbles, UI.Panel {
             width = "100%",

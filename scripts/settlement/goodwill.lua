@@ -67,6 +67,11 @@ function M.is_unlocked(goodwill, feature)
     if feature == "specialty_goods" then return lv >= 1 end
     if feature == "rest_area"       then return lv >= 2 end
     if feature == "emergency_call"  then return lv >= 3 end
+    -- 聚落专属系统（Lv1 解锁）
+    if feature == "archives"     then return lv >= 1 end  -- 钟楼·档案馆
+    if feature == "farm"         then return lv >= 1 end  -- 温室·培育场
+    if feature == "intel"        then return lv >= 1 end  -- 塔台·情报站
+    if feature == "black_market" then return lv >= 1 end  -- 废墟·黑市
     return false
 end
 

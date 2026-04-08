@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "type": "crops",
+    "version": "0.1.0",
+    "description": "温室·培育场作物表。growth_trips 为生长所需跑商趟数。"
+  },
+  "crops": [
+    {
+      "id": "mutant_cabbage",
+      "name": "变异白菜",
+      "desc": "温室常见蔬菜，不需要额外原料，适合新手练手。",
+      "seed_source": "initial",
+      "materials": [],
+      "growth_trips": 3,
+      "yield_id": "food_can",
+      "yield_amount": 5,
+      "required_goodwill": 0,
+      "unlock_flag": null
+    },
+    {
+      "id": "rad_tomato",
+      "name": "抗辐射番茄",
+      "desc": "沈禾培育的特殊品种，需要净水灌溉，产出罐头原料。",
+      "seed_source": "gift_shenhe",
+      "materials": [
+        { "goods_id": "water", "amount": 2 }
+      ],
+      "growth_trips": 5,
+      "yield_id": "food_can",
+      "yield_amount": 3,
+      "required_goodwill": 20,
+      "unlock_flag": null
+    },
+    {
+      "id": "old_wheat",
+      "name": "灾前小麦",
+      "desc": "从钟楼书院找到的灾前种子，需要塔台提供的微量元素肥料。高价值作物。",
+      "seed_source": "story_unlock",
+      "materials": [
+        { "goods_id": "circuit", "amount": 1 }
+      ],
+      "growth_trips": 8,
+      "yield_id": "old_book",
+      "yield_amount": 2,
+      "required_goodwill": 50,
+      "unlock_flag": "wheat_experiment_success"
+    },
+    {
+      "id": "herb",
+      "name": "草药",
+      "desc": "从废墟营地购得的种子，需要堆肥，产出药品原料。",
+      "seed_source": "ruins_shop",
+      "materials": [
+        { "goods_id": "metal_scrap", "amount": 1 }
+      ],
+      "growth_trips": 4,
+      "yield_id": "medicine",
+      "yield_amount": 2,
+      "required_goodwill": 30,
+      "unlock_flag": null
+    },
+    {
+      "id": "glow_mushroom",
+      "name": "夜光蘑菇",
+      "desc": "在隐士洞窟发现的奇特菌种，自动在阴暗环境生长，产出稀有食材。",
+      "seed_source": "explore_discover",
+      "materials": [],
+      "growth_trips": 6,
+      "yield_id": "music_disc",
+      "yield_amount": 1,
+      "required_goodwill": 40,
+      "unlock_flag": "glow_mushroom_found"
+    }
+  ]
+}

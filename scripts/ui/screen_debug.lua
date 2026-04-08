@@ -7,6 +7,11 @@ local Flow       = require("core/flow")
 local RoutePlanner = require("map/route_planner")
 local CargoUtils = require("economy/cargo_utils")
 local EventPool  = require("events/event_pool")
+local Goodwill   = require("settlement/goodwill")
+local Farm       = require("settlement/farm")
+local Intel      = require("settlement/intel")
+local BlackMarket = require("settlement/black_market")
+local Archives   = require("settlement/archives")
 
 local M = {}
 ---@type table
@@ -255,7 +260,195 @@ function M._build(state)
     }
     table.insert(sections, M._sectionCard("货车", truckChildren))
 
-    -- ── 5. 事件触发（折叠/展开） ──
+    -- ── 5. 聚落子系统调试 ──
+    local settlementChildren = {}
+
+    -- 好感度调整（四大据点）
+    local SETTLE_IDS = {
+        { id = "greenhouse",  name = "温室" },
+        { id = "tower",       name = "北穹塔台" },
+        { id = "ruins_camp",  name = "废墟营地" },
+        { id = "bell_tower",  name = "钟楼书院" },
+    }
+    table.insert(settlementChildren, UI.Label {
+        text = "好感度",
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.text_secondary,
+    })
+    for _, s in ipairs(SETTLE_IDS) do
+        local sid = s.id
+        local sett = state.settlements[sid]
+        local gw = sett and sett.goodwill or 0
+        local info = Goodwill.get_info(gw)
+        table.insert(settlementChildren, adjustRow(
+            s.name .. " Lv" .. info.level,
+            tostring(gw),
+            function(n)
+                if state.settlements[sid] then
+                    state.settlements[sid].goodwill = math.max(0, (state.settlements[sid].goodwill or 0) - n)
+                end
+                M._refresh(state)
+            end,
+            function(n)
+                if state.settlements[sid] then
+                    state.settlements[sid].goodwill = math.min(100, (state.settlements[sid].goodwill or 0) + n)
+                end
+                M._refresh(state)
+            end
+        ))
+    end
+
+    -- 培育农场
+    table.insert(settlementChildren, UI.Label {
+        text = "培育农场",
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.text_secondary,
+        marginTop = 8,
+    })
+    local farmSlots = Farm.get_slots(state)
+    for i, slot in ipairs(farmSlots) do
+        local slotText = slot.crop_id
+            and (slot.crop_id .. " " .. (slot.trips_elapsed or 0) .. "/" .. (slot.growth_trips or "?"))
+            or "空"
+        table.insert(settlementChildren, UI.Panel {
+            width = "100%", flexDirection = "row",
+            alignItems = "center", gap = 6,
+            children = {
+                UI.Label {
+                    text = "槽" .. i .. ": " .. slotText,
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.text_primary,
+                    flexGrow = 1,
+                },
+                UI.Button {
+                    text = "推进1趟", width = 72, height = 30,
+                    fontSize = Theme.sizes.font_tiny,
+                    variant = "outline",
+                    onClick = function()
+                        Farm.advance_trip(state)
+                        M._refresh(state)
+                    end,
+                },
+                UI.Button {
+                    text = "清空", width = 48, height = 30,
+                    fontSize = Theme.sizes.font_tiny,
+                    variant = "danger",
+                    onClick = function()
+                        local slots = Farm.get_slots(state)
+                        if slots[i] then
+                            slots[i] = { crop_id = nil }
+                        end
+                        M._refresh(state)
+                    end,
+                },
+            },
+        })
+    end
+
+    -- 情报站
+    local intelData = Intel.get_route_data(state)
+    local intelExchanged, _ = Intel.get_stats(state)
+    table.insert(settlementChildren, UI.Label {
+        text = "情报站",
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.text_secondary,
+        marginTop = 8,
+    })
+    table.insert(settlementChildren, adjustRow(
+        "数据点",
+        tostring(intelData),
+        function(n)
+            local st = state.settlements.tower
+            if st and st.intel then
+                st.intel.route_data = math.max(0, st.intel.route_data - n)
+            end
+            M._refresh(state)
+        end,
+        function(n)
+            local st = state.settlements.tower
+            if st and st.intel then
+                st.intel.route_data = st.intel.route_data + n
+            end
+            M._refresh(state)
+        end
+    ))
+    local activeIntel = Intel.get_active_intel(state)
+    table.insert(settlementChildren, UI.Label {
+        text = "活跃情报: " .. #activeIntel .. "  累计兑换: " .. intelExchanged,
+        fontSize = Theme.sizes.font_small,
+        fontColor = Theme.colors.text_dim,
+    })
+
+    -- 黑市
+    local marketItems = BlackMarket.get_items(state)
+    local marketTrades, marketSaved = BlackMarket.get_stats(state)
+    table.insert(settlementChildren, UI.Label {
+        text = "黑市",
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.text_secondary,
+        marginTop = 8,
+    })
+    table.insert(settlementChildren, UI.Panel {
+        width = "100%", flexDirection = "row",
+        alignItems = "center", gap = 8,
+        children = {
+            UI.Label {
+                text = "货架: " .. #marketItems .. " 件  交易: " .. marketTrades .. "  省: $" .. marketSaved,
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_primary,
+                flexGrow = 1,
+            },
+            UI.Button {
+                text = "强制刷新", width = 80, height = 30,
+                fontSize = Theme.sizes.font_tiny,
+                variant = "primary",
+                onClick = function()
+                    -- 重置 last_refresh 强制刷新
+                    local mkt = state.settlements.ruins_camp
+                        and state.settlements.ruins_camp.market
+                    if mkt then mkt.last_refresh = -1 end
+                    BlackMarket.refresh(state)
+                    M._refresh(state)
+                end,
+            },
+        },
+    })
+
+    -- 档案
+    local archRead, archTotal = Archives.get_progress(state)
+    table.insert(settlementChildren, UI.Label {
+        text = "档案",
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.text_secondary,
+        marginTop = 8,
+    })
+    table.insert(settlementChildren, UI.Panel {
+        width = "100%", flexDirection = "row",
+        alignItems = "center", gap = 8,
+        children = {
+            UI.Label {
+                text = "已读: " .. archRead .. "/" .. archTotal,
+                fontSize = Theme.sizes.font_small,
+                fontColor = Theme.colors.text_primary,
+                flexGrow = 1,
+            },
+            UI.Button {
+                text = "重置已读", width = 80, height = 30,
+                fontSize = Theme.sizes.font_tiny,
+                variant = "danger",
+                onClick = function()
+                    if state.narrative then
+                        state.narrative.archives_read = {}
+                    end
+                    M._refresh(state)
+                end,
+            },
+        },
+    })
+
+    table.insert(sections, M._sectionCard("聚落子系统", settlementChildren))
+
+    -- ── 6. 事件触发（折叠/展开） ──
     local eventChildren = {}
     EventPool._load_config()
     local allEvents = EventPool.EVENTS

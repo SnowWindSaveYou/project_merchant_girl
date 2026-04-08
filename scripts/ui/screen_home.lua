@@ -18,16 +18,24 @@ local WanderingNpc        = require("narrative/wandering_npc")
 local QuestLog            = require("narrative/quest_log")
 local Chatter             = require("travel/chatter")
 local Radio               = require("travel/radio")
+local Scenery             = require("travel/scenery")
+local Archives            = require("settlement/archives")
+local Farm                = require("settlement/farm")
+local Intel               = require("settlement/intel")
+local BlackMarket         = require("settlement/black_market")
+local Flags               = require("core/flags")
+local UnlockStories       = require("narrative/unlock_stories")
 
 local M = {}
 ---@type table
 local router = nil
 
 -- 行驶中状态追踪（用于检测变化触发 UI 重建）
-local _prevChatterId  = nil
-local _prevRadioOn    = nil
-local _prevRadioCh    = nil
+local _prevChatterId   = nil
+local _prevRadioOn     = nil
+local _prevRadioCh     = nil
 local _prevBroadcastId = nil
+local _prevSceneryId   = nil
 
 -- 地图节点 → 资源点探索房间 ID（Phase 06 连接）
 local NODE_EXPLORE_ROOM = {
@@ -68,6 +76,9 @@ function M.create(state, params, r)
         if not state.flow.radio then
             state.flow.radio = Radio.init()
         end
+        if not state.flow.scenery then
+            state.flow.scenery = Scenery.init()
+        end
         -- 同步追踪变量到当前真实状态，避免首帧误判为"变化"导致无限重建
         local initChat = Chatter.get_current(state)
         _prevChatterId   = initChat and initChat.id or nil
@@ -75,6 +86,8 @@ function M.create(state, params, r)
         _prevRadioCh     = Radio.get_channel(state)
         local initBr = Radio.get_current(state)
         _prevBroadcastId = initBr and initBr.id or nil
+        local initScn = Scenery.get_current(state)
+        _prevSceneryId   = initScn and initScn.id or nil
     end
 
     if isTravelling then
@@ -98,28 +111,34 @@ function M.update(state, dt, r)
     local progress = RoutePlanner.get_progress(plan)
     local seg = RoutePlanner.get_current_segment(plan)
 
-    -- ── 驱动 Chatter / Radio ──
+    -- ── 驱动 Chatter / Radio / Scenery ──
     Chatter.update(state, dt, progress, seg)
     Radio.update(state, dt)
+    local chatterActive = Chatter.get_current(state) ~= nil
+    Scenery.update(state, dt, progress, seg, chatterActive)
 
-    -- ── 检测 Chatter / Radio 状态变化 → 重建 UI ──
+    -- ── 检测 Chatter / Radio / Scenery 状态变化 → 重建 UI ──
     local curChat = Chatter.get_current(state)
     local chatId  = curChat and curChat.id or nil
     local radioOn = Radio.is_on(state)
     local radioCh = Radio.get_channel(state)
     local curBroadcast = Radio.get_current(state)
     local broadcastId  = curBroadcast and curBroadcast.id or nil
+    local curScn = Scenery.get_current(state)
+    local scnId  = curScn and curScn.id or nil
 
     local needRebuild = false
     if chatId ~= _prevChatterId then needRebuild = true end
     if radioOn ~= _prevRadioOn then needRebuild = true end
     if radioCh ~= _prevRadioCh then needRebuild = true end
     if broadcastId ~= _prevBroadcastId then needRebuild = true end
+    if scnId ~= _prevSceneryId then needRebuild = true end
 
-    _prevChatterId  = chatId
-    _prevRadioOn    = radioOn
-    _prevRadioCh    = radioCh
+    _prevChatterId   = chatId
+    _prevRadioOn     = radioOn
+    _prevRadioCh     = radioCh
     _prevBroadcastId = broadcastId
+    _prevSceneryId   = scnId
 
     if needRebuild then
         r.navigate("home")
@@ -289,9 +308,9 @@ function createSettlementView(state, curNode)
             })
         end
 
-        -- NPC 拜访
-        local npc = NpcManager.get_npc_for_settlement(nodeId)
-        if npc then
+        -- NPC 拜访（支持同一聚落多个驻扎 NPC）
+        local settlementNpcs = NpcManager.get_npcs_for_settlement(nodeId)
+        for _, npc in ipairs(settlementNpcs) do
             local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
             table.insert(lowerChildren, UI.Button {
                 text = canVisit
@@ -359,6 +378,121 @@ function createSettlementView(state, curNode)
                 router.navigate("shop")
             end,
         })
+
+        -- ── 聚落专属功能按钮 ──
+        local settGw = state.settlements[nodeId]
+            and state.settlements[nodeId].goodwill or 0
+
+        -- 档案阅览 (bell_tower)
+        if nodeId == "bell_tower" then
+            local archUnlocked = Goodwill.is_unlocked(settGw, "archives")
+            local unreadCount = archUnlocked and Archives.get_unread_count(state) or 0
+            local archLabel = archUnlocked
+                and ("📖 档案阅览" .. (unreadCount > 0 and (" (" .. unreadCount .. " 未读)") or ""))
+                or  "📖 档案阅览（好感不足）"
+            table.insert(lowerChildren, UI.Button {
+                text = archLabel,
+                variant = "secondary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                disabled = not archUnlocked,
+                onClick = function(self)
+                    if not archUnlocked then return end
+                    if not Flags.has(state, "unlock_seen_archives") then
+                        local d = UnlockStories.get("archives")
+                        router.navigate("npc", { npc_id = d.npc_id, dialogue = d, _return_to = "archives" })
+                    else
+                        router.navigate("archives")
+                    end
+                end,
+            })
+        end
+
+        -- 培育农场 (greenhouse)
+        if nodeId == "greenhouse" then
+            local farmUnlocked = Goodwill.is_unlocked(settGw, "farm")
+            local farmSlots = Farm.get_slots(state)
+            local busyCount = 0
+            for _, slot in ipairs(farmSlots) do
+                if slot.crop_id then busyCount = busyCount + 1 end
+            end
+            local farmLabel = farmUnlocked
+                and ("🌱 培育农场" .. (busyCount > 0 and (" (" .. busyCount .. " 栽种中)") or ""))
+                or  "🌱 培育农场（好感不足）"
+            table.insert(lowerChildren, UI.Button {
+                text = farmLabel,
+                variant = "secondary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                disabled = not farmUnlocked,
+                onClick = function(self)
+                    if not farmUnlocked then return end
+                    if not Flags.has(state, "unlock_seen_farm") then
+                        local d = UnlockStories.get("farm")
+                        router.navigate("npc", { npc_id = d.npc_id, dialogue = d, _return_to = "farm" })
+                    else
+                        router.navigate("farm")
+                    end
+                end,
+            })
+        end
+
+        -- 情报站 (tower)
+        if nodeId == "tower" then
+            local intelUnlocked = Goodwill.is_unlocked(settGw, "intel")
+            local routeData = 0
+            if intelUnlocked then
+                routeData = Intel.get_route_data(state)
+            end
+            local intelLabel = intelUnlocked
+                and ("📡 情报站" .. (routeData > 0 and (" (数据点: " .. routeData .. ")") or ""))
+                or  "📡 情报站（好感不足）"
+            table.insert(lowerChildren, UI.Button {
+                text = intelLabel,
+                variant = "secondary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                disabled = not intelUnlocked,
+                onClick = function(self)
+                    if not intelUnlocked then return end
+                    if not Flags.has(state, "unlock_seen_intel") then
+                        local d = UnlockStories.get("intel")
+                        router.navigate("npc", { npc_id = d.npc_id, dialogue = d, _return_to = "intel" })
+                    else
+                        router.navigate("intel")
+                    end
+                end,
+            })
+        end
+
+        -- 黑市 (ruins_camp)
+        if nodeId == "ruins_camp" then
+            local marketUnlocked = Goodwill.is_unlocked(settGw, "black_market")
+            local itemCount = 0
+            if marketUnlocked then
+                local items = BlackMarket.get_items(state)
+                itemCount = #items
+            end
+            local marketLabel = marketUnlocked
+                and ("🏚 黑市" .. (itemCount > 0 and (" (" .. itemCount .. " 件商品)") or ""))
+                or  "🏚 黑市（好感不足）"
+            table.insert(lowerChildren, UI.Button {
+                text = marketLabel,
+                variant = "secondary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                disabled = not marketUnlocked,
+                onClick = function(self)
+                    if not marketUnlocked then return end
+                    if not Flags.has(state, "unlock_seen_black_market") then
+                        local d = UnlockStories.get("black_market")
+                        router.navigate("npc", { npc_id = d.npc_id, dialogue = d, _return_to = "black_market" })
+                    else
+                        router.navigate("black_market")
+                    end
+                end,
+            })
+        end
 
         -- 篝火
         local canCamp, campReason = Campfire.can_start(state)
@@ -601,6 +735,12 @@ function createTravelView(state)
             },
         },
     })
+
+    -- ── 路景描写（与对话互斥，仅在无对话时显示） ──
+    local sceneryWidget = createSceneryText(state)
+    if sceneryWidget then
+        table.insert(contentChildren, sceneryWidget)
+    end
 
     -- ── 车内日常对话气泡 ──
     local chatterWidget = createChatterBubble(state)
@@ -943,6 +1083,41 @@ function createBacklogWarning(info)
 end
 
 -- ============================================================
+-- 路景描写文本（行驶中）
+-- 没有路景时返回 nil，不占布局空间
+-- 纯叙事文字，居中灰色，营造公路旅行氛围
+-- ============================================================
+function createSceneryText(state)
+    local cur = Scenery.get_current(state)
+    if not cur then return nil end
+
+    -- 类别对应的微弱装饰色
+    local catColors = {
+        window  = { 140, 160, 180, 255 },
+        cabin   = { 170, 155, 140, 255 },
+        sound   = { 140, 170, 150, 255 },
+        time    = { 180, 165, 130, 255 },
+        micro   = { 160, 150, 165, 255 },
+        silence = { 120, 120, 120, 255 },
+    }
+    local textColor = catColors[cur.category] or Theme.colors.text_dim
+
+    return UI.Panel {
+        width = "100%", paddingTop = 4, paddingBottom = 4,
+        paddingLeft = 20, paddingRight = 20,
+        justifyContent = "center", alignItems = "center",
+        children = {
+            UI.Label {
+                text = cur.text,
+                fontSize = Theme.sizes.font_small,
+                fontColor = textColor,
+                textAlign = "center",
+            },
+        },
+    }
+end
+
+-- ============================================================
 -- 车内日常对话气泡（行驶中）
 -- 没有对话时返回 nil，不占布局空间
 -- ============================================================
@@ -1022,7 +1197,7 @@ function createRadioPanel(state)
                 height = 28,
                 fontSize = Theme.sizes.font_tiny,
                 onClick = function(self)
-                    Radio.toggle(state)
+                    Radio.set_on(state, not isOn)
                 end,
             },
         },
