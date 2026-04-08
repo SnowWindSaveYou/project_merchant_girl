@@ -5,6 +5,8 @@ local Config  = require("combat/combat_config")
 local ItemUse = require("economy/item_use")
 local Modules = require("truck/modules")
 local Goods   = require("economy/goods")
+local Tracker = require("analytics/tracker")
+local Skills  = require("character/skills")
 
 local M = {}
 
@@ -31,6 +33,10 @@ function M.create(state, enemy_id)
         enemy_id = "ambush_light"
     end
 
+    -- 埋点
+    Tracker.milestone(state, "first_combat")
+    Tracker.count(state, "combats_fought")
+
     local ammo_count = state.truck.cargo["ammo"] or 0
     local smoke_count = state.truck.cargo["smoke_bomb"] or 0
 
@@ -45,7 +51,10 @@ function M.create(state, enemy_id)
                           or template.threat,
         escape_progress = 0,
         escape_threshold = math.max(10,
-            math.floor(template.escape_threshold * (1 - Modules.get_repel_bonus(state)) + 0.5)),
+            math.floor(template.escape_threshold
+                * (1 - Modules.get_repel_bonus(state))
+                * (1 - Skills.get_escape_reduction(state))
+                + 0.5)),
         rounds_total    = template.rounds,
         round_current   = 0,
 
@@ -350,6 +359,11 @@ end
 ---@param state table
 ---@param combat table
 function M.apply_aftermath(state, combat)
+    -- 埋点：击退计数
+    if combat.outcome == "repelled" then
+        Tracker.count(state, "combats_repelled")
+    end
+
     -- 击退：发放战利品
     if combat.outcome == "repelled" and combat.enemy.loot_on_repel then
         for _, loot in ipairs(combat.enemy.loot_on_repel) do

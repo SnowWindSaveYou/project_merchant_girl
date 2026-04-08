@@ -11,6 +11,8 @@ local SettlementEventPool = require("events/settlement_event_pool")
 local WanderingNpc        = require("narrative/wandering_npc")
 local Chatter             = require("travel/chatter")
 local Radio               = require("travel/radio")
+local Tracker             = require("analytics/tracker")
+local Skills              = require("character/skills")
 
 local M = {}
 
@@ -69,6 +71,9 @@ function M.start_travel(state, plan)
     state.flow.chatter = Chatter.init()
     state.flow.radio   = Radio.init()
 
+    -- 埋点
+    Tracker.milestone(state, "first_trip")
+
     return true
 end
 
@@ -106,6 +111,12 @@ function M.handle_node_arrival(state, arrival_info)
 
     -- 1. 自动交付匹配的订单
     local delivered, reward = OrderBook.auto_deliver(state, node_id)
+
+    -- 埋点：交付订单
+    if delivered and #delivered > 0 then
+        Tracker.milestone(state, "first_delivery")
+        Tracker.count(state, "trades_completed", #delivered)
+    end
 
     -- 2. 标记聚落已访问
     if state.settlements[node_id] then
@@ -145,9 +156,10 @@ function M.handle_node_arrival(state, arrival_info)
             end
         end
 
-        -- 据点自动修理：恢复 10 点耐久（免费基础服务）
+        -- 据点自动修理：恢复 10 点耐久（免费基础服务）+ 协同修理技能加成
         if state.truck.durability < state.truck.durability_max then
-            local repair = math.min(10, state.truck.durability_max - state.truck.durability)
+            local base_repair = 10 + Skills.get_repair_bonus(state)
+            local repair = math.min(base_repair, state.truck.durability_max - state.truck.durability)
             state.truck.durability = state.truck.durability + repair
             table.insert(services_log, "据点工匠修补了货车（耐久 +" .. repair .. "）")
         end
@@ -158,6 +170,9 @@ function M.handle_node_arrival(state, arrival_info)
         -- 聚落内事件检查（30% 概率触发）
         SettlementEventPool.check_on_arrival(state, node_id)
     end
+
+    -- 埋点：检查全聚落访问里程碑
+    Tracker.check_conditional(state)
 
     return {
         node_id         = node_id,
@@ -228,6 +243,10 @@ function M.start_exploration(state, target_node_id)
     state.flow.chatter     = Chatter.init()
     state.flow.radio       = Radio.init()
 
+    -- 埋点
+    Tracker.milestone(state, "first_explore")
+    Tracker.count(state, "explorations_done")
+
     return true
 end
 
@@ -273,6 +292,12 @@ function M.finish_trip(state)
 
     -- 更新统计
     state.stats.total_trips = state.stats.total_trips + 1
+
+    -- 埋点：检查条件型里程碑（trips_10, credits_1000 等）
+    Tracker.check_conditional(state)
+
+    -- 技能解锁检查
+    Skills.check_unlocks(state)
 
     -- 聚落事件冷却递减
     SettlementEventPool.tick_cooldowns(state)

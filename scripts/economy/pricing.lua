@@ -4,6 +4,7 @@
 local Goods    = require("economy/goods")
 local ItemUse  = require("economy/item_use")
 local Goodwill = require("settlement/goodwill")
+local Skills   = require("character/skills")
 
 local M = {}
 
@@ -109,6 +110,11 @@ function M.get_buy_price(goods_id, settlement_id, state)
     modifier = modifier * (1 + sd_mod)
     -- demoralized：买入价格 +5%（砍价能力下降）
     if is_demoralized(state) then modifier = modifier * 1.05 end
+    -- 技能：临场砍价 + 心有灵犀（买入更便宜）
+    if state then
+        local skill_disc = Skills.get_buy_discount(state)
+        if skill_disc > 0 then modifier = modifier * (1 - skill_disc) end
+    end
     return math.max(1, math.floor(g.base_price * modifier + 0.5))
 end
 
@@ -134,6 +140,11 @@ function M.get_sell_price(goods_id, settlement_id, state)
     modifier = modifier * (1 + sd_mod)
     -- demoralized：卖出价格 -5%（谈判能力下降）
     if is_demoralized(state) then modifier = modifier * 0.95 end
+    -- 技能：临场砍价 + 心有灵犀（卖出更贵）
+    if state then
+        local skill_bonus = Skills.get_sell_bonus(state)
+        if skill_bonus > 0 then modifier = modifier * (1 + skill_bonus) end
+    end
     return math.max(1, math.floor(g.base_price * modifier + 0.5))
 end
 

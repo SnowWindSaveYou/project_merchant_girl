@@ -1,5 +1,7 @@
 --- 货车模块升级系统
 --- 定义 5 个模块的等级上限、升级成本和效果
+local Tracker = require("analytics/tracker")
+
 local M = {}
 
 -- ============================================================
@@ -178,6 +180,10 @@ function M.upgrade(state, module_id)
 
     -- 提升等级
     state.truck.modules[module_id] = next_lv
+
+    -- 埋点
+    Tracker.milestone(state, "first_upgrade")
+    Tracker.count(state, "modules_upgraded")
 
     -- cargo_bay 立即生效：更新仓位上限
     if module_id == "cargo_bay" then

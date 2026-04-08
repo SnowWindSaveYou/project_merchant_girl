@@ -3,6 +3,8 @@
 local EventPool = require("events/event_pool")
 local Goods     = require("economy/goods")
 local ItemUse   = require("economy/item_use")
+local Tracker   = require("analytics/tracker")
+local Skills    = require("character/skills")
 
 local M = {}
 
@@ -84,6 +86,8 @@ function M.update(state, dt, progress, context)
         timer.events_triggered = timer.events_triggered + 1
         timer.pending_event = triggered_event
         EventPool.set_cooldown(state, triggered_event.id, 3)
+        -- 埋点
+        Tracker.count(state, "events_triggered")
         return triggered_event
     end
 
@@ -111,6 +115,12 @@ function M._try_pick(state, context)
         or ItemUse.has_status(state, "taoxia", "fatigued")
     if fatigued then
         chance = chance + 0.1
+    end
+
+    -- 技能：废土嗅觉（事件触发概率提升）
+    local event_bonus = Skills.get_event_bonus(state)
+    if event_bonus > 0 then
+        chance = chance + event_bonus
     end
 
     if math.random() > chance then return nil end

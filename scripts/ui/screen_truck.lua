@@ -7,6 +7,7 @@ local Goodwill = require("settlement/goodwill")
 local ItemUse  = require("economy/item_use")
 local Goods    = require("economy/goods")
 local Graph    = require("map/world_graph")
+local Skills   = require("character/skills")
 
 local M = {}
 ---@type table
@@ -44,6 +45,9 @@ function M.create(state, params, r)
 
     -- ── 聚落好感 ──
     table.insert(children, createGoodwillSection(state))
+
+    -- ── 技能 ──
+    table.insert(children, createSkillsSection(state))
 
     -- ── 成长目标 ──
     table.insert(children, createGoalsSection(state))
@@ -406,6 +410,158 @@ function createGoodwillSection(state)
         fontSize = Theme.sizes.font_normal,
         fontColor = Theme.colors.info,
     })
+
+    return UI.Panel {
+        width = "100%", padding = 12,
+        backgroundColor = Theme.colors.bg_card,
+        borderRadius = Theme.sizes.radius,
+        borderWidth = 1, borderColor = Theme.colors.border,
+        gap = 6,
+        children = rows,
+    }
+end
+
+-- ============================================================
+-- 技能区
+-- ============================================================
+function createSkillsSection(state)
+    local all = Skills.get_all(state)
+    local rows = {}
+
+    -- 标题
+    table.insert(rows, UI.Label {
+        text = "技能",
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.info,
+    })
+
+    -- ── 个人技能 ──
+    for _, cid in ipairs({ "linli", "taoxia" }) do
+        local cName = cid == "linli" and "林砾" or "陶夏"
+        table.insert(rows, UI.Label {
+            text = cName,
+            fontSize = Theme.sizes.font_small,
+            fontColor = Theme.colors.text_secondary,
+            marginTop = 4,
+        })
+
+        for _, sk in ipairs(all.personal[cid]) do
+            local progressText
+            if sk.unlocked then
+                progressText = "已解锁"
+            else
+                progressText = sk.unlock_desc .. "  (" .. math.floor(sk.current) .. "/" .. sk.need .. ")"
+            end
+
+            table.insert(rows, UI.Panel {
+                width = "100%", padding = 8, gap = 2,
+                backgroundColor = sk.unlocked and Theme.colors.bg_secondary or Theme.colors.bg_primary,
+                borderRadius = Theme.sizes.radius_small,
+                children = {
+                    -- 名称行
+                    UI.Panel {
+                        width = "100%", flexDirection = "row",
+                        justifyContent = "space-between", alignItems = "center",
+                        children = {
+                            UI.Label {
+                                text = sk.icon .. " " .. sk.name,
+                                fontSize = Theme.sizes.font_small,
+                                fontColor = sk.unlocked and Theme.colors.text_primary or Theme.colors.text_dim,
+                            },
+                            UI.Label {
+                                text = sk.unlocked and "✅" or "🔒",
+                                fontSize = Theme.sizes.font_small,
+                            },
+                        },
+                    },
+                    -- 描述
+                    UI.Label {
+                        text = sk.desc,
+                        fontSize = Theme.sizes.font_tiny,
+                        fontColor = sk.unlocked and Theme.colors.text_secondary or Theme.colors.text_dim,
+                    },
+                    -- 进度
+                    sk.unlocked and nil or UI.Panel {
+                        width = "100%", flexDirection = "row",
+                        alignItems = "center", gap = 6, marginTop = 2,
+                        children = {
+                            UI.ProgressBar {
+                                value = math.min(1, sk.current / math.max(1, sk.need)),
+                                width = 80, height = 4,
+                                variant = "info",
+                            },
+                            UI.Label {
+                                text = progressText,
+                                fontSize = Theme.sizes.font_tiny,
+                                fontColor = Theme.colors.text_dim,
+                            },
+                        },
+                    },
+                },
+            })
+        end
+    end
+
+    -- ── 协同技能 ──
+    table.insert(rows, UI.Label {
+        text = "协同技能",
+        fontSize = Theme.sizes.font_small,
+        fontColor = Theme.colors.text_secondary,
+        marginTop = 6,
+    })
+
+    for _, sk in ipairs(all.synergy) do
+        local progressText
+        if sk.unlocked then
+            progressText = "已解锁"
+        else
+            progressText = "双方关系 ≥ " .. sk.relation_req .. "  (当前 " .. math.floor(sk.relation_cur) .. ")"
+        end
+
+        table.insert(rows, UI.Panel {
+            width = "100%", padding = 8, gap = 2,
+            backgroundColor = sk.unlocked and Theme.colors.bg_secondary or Theme.colors.bg_primary,
+            borderRadius = Theme.sizes.radius_small,
+            children = {
+                UI.Panel {
+                    width = "100%", flexDirection = "row",
+                    justifyContent = "space-between", alignItems = "center",
+                    children = {
+                        UI.Label {
+                            text = sk.icon .. " " .. sk.name,
+                            fontSize = Theme.sizes.font_small,
+                            fontColor = sk.unlocked and Theme.colors.text_primary or Theme.colors.text_dim,
+                        },
+                        UI.Label {
+                            text = sk.unlocked and "✅" or "🔒",
+                            fontSize = Theme.sizes.font_small,
+                        },
+                    },
+                },
+                UI.Label {
+                    text = sk.desc,
+                    fontSize = Theme.sizes.font_tiny,
+                    fontColor = sk.unlocked and Theme.colors.text_secondary or Theme.colors.text_dim,
+                },
+                sk.unlocked and nil or UI.Panel {
+                    width = "100%", flexDirection = "row",
+                    alignItems = "center", gap = 6, marginTop = 2,
+                    children = {
+                        UI.ProgressBar {
+                            value = math.min(1, sk.relation_cur / math.max(1, sk.relation_req)),
+                            width = 80, height = 4,
+                            variant = "info",
+                        },
+                        UI.Label {
+                            text = progressText,
+                            fontSize = Theme.sizes.font_tiny,
+                            fontColor = Theme.colors.text_dim,
+                        },
+                    },
+                },
+            },
+        })
+    end
 
     return UI.Panel {
         width = "100%", padding = 12,

@@ -59,8 +59,9 @@ function M.new()
 
         -- 角色
         character = {
-            linli  = { relation = 0, status = {} },
-            taoxia = { relation = 0, status = {} },
+            linli  = { relation = 0, status = {}, skills = {} },
+            taoxia = { relation = 0, status = {}, skills = {} },
+            synergy_skills = {},  -- { synergy_repair = true, ... }
         },
 
         -- 地图
@@ -99,6 +100,14 @@ function M.new()
             total_distance      = 0,
             play_time           = 0,
             consecutive_expires = 0,  -- 连续超时订单计数（交付成功时重置）
+            -- 埋点计数器
+            trades_completed    = 0,  -- 完成交易（交付订单）次数
+            combats_fought      = 0,  -- 战斗次数
+            combats_repelled    = 0,  -- 击退追兵次数
+            explorations_done   = 0,  -- 探索次数
+            modules_upgraded    = 0,  -- 模块升级次数
+            events_triggered    = 0,  -- 随机事件触发次数
+            goods_traded_volume = 0,  -- 货物交易总量（件）
         },
     }
 end

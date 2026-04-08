@@ -3,6 +3,7 @@
 local RoutePlanner = require("map/route_planner")
 local ItemUse      = require("economy/item_use")
 local Modules      = require("truck/modules")
+local Skills       = require("character/skills")
 
 local M = {}
 
@@ -19,9 +20,12 @@ end
 function M.advance(state, dt)
     state.stats.play_time = state.stats.play_time + dt
 
-    -- 行驶中消耗燃料（引擎模块可降低燃耗）
+    -- 行驶中消耗燃料（引擎模块可降低燃耗 + 载重平衡技能）
     if state.flow.phase == "travelling" then
         local fuel_rate = 0.3 * Modules.get_fuel_mult(state)
+        -- 技能：载重平衡（高载重时燃料 -10%）
+        local fuel_disc = Skills.get_fuel_discount(state)
+        if fuel_disc > 0 then fuel_rate = fuel_rate * (1 - fuel_disc) end
         state.truck.fuel = math.max(0, state.truck.fuel - fuel_rate * dt)
     end
 end
@@ -43,8 +47,10 @@ function M.advance_offline(state, elapsed_sec)
     local plan = state.flow.route_plan
     if not plan then return nil end
 
-    -- 燃料消耗（引擎模块可降低燃耗）
+    -- 燃料消耗（引擎模块可降低燃耗 + 载重平衡技能）
     local fuel_rate = 0.3 * Modules.get_fuel_mult(state)
+    local fuel_disc = Skills.get_fuel_discount(state)
+    if fuel_disc > 0 then fuel_rate = fuel_rate * (1 - fuel_disc) end
     state.truck.fuel = math.max(0, state.truck.fuel - fuel_rate * elapsed_sec)
 
     -- 模拟推进（按秒步进，检测到达）
