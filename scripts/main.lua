@@ -149,6 +149,13 @@ function Start()
         if not gameState.narrative.archives_read then
             gameState.narrative.archives_read = {}
         end
+        -- 主线章节兼容 (Phase 4)
+        if gameState.narrative.chapter == nil then
+            gameState.narrative.chapter = 0
+        end
+        if not gameState.narrative.chapter_flags then
+            gameState.narrative.chapter_flags = {}
+        end
         -- 聚落子系统状态兼容（farm / intel / market）
         local settSubs = {
             greenhouse = { "farm",   { slots = {}, harvested = {} } },

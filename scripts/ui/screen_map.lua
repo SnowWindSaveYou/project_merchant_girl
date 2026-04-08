@@ -7,6 +7,7 @@ local Graph        = require("map/world_graph")
 local OrderBook    = require("economy/order_book")
 local RoutePlanner = require("map/route_planner")
 local Goods        = require("economy/goods")
+local Intel        = require("settlement/intel")
 
 local M = {}
 
@@ -101,6 +102,9 @@ local inp = {
 -- Modal 引用
 ---@type table|nil
 local modal_ = nil
+
+-- 情报图层开关
+local intelLayerVisible_ = false
 
 -- ============================================================
 -- 策略名称 & 颜色映射
@@ -399,6 +403,177 @@ local function drawLegend(nvg)
     dashedLine(nvg, lx, y, lx + 22, y, 3, 4)
     fc(nvg, Theme.colors.map_label_text)
     nvgText(nvg, lx + 28, y, "捷径(危)", nil)
+end
+
+-- ============================================================
+-- 绘制：情报图层（节点/路线上的情报标注）
+-- ============================================================
+local function drawIntelLayer(nvg, time)
+    if not state_ or not intelLayerVisible_ then return end
+    local intels = Intel.get_active_intel(state_)
+    if #intels == 0 then return end
+
+    nvgFontFaceId(nvg, cam.font)
+
+    -- 聚落节点 ID → 节点坐标映射
+    local settlement_nodes = {}
+    for _, node in ipairs(Graph.NODES) do
+        if node.type == "settlement" then
+            settlement_nodes[node.id] = node
+        end
+    end
+
+    for _, info in ipairs(intels) do
+        if info.type == "tip" and info.target_settlement then
+            -- 商机情报：在目标聚落上画红色星标
+            local node = settlement_nodes[info.target_settlement]
+                      or Graph.get_node(info.target_settlement)
+            if node then
+                local sx, sy = w2s(node.x, node.y)
+                -- 脉冲光圈
+                local pulse = 0.5 + 0.5 * math.abs(math.sin(time * 2.2))
+                nvgBeginPath(nvg)
+                nvgCircle(nvg, sx, sy, NODE_R + 10 + 3 * math.sin(time * 2.2))
+                fc(nvg, Theme.colors.intel_tip, math.floor(50 * pulse))
+                nvgFill(nvg)
+                -- 星标图标
+                nvgFontSize(nvg, 16)
+                nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_BOTTOM)
+                fc(nvg, Theme.colors.intel_tip)
+                nvgText(nvg, sx + NODE_R + 2, sy - NODE_R, "💰", nil)
+                -- 商品标签
+                local Goods_mod = require("economy/goods")
+                local g = Goods_mod.get(info.target_goods)
+                if g then
+                    nvgFontSize(nvg, 9)
+                    nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_TOP)
+                    local lbl = "急需" .. g.name
+                    local tw = nvgTextBounds(nvg, 0, 0, lbl, nil)
+                    nvgBeginPath(nvg)
+                    nvgRoundedRect(nvg, sx - tw / 2 - 3, sy - NODE_R - 18, tw + 6, 13, 3)
+                    fc(nvg, { 180, 50, 40, 200 })
+                    nvgFill(nvg)
+                    fc(nvg, { 255, 240, 220, 240 })
+                    nvgText(nvg, sx, sy - NODE_R - 17, lbl, nil)
+                end
+            end
+
+        elseif info.type == "price" and info.target_settlement then
+            -- 价格情报：在目标聚落上画金色价签
+            local node = settlement_nodes[info.target_settlement]
+                      or Graph.get_node(info.target_settlement)
+            if node then
+                local sx, sy = w2s(node.x, node.y)
+                nvgFontSize(nvg, 14)
+                nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_BOTTOM)
+                fc(nvg, Theme.colors.intel_price)
+                nvgText(nvg, sx + NODE_R + 2, sy - NODE_R + 6, "📊", nil)
+                -- 标签
+                nvgFontSize(nvg, 9)
+                nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_TOP)
+                local lbl = "物价已掌握"
+                local tw = nvgTextBounds(nvg, 0, 0, lbl, nil)
+                nvgBeginPath(nvg)
+                nvgRoundedRect(nvg, sx - tw / 2 - 3, sy + NODE_R + 18, tw + 6, 13, 3)
+                fc(nvg, { 140, 110, 30, 180 })
+                nvgFill(nvg)
+                fc(nvg, { 255, 245, 220, 240 })
+                nvgText(nvg, sx, sy + NODE_R + 19, lbl, nil)
+            end
+
+        elseif info.type == "security" then
+            -- 安全预警：在地图左上画全局状态标
+            -- (绘制到 drawIntelToggle 中一起显示)
+
+        elseif info.type == "weather" then
+            -- 天气预报：同上，全局状态
+        end
+    end
+end
+
+--- 绘制情报图层切换按钮 + 全局情报状态指示器
+local function drawIntelToggle(nvg)
+    if not state_ then return end
+    local intels = Intel.get_active_intel(state_)
+
+    -- 切换按钮（右上角，图例下方）
+    local bx = cam.cx + cam.cw - 108
+    local by = cam.cy + 80
+    local bw, bh = 96, 28
+
+    nvgBeginPath(nvg)
+    nvgRoundedRect(nvg, bx, by, bw, bh, 14)
+    if intelLayerVisible_ then
+        fc(nvg, Theme.colors.intel_toggle_active)
+    else
+        fc(nvg, Theme.colors.intel_toggle_bg)
+    end
+    nvgFill(nvg)
+    -- 边框
+    sc(nvg, Theme.colors.map_road, 100)
+    nvgStrokeWidth(nvg, 1)
+    nvgStroke(nvg)
+
+    nvgFontFaceId(nvg, cam.font)
+    nvgFontSize(nvg, 11)
+    nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+    fc(nvg, { 240, 235, 225, 240 })
+    local label = intelLayerVisible_ and "📡 情报 ON" or "📡 情报 OFF"
+    nvgText(nvg, bx + bw / 2, by + bh / 2, label, nil)
+
+    -- 活跃情报数量角标
+    if #intels > 0 then
+        local badge = tostring(#intels)
+        nvgBeginPath(nvg)
+        nvgCircle(nvg, bx + bw - 4, by + 4, 8)
+        fc(nvg, Theme.colors.intel_tip)
+        nvgFill(nvg)
+        nvgFontSize(nvg, 9)
+        nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+        fc(nvg, { 255, 255, 255, 255 })
+        nvgText(nvg, bx + bw - 4, by + 4, badge, nil)
+    end
+
+    -- 全局情报状态指示器（按钮下方）
+    if intelLayerVisible_ and #intels > 0 then
+        local iy = by + bh + 6
+        for _, info in ipairs(intels) do
+            local icon, col, txt
+            if info.type == "security" then
+                icon = "🛡"
+                col = Theme.colors.intel_security
+                txt = "安全预警(" .. info.trips_left .. "趟)"
+            elseif info.type == "weather" then
+                icon = "🌤"
+                col = Theme.colors.intel_weather
+                txt = "天气预报(" .. info.trips_left .. "趟)"
+            elseif info.type == "price" then
+                icon = "📊"
+                col = Theme.colors.intel_price
+                txt = info.desc_text and string.sub(info.desc_text, 1, 30) or "价格情报"
+            elseif info.type == "tip" then
+                icon = "💰"
+                col = Theme.colors.intel_tip
+                txt = info.desc_text and string.sub(info.desc_text, 1, 30) or "商机情报"
+            else
+                icon = "📄"
+                col = Theme.colors.text_dim
+                txt = info.desc_text or info.type
+            end
+
+            -- 背景条
+            nvgBeginPath(nvg)
+            nvgRoundedRect(nvg, bx - 10, iy, bw + 10, 18, 4)
+            fc(nvg, { col[1], col[2], col[3], 40 })
+            nvgFill(nvg)
+
+            nvgFontSize(nvg, 10)
+            nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_MIDDLE)
+            fc(nvg, col)
+            nvgText(nvg, bx - 6, iy + 9, icon .. " " .. txt, nil)
+            iy = iy + 22
+        end
+    end
 end
 
 -- ============================================================
@@ -737,10 +912,14 @@ local function drawMap(nvg, layout)
 
     drawNodes(nvg, known, current, destSet, time)
 
+    -- 情报图层（在节点之上，裁剪区域内）
+    drawIntelLayer(nvg, time)
+
     nvgRestore(nvg)
 
     -- 3) 覆盖 UI 层（不受裁剪约束）
     drawLegend(nvg)
+    drawIntelToggle(nvg)
 end
 
 -- ============================================================
@@ -1630,6 +1809,16 @@ local function handleInput(dt)
     -- 松开 —— 点击判定（按模式分支）
     if justRelease and not inp.isDrag then
         local cx, cy = inp.pressX, inp.pressY
+
+        -- 情报切换按钮点击判定
+        local tbx = cam.cx + cam.cw - 108
+        local tby = cam.cy + 80
+        local tbw, tbh = 96, 28
+        if cx >= tbx and cx <= tbx + tbw and cy >= tby and cy <= tby + tbh then
+            intelLayerVisible_ = not intelLayerVisible_
+            inp.wasDown = isDown
+            return
+        end
 
         if inMapArea(cx, cy) then
             local known = state_.map.known_nodes or {}

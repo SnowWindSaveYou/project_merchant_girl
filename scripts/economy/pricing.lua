@@ -5,6 +5,7 @@ local Goods    = require("economy/goods")
 local ItemUse  = require("economy/item_use")
 local Goodwill = require("settlement/goodwill")
 local Skills   = require("character/skills")
+local Intel    = require("settlement/intel")
 
 local M = {}
 
@@ -115,6 +116,16 @@ function M.get_buy_price(goods_id, settlement_id, state)
         local skill_disc = Skills.get_buy_discount(state)
         if skill_disc > 0 then modifier = modifier * (1 - skill_disc) end
     end
+    -- 价格情报：掌握该聚落物价趋势，买入价 -8%
+    if state then
+        local price_intels = Intel.get_active_of_type(state, "price")
+        for _, info in ipairs(price_intels) do
+            if info.target_settlement == settlement_id then
+                modifier = modifier * 0.92
+                break
+            end
+        end
+    end
     return math.max(1, math.floor(g.base_price * modifier + 0.5))
 end
 
@@ -144,6 +155,16 @@ function M.get_sell_price(goods_id, settlement_id, state)
     if state then
         local skill_bonus = Skills.get_sell_bonus(state)
         if skill_bonus > 0 then modifier = modifier * (1 + skill_bonus) end
+    end
+    -- 价格情报：掌握该聚落物价趋势，卖出价 +8%
+    if state then
+        local price_intels = Intel.get_active_of_type(state, "price")
+        for _, info in ipairs(price_intels) do
+            if info.target_settlement == settlement_id then
+                modifier = modifier * 1.08
+                break
+            end
+        end
     end
     return math.max(1, math.floor(g.base_price * modifier + 0.5))
 end

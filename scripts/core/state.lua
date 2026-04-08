@@ -81,6 +81,8 @@ function M.new()
 
         -- 叙事
         narrative = {
+            chapter            = 0,   -- 主线章节 (0=序章 ~ 7=终章)
+            chapter_flags      = {},  -- 章节专属旗标 { prologue_done = true, ... }
             story_flags        = {},
             memories           = {},
             campfire_cooldowns = {},  -- { ["CF_001"] = 2 }

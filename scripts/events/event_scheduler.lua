@@ -5,6 +5,7 @@ local Goods     = require("economy/goods")
 local ItemUse   = require("economy/item_use")
 local Tracker   = require("analytics/tracker")
 local Skills    = require("character/skills")
+local Intel     = require("settlement/intel")
 
 local M = {}
 
@@ -66,6 +67,15 @@ function M.update(state, dt, progress, context)
 
     local triggered_event = nil
 
+    -- 0. 主线事件优先（Phase 4）
+    triggered_event = M._pop_story_event(state)
+    if triggered_event then
+        timer.events_triggered = timer.events_triggered + 1
+        timer.pending_event = triggered_event
+        Tracker.count(state, "events_triggered")
+        return triggered_event
+    end
+
     -- 1. 里程节点检查
     for i, milestone in ipairs(M.MILESTONE_CHECKS) do
         if not timer.milestones_hit[i] and progress >= milestone then
@@ -123,6 +133,15 @@ function M._try_pick(state, context)
         chance = chance + event_bonus
     end
 
+    -- 情报减成：安全预警降低总体事件触发率 15%
+    if Intel.has_active(state, "security") then
+        chance = chance - 0.15
+    end
+    -- 情报减成：天气预报降低捷径额外触发率（从 +15% 降至 +5%）
+    if Intel.has_active(state, "weather") and context and context.edge_type == "shortcut" then
+        chance = chance - 0.10
+    end
+
     if math.random() > chance then return nil end
 
     -- 构建事件池筛选上下文
@@ -168,6 +187,38 @@ function M._try_pick(state, context)
 
     -- 从事件池中筛选并加权抽取
     local evt = EventPool.pick(state, filter_ctx)
+    return evt
+end
+
+-- ============================================================
+-- 主线事件强制触发（Phase 4）
+-- ============================================================
+
+--- 将主线事件插入队列，下次 update 时优先触发
+--- 可在 handleTripFinish / chapter advance 等时机调用
+---@param state table
+---@param event_id string 事件 ID（必须存在于 event_pool 中）
+function M.queue_story_event(state, event_id)
+    if not state.flow._story_event_queue then
+        state.flow._story_event_queue = {}
+    end
+    table.insert(state.flow._story_event_queue, event_id)
+    print("[EventScheduler] Queued story event: " .. event_id)
+end
+
+--- 弹出队列中的下一个主线事件（内部用）
+---@param state table
+---@return table|nil event
+function M._pop_story_event(state)
+    local queue = state.flow._story_event_queue
+    if not queue or #queue == 0 then return nil end
+    local event_id = table.remove(queue, 1)
+    local evt = EventPool.get(event_id)
+    if evt then
+        print("[EventScheduler] Popped story event: " .. event_id)
+    else
+        print("[EventScheduler] Story event not found: " .. event_id)
+    end
     return evt
 end
 

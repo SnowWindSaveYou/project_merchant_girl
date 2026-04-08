@@ -104,6 +104,40 @@ function M.start(state)
     return dialogue, consumed
 end
 
+--- 开启指定对话的篝火会话（主线剧情强制触发）
+--- 跳过池抽取，直接使用指定 dialogue_id，仍消耗资源
+---@param state table
+---@param dialogue_id string 对话 ID（必须存在于 dialogue_pool 中）
+---@return table|nil dialogue
+---@return string|nil consumed
+function M.start_with_dialogue(state, dialogue_id)
+    -- 消耗资源（与普通 start 相同，优先 food_can）
+    local cargo = state.truck.cargo or {}
+    local consumed
+    if (cargo.food_can or 0) >= 1 then
+        ItemUse.consume(state, "food_can", 1)
+        consumed = "food_can"
+    elseif (cargo.fuel_cell or 0) >= 1 then
+        ItemUse.consume(state, "fuel_cell", 1)
+        consumed = "fuel_cell"
+    end
+    -- 注：即使没有资源也允许触发（主线剧情不应被资源阻断）
+
+    local dialogue = DialoguePool.get(dialogue_id)
+    if not dialogue then
+        print("[Campfire] Story dialogue not found: " .. tostring(dialogue_id))
+        return nil, consumed
+    end
+
+    DialoguePool.set_cooldown(state, dialogue.id)
+
+    if not state.narrative then state.narrative = {} end
+    state.narrative.campfire_count = (state.narrative.campfire_count or 0) + 1
+
+    print("[Campfire] Story dialogue forced: " .. dialogue.id .. " (" .. dialogue.title .. ")")
+    return dialogue, consumed
+end
+
 --- 执行选择结果
 ---@param state table
 ---@param dialogue table 当前对话数据

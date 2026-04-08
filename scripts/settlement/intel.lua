@@ -126,25 +126,74 @@ function M.exchange(state, intel_type)
             "天气转凉，道路可能有霜冻。",
             "预报显示路途天气稳定。",
         },
-        price    = {
-            "温室社区近期食品需求旺盛，罐头价格上涨 15%。",
-            "废墟营地弹药充足，价格略有下降。",
-            "塔台目前电路板库存紧张，可溢价出售。",
-            "各聚落物价平稳，无明显波动。",
-        },
         security = {
             "东线公路近期有掠夺者出没，建议绕行。",
             "小径区域较为安全，近期无异常。",
             "捷径附近发现可疑营火痕迹，谨慎通行。",
             "目前所有主要路线安全状况良好。",
         },
-        tip      = {
-            "钟楼书院急需旧书，价格翻倍收购！限时 1 趟。",
-            "温室急需净水，愿意高价收购。",
-            "废墟营地有人高价求购燃料芯。",
-            "塔台需要医疗包，价格上浮 20%。",
-        },
     }
+
+    -- ============================================================
+    -- 商机情报：注入真实供需变化
+    -- ============================================================
+    if intel_type == "tip" then
+        -- 随机选择一个聚落和对应紧缺商品
+        local tip_combos = {
+            { settlement = "bell_tower",  goods = "old_book",    name = "钟楼书院", goods_name = "旧书" },
+            { settlement = "greenhouse",  goods = "water",       name = "温室社区", goods_name = "净水" },
+            { settlement = "ruins_camp",  goods = "fuel_cell",   name = "废墟营地", goods_name = "燃料芯" },
+            { settlement = "tower",       goods = "circuit",     name = "北穹塔台", goods_name = "电路板" },
+            { settlement = "greenhouse",  goods = "ammo",        name = "温室社区", goods_name = "弹药" },
+            { settlement = "bell_tower",  goods = "metal_scrap", name = "钟楼书院", goods_name = "废金属" },
+            { settlement = "ruins_camp",  goods = "food_can",    name = "废墟营地", goods_name = "罐头" },
+            { settlement = "tower",       goods = "water",       name = "北穹塔台", goods_name = "净水" },
+        }
+        local combo = tip_combos[math.random(1, #tip_combos)]
+
+        -- 注入供需：supply_demand 负值 = 供不应求 → 涨价
+        local sett_data = state.settlements[combo.settlement]
+        if sett_data then
+            if not sett_data.supply_demand then sett_data.supply_demand = {} end
+            local cur = sett_data.supply_demand[combo.goods] or 0
+            sett_data.supply_demand[combo.goods] = cur - 30  -- 强烈紧缺
+        end
+
+        local text = combo.name .. "急需" .. combo.goods_name .. "，价格翻倍收购！限时 1 趟。"
+        table.insert(intel.active_intel, {
+            type       = intel_type,
+            name       = def.name,
+            desc_text  = text,
+            trips_left = def.duration,
+            -- 额外数据：用于地图显示
+            target_settlement = combo.settlement,
+            target_goods      = combo.goods,
+        })
+        return true, text
+    end
+
+    -- ============================================================
+    -- 价格情报：记录目标聚落信息（用于定价加成判定）
+    -- ============================================================
+    if intel_type == "price" then
+        -- 随机选择一个聚落
+        local price_targets = {
+            { id = "greenhouse",  name = "温室社区" },
+            { id = "tower",       name = "北穹塔台" },
+            { id = "ruins_camp",  name = "废墟营地" },
+            { id = "bell_tower",  name = "钟楼书院" },
+        }
+        local target = price_targets[math.random(1, #price_targets)]
+        local text = target.name .. "的物价趋势已掌握，交易将更有优势。"
+        table.insert(intel.active_intel, {
+            type       = intel_type,
+            name       = def.name,
+            desc_text  = text,
+            trips_left = def.duration,
+            target_settlement = target.id,
+        })
+        return true, text
+    end
 
     -- 位置情报：解锁隐藏节点
     if intel_type == "location" then
@@ -202,6 +251,33 @@ end
 function M.get_active_intel(state)
     local intel = _ensure(state)
     return intel.active_intel
+end
+
+--- 检查是否有某类型的活跃情报
+---@param state table
+---@param intel_type string  "weather"|"price"|"security"|"tip"
+---@return boolean
+function M.has_active(state, intel_type)
+    local intel = _ensure(state)
+    for _, info in ipairs(intel.active_intel) do
+        if info.type == intel_type then return true end
+    end
+    return false
+end
+
+--- 获取某类型的所有活跃情报
+---@param state table
+---@param intel_type string
+---@return table[]
+function M.get_active_of_type(state, intel_type)
+    local intel = _ensure(state)
+    local result = {}
+    for _, info in ipairs(intel.active_intel) do
+        if info.type == intel_type then
+            table.insert(result, info)
+        end
+    end
+    return result
 end
 
 --- 获取统计
