@@ -19,6 +19,9 @@ local QuestLog            = require("narrative/quest_log")
 local Chatter             = require("travel/chatter")
 local Radio               = require("travel/radio")
 local Scenery             = require("travel/scenery")
+local DrivingScene        = require("travel/driving_scene")
+local Environment         = require("travel/environment")
+local RoadLoot            = require("travel/road_loot")
 local Archives            = require("settlement/archives")
 local Farm                = require("settlement/farm")
 local Intel               = require("settlement/intel")
@@ -33,10 +36,8 @@ local router = nil
 
 -- 行驶中状态追踪（用于检测变化触发 UI 重建）
 local _prevChatterId   = nil
-local _prevRadioOn     = nil
-local _prevRadioCh     = nil
-local _prevBroadcastId = nil
 local _prevSceneryId   = nil
+local _prevSegmentIndex = nil
 
 -- 地图节点 → 资源点探索房间 ID（Phase 06 连接）
 local NODE_EXPLORE_ROOM = {
@@ -74,21 +75,36 @@ function M.create(state, params, r)
         if not state.flow.chatter then
             state.flow.chatter = Chatter.init()
         end
-        if not state.flow.radio then
-            state.flow.radio = Radio.init()
-        end
+        -- radio 初始化已移至 shell.lua
         if not state.flow.scenery then
             state.flow.scenery = Scenery.init()
         end
         -- 同步追踪变量到当前真实状态，避免首帧误判为"变化"导致无限重建
         local initChat = Chatter.get_current(state)
         _prevChatterId   = initChat and initChat.id or nil
-        _prevRadioOn     = Radio.is_on(state)
-        _prevRadioCh     = Radio.get_channel(state)
-        local initBr = Radio.get_current(state)
-        _prevBroadcastId = initBr and initBr.id or nil
         local initScn = Scenery.get_current(state)
         _prevSceneryId   = initScn and initScn.id or nil
+        -- late-init road_loot
+        if not state.flow.road_loot then
+            state.flow.road_loot = RoadLoot.init()
+        end
+        -- 同步 segment 索引 + 初始环境推送到 DrivingScene
+        local plan = state.flow.route_plan
+        _prevSegmentIndex = plan and plan.segment_index or nil
+        if state.flow.environment then
+            DrivingScene.setEnvironment(Environment.get_current(state.flow.environment))
+        end
+        -- 传入 state 供纸娃娃/装备渲染使用
+        DrivingScene.setState(state)
+        -- 设置掉落物点击回调
+        DrivingScene.setDropCallback(function(drop)
+            local feedback = RoadLoot.try_pickup(state, drop)
+            if feedback then
+                DrivingScene.addFeedback(feedback)
+            end
+        end)
+        -- 初始同步掉落物到 DrivingScene
+        DrivingScene.setDrops(RoadLoot.get_active_drops(state))
     end
 
     if isTravelling then
@@ -112,33 +128,42 @@ function M.update(state, dt, r)
     local progress = RoutePlanner.get_progress(plan)
     local seg = RoutePlanner.get_current_segment(plan)
 
-    -- ── 驱动 Chatter / Radio / Scenery ──
+    -- ── 检测 segment 切换 → 更新环境 + 掉落规划 ──
+    local curSegIdx = plan.segment_index or 0
+    if curSegIdx ~= _prevSegmentIndex then
+        _prevSegmentIndex = curSegIdx
+        -- segment 切换：推演新环境
+        if state.flow.environment and seg then
+            Environment.on_segment_enter(state.flow.environment, seg)
+            DrivingScene.setEnvironment(Environment.get_current(state.flow.environment))
+        end
+        -- segment 切换：规划新掉落物
+        if seg then
+            RoadLoot.on_segment_enter(state, seg)
+        end
+    end
+
+    -- ── 驱动 Chatter / Scenery / RoadLoot ──
+    -- （Radio.update 已移至 shell.lua 全局调用）
+    DrivingScene.update(dt)
+    RoadLoot.update(state, dt)
+    DrivingScene.setDrops(RoadLoot.get_active_drops(state))
     Chatter.update(state, dt, progress, seg)
-    Radio.update(state, dt)
     local chatterActive = Chatter.get_current(state) ~= nil
     Scenery.update(state, dt, progress, seg, chatterActive)
 
-    -- ── 检测 Chatter / Radio / Scenery 状态变化 → 重建 UI ──
+    -- ── 检测 Chatter / Scenery 状态变化 → 重建 UI ──
+    -- （收音机状态变化已由 shell.lua 检测并触发顶栏重建）
     local curChat = Chatter.get_current(state)
     local chatId  = curChat and curChat.id or nil
-    local radioOn = Radio.is_on(state)
-    local radioCh = Radio.get_channel(state)
-    local curBroadcast = Radio.get_current(state)
-    local broadcastId  = curBroadcast and curBroadcast.id or nil
     local curScn = Scenery.get_current(state)
     local scnId  = curScn and curScn.id or nil
 
     local needRebuild = false
     if chatId ~= _prevChatterId then needRebuild = true end
-    if radioOn ~= _prevRadioOn then needRebuild = true end
-    if radioCh ~= _prevRadioCh then needRebuild = true end
-    if broadcastId ~= _prevBroadcastId then needRebuild = true end
     if scnId ~= _prevSceneryId then needRebuild = true end
 
     _prevChatterId   = chatId
-    _prevRadioOn     = radioOn
-    _prevRadioCh     = radioCh
-    _prevBroadcastId = broadcastId
     _prevSceneryId   = scnId
 
     if needRebuild then
@@ -728,6 +753,12 @@ function createTravelView(state)
 
     local contentChildren = {}
 
+    -- ── 行驶视差场景 ──
+    table.insert(contentChildren, DrivingScene.createWidget({
+        height = 220,
+        borderRadius = Theme.sizes.radius,
+    }))
+
     -- 当前路段描述
     local EDGE_TYPE_LABEL = { main_road = "公路", path = "小径", shortcut = "捷径" }
     local segFrom = seg and seg.from_name or "?"
@@ -835,8 +866,7 @@ function createTravelView(state)
         table.insert(contentChildren, chatterWidget)
     end
 
-    -- ── 收音机面板 ──
-    table.insert(contentChildren, createRadioPanel(state))
+    -- 收音机面板已移至全局顶栏（shell_top.lua）
 
     -- 活跃订单列表
     if #activeOrders > 0 then
@@ -893,24 +923,50 @@ end
 -- 货舱概览（简版，行驶中展示）
 -- ============================================================
 function createCargoSummary(state)
-    local items = {}
+    local used = CargoUtils.get_cargo_used(state)
+    local hasShortage = CargoUtils.has_any_shortage(state)
+
+    -- 构建货物图标网格
+    local itemWidgets = {}
     for gid, count in pairs(state.truck.cargo) do
         if count > 0 then
             local g = Goods.get(gid)
             local name = g and g.name or gid
             local committed = CargoUtils.get_committed(state, gid)
+            local countText = "x" .. count
             if committed > 0 then
-                name = name .. " x" .. count .. "(委" .. committed .. ")"
-            else
-                name = name .. " x" .. count
+                countText = countText .. "(委" .. committed .. ")"
             end
-            table.insert(items, name)
+            local cat = g and g.category and Goods.CATEGORIES[g.category]
+            local catColor = cat and cat.color or Theme.colors.text_primary
+
+            local itemChildren = {}
+            -- 图标
+            if g and g.icon then
+                table.insert(itemChildren, UI.Panel {
+                    width = 24, height = 24,
+                    backgroundImage = g.icon,
+                    backgroundFit = "contain",
+                })
+            end
+            -- 名称 + 数量
+            table.insert(itemChildren, UI.Label {
+                text = name,
+                fontSize = Theme.sizes.font_tiny,
+                fontColor = catColor,
+            })
+            table.insert(itemChildren, UI.Label {
+                text = countText,
+                fontSize = Theme.sizes.font_tiny,
+                fontColor = Theme.colors.text_secondary,
+            })
+
+            table.insert(itemWidgets, UI.Panel {
+                flexDirection = "row", alignItems = "center", gap = 3,
+                children = itemChildren,
+            })
         end
     end
-    local text = #items > 0 and table.concat(items, " · ") or "空"
-
-    local used = CargoUtils.get_cargo_used(state)
-    local hasShortage = CargoUtils.has_any_shortage(state)
 
     local cargoChildren = {
         UI.Panel {
@@ -929,12 +985,21 @@ function createCargoSummary(state)
                 },
             },
         },
-        UI.Label {
-            text = text,
-            fontSize = Theme.sizes.font_small,
-            fontColor = Theme.colors.text_primary,
-        },
     }
+    -- 如果有货物则显示图标网格，否则显示"空"
+    if #itemWidgets > 0 then
+        table.insert(cargoChildren, UI.Panel {
+            width = "100%",
+            flexDirection = "row", flexWrap = "wrap", gap = 8,
+            children = itemWidgets,
+        })
+    else
+        table.insert(cargoChildren, UI.Label {
+            text = "空",
+            fontSize = Theme.sizes.font_small,
+            fontColor = Theme.colors.text_dim,
+        })
+    end
 
     if hasShortage then
         table.insert(cargoChildren, UI.Label {
@@ -1294,105 +1359,6 @@ function createChatterBubble(state)
         borderWidth = 1, borderColor = color,
         gap = 4,
         children = bubbleChildren,
-    }
-end
-
--- ============================================================
--- 收音机面板（行驶中始终显示，可开关）
--- ============================================================
-function createRadioPanel(state)
-    local isOn    = Radio.is_on(state)
-    local channel = Radio.get_channel(state)
-    local cur     = Radio.get_current(state)
-
-    local radioChildren = {}
-
-    -- 顶栏：标题 + 开关按钮
-    table.insert(radioChildren, UI.Panel {
-        width = "100%", flexDirection = "row",
-        justifyContent = "space-between", alignItems = "center",
-        children = {
-            UI.Label {
-                text = "📻 收音机",
-                fontSize = Theme.sizes.font_small,
-                fontColor = isOn and Theme.colors.info or Theme.colors.text_dim,
-            },
-            UI.Button {
-                text = isOn and "关闭" or "开启",
-                variant = isOn and "secondary" or "primary",
-                height = 28,
-                fontSize = Theme.sizes.font_tiny,
-                onClick = function(self)
-                    Radio.set_on(state, not isOn)
-                end,
-            },
-        },
-    })
-
-    if isOn then
-        -- 频道切换行
-        local channelButtons = {}
-        for _, ch in ipairs(Radio.CHANNELS) do
-            local isActive = (ch == channel)
-            table.insert(channelButtons, UI.Button {
-                text = Radio.CHANNEL_NAMES[ch] or ch,
-                variant = isActive and "primary" or "secondary",
-                height = 26,
-                fontSize = Theme.sizes.font_tiny,
-                flexGrow = 1,
-                onClick = function(self)
-                    Radio.switch_channel(state, ch)
-                end,
-            })
-        end
-        table.insert(radioChildren, UI.Panel {
-            width = "100%", flexDirection = "row", gap = 6,
-            children = channelButtons,
-        })
-
-        -- 当前播报内容
-        if cur then
-            table.insert(radioChildren, UI.Label {
-                text = cur.text,
-                fontSize = Theme.sizes.font_small,
-                fontColor = Theme.colors.text_primary,
-            })
-            -- 有奖励且未领取
-            if cur.reward and not cur.reward_claimed then
-                local rewardLabel = "领取"
-                if cur.reward.type == "credits" then
-                    rewardLabel = "领取 +$" .. tostring(cur.reward.value or 0)
-                elseif cur.reward.type == "info" then
-                    rewardLabel = "记下情报"
-                end
-                table.insert(radioChildren, UI.Button {
-                    text = rewardLabel,
-                    variant = "primary",
-                    height = 28,
-                    fontSize = Theme.sizes.font_tiny,
-                    onClick = function(self)
-                        Radio.claim_reward(state)
-                    end,
-                })
-            end
-        else
-            table.insert(radioChildren, UI.Label {
-                text = "...",
-                fontSize = Theme.sizes.font_small,
-                fontColor = Theme.colors.text_dim,
-                textAlign = "center",
-            })
-        end
-    end
-
-    return UI.Panel {
-        width = "100%", padding = 10,
-        backgroundColor = isOn and { 28, 36, 28, 220 } or { 36, 36, 36, 180 },
-        borderRadius = Theme.sizes.radius,
-        borderWidth = 1,
-        borderColor = isOn and { 60, 100, 60, 200 } or Theme.colors.border,
-        gap = 6,
-        children = radioChildren,
     }
 end
 

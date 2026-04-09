@@ -12,6 +12,8 @@ local WanderingNpc        = require("narrative/wandering_npc")
 local Chatter             = require("travel/chatter")
 local Radio               = require("travel/radio")
 local Scenery             = require("travel/scenery")
+local Environment         = require("travel/environment")
+local RoadLoot            = require("travel/road_loot")
 local Tracker             = require("analytics/tracker")
 local Skills              = require("character/skills")
 
@@ -70,8 +72,19 @@ function M.start_travel(state, plan)
     state.flow.route_plan = plan
     state.flow.event_timer = EventScheduler.new_timer()
     state.flow.chatter = Chatter.init()
-    state.flow.radio   = Radio.init()
+    if not state.flow.radio then
+        state.flow.radio = Radio.init()
+    else
+        Radio.reset_broadcast(state.flow.radio)
+    end
     state.flow.scenery = Scenery.init()
+    state.flow.environment = Environment.init()
+    state.flow.road_loot = RoadLoot.init()
+    -- 初始 segment 环境推演 + 掉落物规划
+    if plan.segments and #plan.segments > 0 then
+        Environment.on_segment_enter(state.flow.environment, plan.segments[1])
+        RoadLoot.on_segment_enter(state, plan.segments[1])
+    end
 
     -- 埋点
     Tracker.milestone(state, "first_trip")
@@ -260,8 +273,18 @@ function M.start_exploration(state, target_node_id)
     state.flow.route_plan  = plan
     state.flow.event_timer = EventScheduler.new_timer()
     state.flow.chatter     = Chatter.init()
-    state.flow.radio       = Radio.init()
+    if not state.flow.radio then
+        state.flow.radio = Radio.init()
+    else
+        Radio.reset_broadcast(state.flow.radio)
+    end
     state.flow.scenery     = Scenery.init()
+    state.flow.environment = Environment.init()
+    state.flow.road_loot   = RoadLoot.init()
+    if plan.segments and #plan.segments > 0 then
+        Environment.on_segment_enter(state.flow.environment, plan.segments[1])
+        RoadLoot.on_segment_enter(state, plan.segments[1])
+    end
 
     -- 埋点
     Tracker.milestone(state, "first_explore")
@@ -332,8 +355,10 @@ function M.finish_trip(state)
     state.flow.route_plan = nil
     state.flow.event_timer = nil
     state.flow.chatter = nil
-    state.flow.radio   = nil
+    -- radio 保留：不清除，让用户的开关/频道偏好跨旅行保持
     state.flow.scenery = nil
+    state.flow.environment = nil
+    state.flow.road_loot = nil
 
     return result
 end

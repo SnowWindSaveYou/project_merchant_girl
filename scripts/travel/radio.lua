@@ -14,7 +14,7 @@ local CONFIG_PATH = "configs/radio_broadcasts.json"
 M.FIRST_DELAY    = 5     -- 开启后首条播报延迟（秒）
 M.INTERVAL_MIN   = 20    -- 播报轮换最短间隔
 M.INTERVAL_MAX   = 30    -- 播报轮换最长间隔
-M.DISPLAY_DURATION = 10  -- 默认播报显示时长（秒）
+M.DISPLAY_DURATION = 45  -- 默认播报显示时长（秒）- ticker 滚动需要更多时间
 
 M.CHANNELS = { "mingsha", "settlement", "mystery" }
 M.CHANNEL_NAMES = {
@@ -62,6 +62,15 @@ function M.init()
         current  = nil,  -- { id, text, reward?, duration, shown_time, reward_claimed }
         shown_ids = {},
     }
+end
+
+--- 重置播报临时数据（保留 on / channel 偏好）
+---@param r table radio 状态表
+function M.reset_broadcast(r)
+    r.elapsed   = 0
+    r.next_at   = M.FIRST_DELAY
+    r.current   = nil
+    r.shown_ids = {}
 end
 
 --- 每帧驱动

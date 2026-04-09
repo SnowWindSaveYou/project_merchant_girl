@@ -191,13 +191,20 @@ function M.create(state, params, r)
             end
 
             -- 物品名行
-            local nameChildren = {
-                UI.Label {
-                    text = item.name,
-                    fontSize = Theme.sizes.font_normal,
-                    fontColor = item.shortage and Theme.colors.danger or Theme.colors.text_primary,
-                },
-            }
+            local g = Goods.get(item.id)
+            local nameChildren = {}
+            if g and g.icon then
+                table.insert(nameChildren, UI.Panel {
+                    width = 26, height = 26,
+                    backgroundImage = g.icon,
+                    backgroundFit = "contain",
+                })
+            end
+            table.insert(nameChildren, UI.Label {
+                text = item.name,
+                fontSize = Theme.sizes.font_normal,
+                fontColor = item.shortage and Theme.colors.danger or Theme.colors.text_primary,
+            })
             if catName ~= "" then
                 table.insert(nameChildren, UI.Label {
                     text = catName,

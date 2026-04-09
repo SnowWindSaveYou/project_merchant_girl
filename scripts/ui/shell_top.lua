@@ -1,6 +1,6 @@
 --- 全局顶部状态栏
 --- 显示信用点、燃料、耐久、货舱容量、角色状态
---- 旅行中：额外显示旅行进度条、目的地、剩余时间
+--- 旅行中：额外显示旅行进度条、目的地、剩余时间、收音机面板
 --- Shell 每帧通过 FindById 更新数值
 local UI           = require("urhox-libs/UI")
 local Theme        = require("ui/theme")
@@ -9,6 +9,7 @@ local ItemUse      = require("economy/item_use")
 local Flow         = require("core/flow")
 local RoutePlanner = require("map/route_planner")
 local Graph        = require("map/world_graph")
+local Radio        = require("travel/radio")
 
 local M = {}
 
@@ -142,17 +143,148 @@ function M.create(state)
             },
         }
 
+        -- 收音机面板（旅行中：进度条下方）
+        local radioStrip = M.createRadioStrip(state)
+
         return UI.Panel {
             id = "shellTopContainer",
             width = "100%",
             children = {
                 statusBar,
                 travelStrip,
+                radioStrip,
+            },
+        }
+    end
+
+    -- 非旅行（据点）：也显示收音机
+    local radioStrip = M.createRadioStrip(state)
+    if radioStrip then
+        return UI.Panel {
+            id = "shellTopContainer",
+            width = "100%",
+            children = {
+                statusBar,
+                radioStrip,
             },
         }
     end
 
     return statusBar
+end
+
+--- 获取下一个频道（循环切换）
+---@param current string
+---@return string
+local function _next_channel(current)
+    for i, ch in ipairs(Radio.CHANNELS) do
+        if ch == current then
+            return Radio.CHANNELS[(i % #Radio.CHANNELS) + 1]
+        end
+    end
+    return Radio.CHANNELS[1]
+end
+
+--- 收音机迷你面板（紧凑横条样式，嵌入顶栏）
+--- 据点和旅行中都可见；无 radio 状态时返回 nil
+---@param state table
+---@return table|nil widget
+function M.createRadioStrip(state)
+    local r = state.flow and state.flow.radio
+    if not r then return nil end
+
+    local isOn    = Radio.is_on(state)
+    local channel = Radio.get_channel(state)
+    local cur     = Radio.get_current(state)
+
+    local stripChildren = {}
+
+    -- 左侧：开关按钮
+    table.insert(stripChildren, UI.Button {
+        id = "shellRadioToggle",
+        text = "📻",
+        variant = isOn and "primary" or "secondary",
+        height = 24, width = 36,
+        fontSize = 12,
+        onClick = function(self)
+            Radio.set_on(state, not isOn)
+        end,
+    })
+
+    if isOn then
+        -- 单个频道按钮：点击循环切换
+        local chName = Radio.CHANNEL_NAMES[channel] or channel
+        table.insert(stripChildren, UI.Button {
+            id = "shellRadioCh",
+            text = chName,
+            variant = "primary",
+            height = 22,
+            fontSize = 9,
+            paddingLeft = 6, paddingRight = 6,
+            onClick = function(self)
+                local nextCh = _next_channel(channel)
+                Radio.switch_channel(state, nextCh)
+            end,
+        })
+
+        -- 播报文字区域（NanoVG 在此 Panel 上方绘制平滑滚动字幕）
+        if cur then
+            table.insert(stripChildren, UI.Panel {
+                id = "shellRadioTextArea",
+                flexGrow = 1, flexShrink = 1,
+                height = "100%",
+            })
+            -- 有奖励且未领取
+            if cur.reward and not cur.reward_claimed then
+                local rewardLabel = "领取"
+                if cur.reward.type == "credits" then
+                    rewardLabel = "+$" .. tostring(cur.reward.value or 0)
+                elseif cur.reward.type == "info" then
+                    rewardLabel = "记下"
+                end
+                table.insert(stripChildren, UI.Button {
+                    id = "shellRadioReward",
+                    text = rewardLabel,
+                    variant = "primary",
+                    height = 22,
+                    fontSize = 9,
+                    paddingLeft = 6, paddingRight = 6,
+                    onClick = function(self)
+                        Radio.claim_reward(state)
+                    end,
+                })
+            end
+        else
+            table.insert(stripChildren, UI.Label {
+                id = "shellRadioText",
+                text = "...",
+                fontSize = 10,
+                fontColor = Theme.colors.text_dim,
+                flexGrow = 1,
+            })
+        end
+    else
+        -- 关闭状态：简短提示
+        table.insert(stripChildren, UI.Label {
+            id = "shellRadioText",
+            text = "收音机已关闭",
+            fontSize = 10,
+            fontColor = Theme.colors.text_dim,
+            flexGrow = 1,
+        })
+    end
+
+    return UI.Panel {
+        id = "shellRadioStrip",
+        width = "100%", height = 28,
+        flexDirection = "row", alignItems = "center",
+        paddingLeft = 8, paddingRight = 8,
+        backgroundColor = isOn and { 28, 36, 28, 230 } or { 36, 36, 36, 180 },
+        borderBottomWidth = 1,
+        borderColor = isOn and { 60, 100, 60, 120 } or { 50, 50, 50, 100 },
+        gap = 4,
+        children = stripChildren,
+    }
 end
 
 --- 状态栏小标签

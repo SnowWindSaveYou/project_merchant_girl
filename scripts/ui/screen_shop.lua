@@ -232,7 +232,14 @@ function M.create(state, params, r)
                     width = "100%", flexDirection = "row",
                     justifyContent = "space-between", alignItems = "center",
                     children = {
-                        UI.Label { text = g.name, fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.text_primary },
+                        UI.Panel { flexDirection = "row", alignItems = "center", gap = 6, children = {
+                            g.icon and UI.Panel {
+                                width = 26, height = 26,
+                                backgroundImage = g.icon,
+                                backgroundFit = "contain",
+                            } or nil,
+                            UI.Label { text = g.name, fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.text_primary },
+                        }},
                         UI.Panel { flexDirection = "row", alignItems = "center", gap = 6, children = {
                             UI.Label { text = catInfo.name, fontSize = Theme.sizes.font_tiny, fontColor = catInfo.color },
                         }},

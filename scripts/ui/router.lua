@@ -102,7 +102,11 @@ end
 function M.update(dt)
     -- 刷新 Shell 顶栏数值
     if Shell.is_shelled(currentName) then
-        Shell.update(gameState, dt)
+        local needRebuild = Shell.update(gameState, dt)
+        if needRebuild then
+            M.refresh()
+            return
+        end
     end
 
     -- 页面自身更新
