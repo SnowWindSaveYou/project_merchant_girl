@@ -25,17 +25,49 @@ local SCROLL_SPEED = 50   -- 基础滚动速度 (像素/秒)
 
 -- ── 纸娃娃 & 装备配置 ──────────────────────────────────────
 --- 区域定义（归一化坐标，相对卡车图片 1024×572）
+--- 从 truck_locations_2.png 色块标注提取
 local ZONES = {
+    -- 车厢整体（用于 outside→container 切换后的默认落点）
     container = { x = 0.379, y = 0.150, w = 0.545, h = 0.518 },
-    cabin     = { x = 0.194, y = 0.320, w = 0.106, h = 0.136 },
-    gun       = { x = 0.396, y = -0.10,  w = 0.366, h = 0.228 },  -- 可超顶部
-    radar     = { x = 0.763, y = -0.10,  w = 0.190, h = 0.226 },  -- 可超顶部
+    -- 驾驶舱（cyan 标注区域，修正：比旧值大幅下移）
+    cabin     = { x = 0.193, y = 0.294, w = 0.106, h = 0.376 },
+    -- 饭桌（green 标注区域）
+    table     = { x = 0.439, y = 0.358, w = 0.094, h = 0.311 },
+    -- 灶台（magenta 标注区域）
+    stove     = { x = 0.594, y = 0.406, w = 0.106, h = 0.264 },
+    -- 床铺（blue 标注区域）
+    bed       = { x = 0.714, y = 0.406, w = 0.191, h = 0.177 },
+    -- 装备挂载区
+    gun       = { x = 0.396, y = -0.10,  w = 0.366, h = 0.228 },
+    radar     = { x = 0.763, y = -0.10,  w = 0.190, h = 0.226 },
 }
 
---- 纸娃娃图片
+--- 纸娃娃图片（按姿势差分）
 local CHIBI_IMAGES = {
-    linli  = "image/chibi_linli_20260409053601.png",
-    taoxia = "image/chibi_taoxia_20260409053853.png",
+    linli = {
+        default = "image/chibi_linli_20260409053601.png",
+        drive   = "image/chibi_linli_drive_20260409070207.png",
+        eat     = "image/chibi_linli_eat_20260409070212.png",
+        cook    = "image/chibi_linli_cook_20260409070159.png",
+        sleep   = "image/chibi_linli_sleep_20260409073014.png",
+    },
+    taoxia = {
+        default = "image/chibi_taoxia_20260409053853.png",
+        drive   = "image/chibi_taoxia_drive_20260409070148.png",
+        eat     = "image/chibi_taoxia_eat_20260409070156.png",
+        cook    = "image/chibi_taoxia_cook_20260409070214.png",
+        sleep   = "image/chibi_taoxia_sleep_20260409073033.png",
+    },
+}
+
+--- 区域→姿势映射
+local ZONE_POSE = {
+    cabin     = "drive",
+    table     = "eat",
+    stove     = "cook",
+    bed       = "sleep",
+    container = "default",
+    outside   = "default",
 }
 
 --- 装备图片（按等级）
@@ -53,12 +85,35 @@ local EQUIP_IMAGES = {
 }
 
 --- 纸娃娃高度占卡车高度的比例
-local CHIBI_H_RATIO = 0.25
+local CHIBI_H_RATIO = 0.32
 --- 纸娃娃移动速度（归一化/秒）
-local CHIBI_WALK_SPEED = 0.12
+local CHIBI_WALK_SPEED = 0.10
 --- 切换区域间隔范围（秒）
 local CHIBI_ZONE_SWITCH_MIN = 20
 local CHIBI_ZONE_SWITCH_MAX = 40
+--- 行走颠动参数
+local WOBBLE_FREQ   = 2.2   -- 颠动频率 (Hz)
+local WOBBLE_PX     = 6.0   -- 颠动幅度 (像素，上下位移)
+--- 纸片翻转转身时长（秒）
+local FLIP_DURATION = 0.25
+--- idle 呼吸缩放参数
+local BREATH_FREQ   = 0.6   -- 呼吸频率 (Hz)
+local BREATH_AMP    = 0.035 -- 呼吸缩放幅度 (±3.5%)
+local IDLE_BOB_FREQ = 0.8   -- idle 轻微浮动频率 (Hz)
+local IDLE_BOB_PX   = 2.5   -- idle 浮动幅度 (像素)
+--- 气泡表情配置
+local EMOTE_INTERVAL_MIN = 8    -- 最短间隔（秒）
+local EMOTE_INTERVAL_MAX = 20   -- 最长间隔（秒）
+local EMOTE_DURATION     = 2.5  -- 气泡显示时长（秒）
+local EMOTE_FADE_TIME    = 0.4  -- 淡入淡出时间（秒）
+--- 不同状态/区域的表情池
+local EMOTES_IDLE    = { "💤", "...", "～♪", "😊", "🤔" }
+local EMOTES_WALK    = { "♪", "🎵", "!", "→" }
+local EMOTES_CABIN   = { "🚗", "👀", "😤", "～♪", "🛣️" }
+local EMOTES_TABLE   = { "🍚", "😋", "🥢", "好吃", "🍜" }
+local EMOTES_STOVE   = { "🔥", "🍳", "好香", "👨‍🍳", "♨️" }
+local EMOTES_BED     = { "💤", "😴", "zzZ", "😌", "..." }
+local EMOTES_OUTSIDE = { "🌿", "☁️", "😌", "🔍" }
 
 --- 区域 → 中景图片路径（按地形景观分类）
 local MID_IMAGES = {
@@ -164,25 +219,54 @@ local gameState_ = nil
 --- 卡车绘制位置缓存（每帧由 drawTruck 更新，供 chibi/equipment 复用）
 local truckBounds_ = { x = 0, y = 0, w = 0, h = 0, bounce = 0 }
 
+--- 是否处于行驶状态
+local isDriving_ = true
+
+--- 获取角色当前姿势图片
+---@param c table 角色状态
+---@return string 图片路径
+local function getChibiImage(c)
+    local poses = CHIBI_IMAGES[c.id]
+    if not poses then return "" end
+    local pose = ZONE_POSE[c.zone] or "default"
+    return poses[pose] or poses.default
+end
+
 --- 纸娃娃角色状态
 local chibis_ = {
     {
-        id = "linli", image = CHIBI_IMAGES.linli,
-        zone = "container",      -- "container" | "cabin"
-        x = 0.35, targetX = 0.35, -- 在区域内的归一化 x (0~1)
-        facing = 1,              -- 1=右, -1=左
-        state = "idle",          -- "idle" | "walk"
-        stateTimer = 0,          -- 当前状态剩余时间
-        switchTimer = 25,        -- 切换区域倒计时
+        id = "linli",
+        zone = "cabin",           -- "cabin"|"table"|"stove"|"bed"|"container"|"outside"
+        x = 0.5, targetX = 0.5,   -- 在区域内的归一化 x (0~1)
+        facing = 1,               -- 1=右, -1=左
+        scaleX = 1,               -- 当前渲染缩放（用于纸片翻转）
+        state = "idle",           -- "idle" | "walk" | "turning"
+        stateTimer = 0,           -- 当前状态剩余时间
+        switchTimer = 25,         -- 切换区域倒计时
+        flipTimer = 0,            -- 翻转动画计时器
+        flipFrom = 1,             -- 翻转起始方向
+        walkTime = 0,             -- 行走总时长（用于颠动相位）
+        idleTime = 0,             -- idle 累计时间（用于呼吸动画）
+        emote = nil,              -- 当前表情文字 (nil=无)
+        emoteTimer = 0,           -- 表情显示计时
+        emoteCD = 5 + math.random() * 10, -- 下次表情倒计时
     },
     {
-        id = "taoxia", image = CHIBI_IMAGES.taoxia,
-        zone = "container",
-        x = 0.65, targetX = 0.65,
+        id = "taoxia",
+        zone = "table",           -- 初始在饭桌
+        x = 0.5, targetX = 0.5,
         facing = -1,
+        scaleX = -1,
         state = "idle",
         stateTimer = 1.5,
         switchTimer = 35,
+        flipTimer = 0,
+        flipFrom = -1,
+        walkTime = 0,
+        idleTime = 0,
+        emote = nil,
+        emoteTimer = 0,
+        emoteCD = 8 + math.random() * 12,
     },
 }
 
@@ -325,7 +409,10 @@ function DrivingSceneWidget:Render(nvg)
     -- 12) 货厢纸娃娃（在卡车上面）
     self:drawContainerChibis(nvg)
 
-    -- 13) 拾取反馈浮字
+    -- 13) 车外纸娃娃（停泊时）
+    self:drawOutsideChibis(nvg, l)
+
+    -- 14) 拾取反馈浮字
     self:drawPickupFeedback(nvg, l)
 
     nvgRestore(nvg)
@@ -650,46 +737,260 @@ function DrivingSceneWidget:drawPickupFeedback(nvg, l)
     end
 end
 
+-- ── 纸娃娃辅助 ─────────────────────────────────────────────
+
+--- 判断另一个角色是否在指定区域
+local function otherInZone(chibiIdx, zoneName)
+    local otherIdx = chibiIdx == 1 and 2 or 1
+    return chibis_[otherIdx].zone == zoneName
+end
+
+--- 启动纸片翻转动画
+local function startFlip(c, newFacing)
+    if c.facing == newFacing then return end
+    c.state = "turning"
+    c.flipTimer = 0
+    c.flipFrom = c.facing
+end
+
+--- 可用区域列表（行驶/停泊不同）
+--- 车厢内细分为：table（饭桌）、stove（灶台）、bed（床铺）
+local INTERIOR_ZONES = { "cabin", "table", "stove", "bed" }
+
+local function getAvailableZones(chibiIdx)
+    if isDriving_ then
+        return { "cabin", "table", "stove", "bed" }
+    else
+        return { "cabin", "table", "stove", "bed", "outside" }
+    end
+end
+
 -- ── 纸娃娃 AI 更新 ─────────────────────────────────────────
 local function updateChibis(dt)
-    for _, c in ipairs(chibis_) do
-        -- 区域切换倒计时
-        c.switchTimer = c.switchTimer - dt
-        if c.switchTimer <= 0 then
-            c.zone = (c.zone == "container") and "cabin" or "container"
-            c.switchTimer = CHIBI_ZONE_SWITCH_MIN
-                + math.random() * (CHIBI_ZONE_SWITCH_MAX - CHIBI_ZONE_SWITCH_MIN)
-            c.x = 0.5
-            c.targetX = 0.5
-            c.state = "idle"
-            c.stateTimer = 1 + math.random() * 2
+    for ci, c in ipairs(chibis_) do
+        -- ── 翻转动画 ──
+        if c.state == "turning" then
+            c.flipTimer = c.flipTimer + dt
+            local progress = math.min(1, c.flipTimer / FLIP_DURATION)
+            -- cos 从 1→0→-1：前半程压扁，后半程展开到反方向
+            c.scaleX = c.flipFrom * math.cos(progress * math.pi)
+            if progress >= 0.5 and c.facing == c.flipFrom then
+                c.facing = -c.flipFrom
+            end
+            if progress >= 1 then
+                c.scaleX = c.facing
+                c.state = "walk"
+                c.walkTime = 0
+            end
+            goto continue
         end
 
-        -- 状态机：idle ↔ walk
+        -- ── 区域切换倒计时 ──
+        c.switchTimer = c.switchTimer - dt
+        if c.switchTimer <= 0 then
+            c.switchTimer = CHIBI_ZONE_SWITCH_MIN
+                + math.random() * (CHIBI_ZONE_SWITCH_MAX - CHIBI_ZONE_SWITCH_MIN)
+
+            -- 行驶中：必须保证至少一人在驾驶舱
+            if isDriving_ and c.zone == "cabin" and not otherInZone(ci, "cabin") then
+                -- 自己是唯一在驾驶舱的，不能离开
+                goto continue
+            end
+
+            -- 选一个不同的区域
+            local zones = getAvailableZones(ci)
+            local candidates = {}
+            for _, z in ipairs(zones) do
+                if z ~= c.zone then
+                    table.insert(candidates, z)
+                end
+            end
+            if #candidates > 0 then
+                c.zone = candidates[math.random(#candidates)]
+                c.x = 0.5
+                c.targetX = 0.5
+                c.state = "idle"
+                c.stateTimer = 1 + math.random() * 2
+                c.walkTime = 0
+            end
+        end
+
+        -- ── 状态机：idle ↔ walk ──
+        -- 固定姿势区域不走动（table/stove/bed），只在 idle 中呼吸
+        local isFixedZone = (c.zone == "cabin" or c.zone == "table" or c.zone == "stove" or c.zone == "bed")
+
         if c.state == "idle" then
             c.stateTimer = c.stateTimer - dt
+            c.idleTime = c.idleTime + dt
+            c.walkTime = 0
             if c.stateTimer <= 0 then
-                if c.zone == "container" then
-                    c.targetX = 0.08 + math.random() * 0.84
+                if isFixedZone then
+                    -- 固定区域：重新进入 idle，不走动
+                    c.stateTimer = 3 + math.random() * 5
                 else
-                    c.targetX = 0.2 + math.random() * 0.6
+                    -- 选择目标位置
+                    if c.zone == "container" or c.zone == "outside" then
+                        c.targetX = 0.08 + math.random() * 0.84
+                    else -- cabin
+                        c.targetX = 0.2 + math.random() * 0.6
+                    end
+                    -- 判断是否需要转身
+                    local newFacing = (c.targetX > c.x) and 1 or -1
+                    if newFacing ~= c.facing then
+                        startFlip(c, newFacing)
+                    else
+                        c.state = "walk"
+                        c.walkTime = 0
+                    end
                 end
-                c.state = "walk"
-                c.facing = (c.targetX > c.x) and 1 or -1
             end
         elseif c.state == "walk" then
             local spd = CHIBI_WALK_SPEED
             if c.zone == "cabin" then spd = spd * 0.5 end
+            c.walkTime = c.walkTime + dt
             local dx = c.targetX - c.x
             if math.abs(dx) < spd * dt then
                 c.x = c.targetX
                 c.state = "idle"
                 c.stateTimer = 2 + math.random() * 4
+                c.walkTime = 0
+                c.idleTime = 0
             else
-                c.x = c.x + (dx > 0 and 1 or -1) * spd * dt
-                c.facing = (dx > 0) and 1 or -1
+                local dir = dx > 0 and 1 or -1
+                c.x = c.x + dir * spd * dt
+                -- 行走中方向改变时触发翻转
+                if dir ~= c.facing then
+                    startFlip(c, dir)
+                end
+            end
+            -- 更新缩放为当前朝向（非翻转期间）
+            c.scaleX = c.facing
+        end
+
+        -- ── 气泡表情更新 ──
+        if c.emote then
+            c.emoteTimer = c.emoteTimer + dt
+            if c.emoteTimer >= EMOTE_DURATION then
+                c.emote = nil
+                c.emoteTimer = 0
+                c.emoteCD = EMOTE_INTERVAL_MIN
+                    + math.random() * (EMOTE_INTERVAL_MAX - EMOTE_INTERVAL_MIN)
+            end
+        else
+            c.emoteCD = c.emoteCD - dt
+            if c.emoteCD <= 0 then
+                -- 根据当前状态/区域选择表情池
+                local pool = EMOTES_IDLE
+                if c.state == "walk" then
+                    pool = EMOTES_WALK
+                elseif c.zone == "cabin" then
+                    pool = EMOTES_CABIN
+                elseif c.zone == "table" then
+                    pool = EMOTES_TABLE
+                elseif c.zone == "stove" then
+                    pool = EMOTES_STOVE
+                elseif c.zone == "bed" then
+                    pool = EMOTES_BED
+                elseif c.zone == "outside" then
+                    pool = EMOTES_OUTSIDE
+                end
+                c.emote = pool[math.random(#pool)]
+                c.emoteTimer = 0
             end
         end
+
+        ::continue::
+    end
+end
+
+--- 绘制单个纸娃娃（带颠动 + 纸片缩放 + 呼吸 + 气泡表情）
+---@param nvg userdata
+---@param c table 角色状态
+---@param drawX number 目标 x
+---@param drawY number 目标 y
+---@param chibiW number
+---@param chibiH number
+local function drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
+    local imgPath = getChibiImage(c)
+    local imgHandle = ImageCache.Get(imgPath)
+    if imgHandle == 0 then return end
+
+    local cx = drawX + chibiW / 2
+    local cy = drawY + chibiH      -- 变换支点在脚底
+
+    -- 上下位移动画
+    local bobY = 0
+    if c.state == "walk" and c.walkTime > 0 then
+        -- 行走颠动（较快频率，较大幅度）
+        bobY = -math.abs(math.sin(c.walkTime * WOBBLE_FREQ * math.pi)) * WOBBLE_PX
+    elseif c.state == "idle" and c.idleTime > 0 then
+        -- idle 轻微浮动（缓慢，柔和）
+        bobY = -math.abs(math.sin(c.idleTime * IDLE_BOB_FREQ * math.pi)) * IDLE_BOB_PX
+    end
+
+    -- 呼吸缩放（微微纵向伸缩，从脚底向上）
+    local breathScaleY = 1.0
+    if (c.state == "idle" or c.state == "turning") and c.idleTime > 0 then
+        breathScaleY = 1.0 + math.sin(c.idleTime * BREATH_FREQ * 2 * math.pi) * BREATH_AMP
+    end
+
+    nvgSave(nvg)
+    nvgTranslate(nvg, cx, cy + bobY)
+
+    -- 纸片翻转缩放 + 呼吸
+    nvgScale(nvg, c.scaleX, breathScaleY)
+
+    nvgTranslate(nvg, -cx, -cy - bobY)
+
+    local paint = nvgImagePattern(nvg,
+        drawX, drawY, chibiW, chibiH,
+        0, imgHandle, 1.0)
+    nvgBeginPath(nvg)
+    nvgRect(nvg, drawX, drawY, chibiW, chibiH)
+    nvgFillPaint(nvg, paint)
+    nvgFill(nvg)
+
+    nvgRestore(nvg)
+
+    -- ── 气泡表情 ──
+    if c.emote then
+        -- 淡入淡出
+        local alpha = 1.0
+        if c.emoteTimer < EMOTE_FADE_TIME then
+            alpha = c.emoteTimer / EMOTE_FADE_TIME
+        elseif c.emoteTimer > EMOTE_DURATION - EMOTE_FADE_TIME then
+            alpha = (EMOTE_DURATION - c.emoteTimer) / EMOTE_FADE_TIME
+        end
+        alpha = math.max(0, math.min(1, alpha))
+
+        -- 气泡位置：头顶上方，轻微上浮
+        local floatUp = math.sin(c.emoteTimer * 1.5) * 2
+        local bubbleX = drawX + chibiW / 2
+        local bubbleY = drawY + bobY - 6 + floatUp
+
+        -- 气泡背景（圆角矩形）
+        local bw, bh = 22, 18
+        nvgSave(nvg)
+        nvgGlobalAlpha(nvg, alpha)
+        nvgBeginPath(nvg)
+        nvgRoundedRect(nvg, bubbleX - bw / 2, bubbleY - bh, bw, bh, 5)
+        nvgFillColor(nvg, nvgRGBA(255, 255, 255, 200))
+        nvgFill(nvg)
+        -- 小三角尾巴
+        nvgBeginPath(nvg)
+        nvgMoveTo(nvg, bubbleX - 3, bubbleY)
+        nvgLineTo(nvg, bubbleX + 3, bubbleY)
+        nvgLineTo(nvg, bubbleX, bubbleY + 4)
+        nvgClosePath(nvg)
+        nvgFillColor(nvg, nvgRGBA(255, 255, 255, 200))
+        nvgFill(nvg)
+        -- 表情文字
+        nvgFontFace(nvg, "sans")
+        nvgFontSize(nvg, 11)
+        nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+        nvgFillColor(nvg, nvgRGBA(40, 40, 40, 255))
+        nvgText(nvg, bubbleX, bubbleY - bh / 2, c.emote)
+        nvgRestore(nvg)
     end
 end
 
@@ -701,76 +1002,70 @@ function DrivingSceneWidget:drawCabinChibis(nvg)
 
     for _, c in ipairs(chibis_) do
         if c.zone == "cabin" then
-            local imgHandle = ImageCache.Get(c.image)
-            if imgHandle ~= 0 then
-                local chibiH = tb.h * CHIBI_H_RATIO * 0.8
-                local chibiW = chibiH
+            local chibiH = tb.h * CHIBI_H_RATIO * 0.7
+            local chibiW = chibiH
 
-                local zoneX = tb.x + zone.x * tb.w
-                local zoneY = tb.y + zone.y * tb.h
-                local zoneW = zone.w * tb.w
+            local zoneX = tb.x + zone.x * tb.w
+            local zoneY = tb.y + zone.y * tb.h
+            local zoneW = zone.w * tb.w
 
-                local drawX = zoneX + c.x * zoneW - chibiW / 2
-                -- 头部对齐窗口中心（图片约 30% 处是头部）
-                local drawY = zoneY - chibiH * 0.25
+            local drawX = zoneX + c.x * zoneW - chibiW / 2
+            local drawY = zoneY + chibiH * 0.25
 
-                nvgSave(nvg)
-                local cx = drawX + chibiW / 2
-                nvgTranslate(nvg, cx, 0)
-                nvgScale(nvg, c.facing, 1)
-                nvgTranslate(nvg, -cx, 0)
-
-                local paint = nvgImagePattern(nvg,
-                    drawX, drawY, chibiW, chibiH,
-                    0, imgHandle, 1.0)
-                nvgBeginPath(nvg)
-                nvgRect(nvg, drawX, drawY, chibiW, chibiH)
-                nvgFillPaint(nvg, paint)
-                nvgFill(nvg)
-
-                nvgRestore(nvg)
-            end
+            drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
         end
     end
 end
 
--- ── 绘制货厢纸娃娃（在卡车上面）─────────────────────────────
+-- ── 绘制货厢纸娃娃（在卡车上面：table/stove/bed/container）──
 function DrivingSceneWidget:drawContainerChibis(nvg)
     local tb = truckBounds_
     if tb.w <= 0 then return end
-    local zone = ZONES.container
 
     for _, c in ipairs(chibis_) do
-        if c.zone == "container" then
-            local imgHandle = ImageCache.Get(c.image)
-            if imgHandle ~= 0 then
-                local chibiH = tb.h * CHIBI_H_RATIO
-                local chibiW = chibiH
+        -- 车厢内的子区域都在这里绘制
+        local zone = ZONES[c.zone]
+        if zone and (c.zone == "container" or c.zone == "table"
+                  or c.zone == "stove" or c.zone == "bed") then
+            -- 固定姿势区域（table/stove/bed）角色稍小一点更自然
+            local sizeRatio = CHIBI_H_RATIO
+            if c.zone == "bed" then sizeRatio = CHIBI_H_RATIO * 0.75 end
 
-                local zoneX = tb.x + zone.x * tb.w
-                local zoneY = tb.y + zone.y * tb.h
-                local zoneW = zone.w * tb.w
-                local zoneH = zone.h * tb.h
+            local chibiH = tb.h * sizeRatio
+            local chibiW = chibiH
 
-                local drawX = zoneX + c.x * zoneW - chibiW / 2
-                local drawY = zoneY + zoneH - chibiH  -- 站在区域底部
+            local zoneX = tb.x + zone.x * tb.w
+            local zoneY = tb.y + zone.y * tb.h
+            local zoneW = zone.w * tb.w
+            local zoneH = zone.h * tb.h
 
-                nvgSave(nvg)
-                local cx = drawX + chibiW / 2
-                nvgTranslate(nvg, cx, 0)
-                nvgScale(nvg, c.facing, 1)
-                nvgTranslate(nvg, -cx, 0)
+            local drawX = zoneX + c.x * zoneW - chibiW / 2
+            local drawY = zoneY + zoneH - chibiH
 
-                local paint = nvgImagePattern(nvg,
-                    drawX, drawY, chibiW, chibiH,
-                    0, imgHandle, 1.0)
-                nvgBeginPath(nvg)
-                nvgRect(nvg, drawX, drawY, chibiW, chibiH)
-                nvgFillPaint(nvg, paint)
-                nvgFill(nvg)
+            drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
+        end
+    end
+end
 
-                nvgRestore(nvg)
-            end
+-- ── 绘制车外纸娃娃（停泊时可在地面活动）─────────────────────
+function DrivingSceneWidget:drawOutsideChibis(nvg, l)
+    local tb = truckBounds_
+    if tb.w <= 0 then return end
+
+    for _, c in ipairs(chibis_) do
+        if c.zone == "outside" then
+            local chibiH = tb.h * CHIBI_H_RATIO
+            local chibiW = chibiH
+
+            -- 在卡车前方地面活动（卡车左侧区域）
+            local groundY = l.y + l.h * 0.88
+            local areaX = tb.x - tb.w * 0.3
+            local areaW = tb.w * 0.35
+
+            local drawX = areaX + c.x * areaW - chibiW / 2
+            local drawY = groundY - chibiH
+
+            drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
         end
     end
 end
@@ -910,8 +1205,11 @@ end
 --- 每帧更新滚动 + 天气粒子 + 输入检测 + 拾取反馈（由 screen_home.update 调用）
 ---@param dt number 帧间隔
 function M.update(dt)
-    scrollOffset_ = scrollOffset_ + dt * SCROLL_SPEED
-    -- 更新纸娃娃 AI
+    -- 行驶中才滚动背景
+    if isDriving_ then
+        scrollOffset_ = scrollOffset_ + dt * SCROLL_SPEED
+    end
+    -- 更新纸娃娃 AI（行驶/停泊都运行）
     updateChibis(dt)
     -- 更新天气粒子位置（使用上次渲染的 widget 尺寸估算）
     if weatherParticlesInited_ and #weatherParticles_ > 0 then
@@ -1011,6 +1309,38 @@ function M.setState(state)
     gameState_ = state
 end
 
+--- 设置行驶/停泊模式
+---@param driving boolean
+function M.setDriving(driving)
+    if isDriving_ == driving then return end
+    isDriving_ = driving
+    if driving then
+        -- 开始行驶：确保至少一人在驾驶舱
+        local anyInCabin = false
+        for _, c in ipairs(chibis_) do
+            if c.zone == "cabin" then anyInCabin = true; break end
+        end
+        if not anyInCabin then
+            chibis_[1].zone = "cabin"
+            chibis_[1].x = 0.5
+            chibis_[1].targetX = 0.5
+            chibis_[1].state = "idle"
+            chibis_[1].stateTimer = 2
+        end
+        -- 把 outside 的角色拉回车厢内（随机选一个子区域）
+        for _, c in ipairs(chibis_) do
+            if c.zone == "outside" then
+                local interiors = { "table", "stove", "bed" }
+                c.zone = interiors[math.random(#interiors)]
+                c.x = 0.5
+                c.targetX = 0.5
+                c.state = "idle"
+                c.stateTimer = 1
+            end
+        end
+    end
+end
+
 --- 重置滚动位置（出发时调用）
 function M.reset()
     scrollOffset_ = 0
@@ -1020,18 +1350,19 @@ function M.reset()
     onDropClick_ = nil
     lastLayout_ = nil
     -- 重置纸娃娃状态
-    chibis_[1].zone = "container"
-    chibis_[1].x = 0.35
-    chibis_[1].targetX = 0.35
-    chibis_[1].state = "idle"
-    chibis_[1].stateTimer = 0
-    chibis_[1].switchTimer = 25
-    chibis_[2].zone = "container"
-    chibis_[2].x = 0.65
-    chibis_[2].targetX = 0.65
-    chibis_[2].state = "idle"
-    chibis_[2].stateTimer = 1.5
-    chibis_[2].switchTimer = 35
+    local function resetChibi(c, zone, x, facing, delay, switchT)
+        c.zone = zone
+        c.x = x; c.targetX = x
+        c.facing = facing; c.scaleX = facing
+        c.state = "idle"; c.stateTimer = delay
+        c.switchTimer = switchT
+        c.flipTimer = 0; c.flipFrom = facing
+        c.walkTime = 0; c.idleTime = 0
+        c.emote = nil; c.emoteTimer = 0
+        c.emoteCD = EMOTE_INTERVAL_MIN + math.random() * (EMOTE_INTERVAL_MAX - EMOTE_INTERVAL_MIN)
+    end
+    resetChibi(chibis_[1], "cabin", 0.5,  1, 0,   25)
+    resetChibi(chibis_[2], "table", 0.5, -1, 1.5, 35)
 end
 
 return M

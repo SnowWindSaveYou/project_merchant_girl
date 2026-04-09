@@ -1,17 +1,21 @@
 --- 货车状态页
 --- 模块升级 · 角色状态 · 聚落好感 · 成长目标
-local UI       = require("urhox-libs/UI")
-local Theme    = require("ui/theme")
-local Modules  = require("truck/modules")
-local Goodwill = require("settlement/goodwill")
-local ItemUse  = require("economy/item_use")
-local Goods    = require("economy/goods")
-local Graph    = require("map/world_graph")
-local Skills   = require("character/skills")
+local UI           = require("urhox-libs/UI")
+local Theme        = require("ui/theme")
+local Modules      = require("truck/modules")
+local Goodwill     = require("settlement/goodwill")
+local ItemUse      = require("economy/item_use")
+local Goods        = require("economy/goods")
+local Graph        = require("map/world_graph")
+local Skills       = require("character/skills")
+local Flow         = require("core/flow")
+local DrivingScene = require("travel/driving_scene")
 
 local M = {}
 ---@type table
 local router = nil
+--- 是否已初始化过 DrivingScene 状态（避免重复 setState）
+local drivingSceneInited_ = false
 
 -- 聚落中文名
 local SETT_NAMES = {
@@ -26,6 +30,17 @@ function M.create(state, params, r)
     router = r
     local location = state.map.current_location
     local children = {}
+
+    -- ── 货车视图（行驶场景 / 静态展示）──
+    local isTravelling = (Flow.get_phase(state) == Flow.Phase.TRAVELLING)
+    DrivingScene.setState(state)
+    DrivingScene.setDriving(isTravelling)
+    drivingSceneInited_ = true
+
+    table.insert(children, DrivingScene.createWidget({
+        height = 260,
+        borderRadius = Theme.sizes.radius,
+    }))
 
     -- ── 标题 ──
     table.insert(children, UI.Label {
@@ -62,7 +77,12 @@ function M.create(state, params, r)
     }
 end
 
-function M.update(state, dt, r) end
+function M.update(state, dt, r)
+    -- 驱动行驶场景动画（纸娃娃 AI + 滚动 + 天气粒子）
+    if drivingSceneInited_ then
+        DrivingScene.update(dt)
+    end
+end
 
 --- 货舱使用量
 local function cargoCount(state)

@@ -96,6 +96,7 @@ function M.create(state, params, r)
         end
         -- 传入 state 供纸娃娃/装备渲染使用
         DrivingScene.setState(state)
+        DrivingScene.setDriving(true)
         -- 设置掉落物点击回调
         DrivingScene.setDropCallback(function(drop)
             local feedback = RoadLoot.try_pickup(state, drop)
@@ -755,7 +756,7 @@ function createTravelView(state)
 
     -- ── 行驶视差场景 ──
     table.insert(contentChildren, DrivingScene.createWidget({
-        height = 220,
+        height = 260,
         borderRadius = Theme.sizes.radius,
     }))
 
