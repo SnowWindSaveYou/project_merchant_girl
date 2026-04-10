@@ -2,6 +2,7 @@
 --- 展示路况数据余额、可交换情报、已获情报
 local UI    = require("urhox-libs/UI")
 local Theme = require("ui/theme")
+local F     = require("ui/ui_factory")
 local Intel = require("settlement/intel")
 
 local M = {}
@@ -60,10 +61,8 @@ function M.create(state, params, r)
         })
         for _, info in ipairs(available) do
             local canBuy = info.available
-            table.insert(children, UI.Panel {
+            table.insert(children, F.card {
                 width = "100%", padding = 10,
-                backgroundColor = Theme.colors.bg_card,
-                borderRadius = Theme.sizes.radius_small,
                 borderWidth = 1, borderColor = canBuy and Theme.colors.info or Theme.colors.border,
                 gap = 4,
                 children = {
@@ -88,11 +87,11 @@ function M.create(state, params, r)
                         fontSize = Theme.sizes.font_tiny,
                         fontColor = Theme.colors.text_secondary,
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = canBuy and "交换" or "数据不足",
                         variant = canBuy and "primary" or "secondary",
                         disabled = not canBuy,
-                        width = "100%", height = 32,
+                        height = 32,
                         fontSize = Theme.sizes.font_small,
                         onClick = function(self)
                             if not canBuy then return end

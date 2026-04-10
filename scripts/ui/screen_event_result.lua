@@ -2,6 +2,7 @@
 --- 显示玩家选择后的结果文本，然后继续流程
 local UI = require("urhox-libs/UI")
 local Theme = require("ui/theme")
+local F = require("ui/ui_factory")
 local EventScheduler = require("events/event_scheduler")
 
 local M = {}
@@ -13,19 +14,14 @@ function M.create(state, params, r)
     local event  = params and params.event or {}
     local choice = params and params.choice or {}
 
-    return UI.Panel {
+    return F.overlay {
         id = "eventResultScreen",
-        width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_overlay,
-        justifyContent = "center", alignItems = "center",
         children = {
-            UI.Panel {
+            F.card {
                 width = "90%", maxWidth = 420,
                 padding = Theme.sizes.padding_large,
-                backgroundColor = Theme.colors.bg_card,
-                borderRadius = Theme.sizes.radius_large,
-                borderWidth = Theme.sizes.border, borderColor = Theme.colors.border,
                 gap = 14, alignItems = "center",
+                enterAnim = true,
                 children = {
                     UI.Label {
                         text = event.title or "事件结果",
@@ -36,9 +32,9 @@ function M.create(state, params, r)
                         fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.text_secondary,
                         textAlign = "center", lineHeight = 1.5,
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = "继续",
-                        variant = "primary", width = "100%", height = 44, marginTop = 8,
+                        variant = "primary", marginTop = 8,
                         onClick = function(self)
                             -- 清除待处理事件标记
                             EventScheduler.clear_pending(state)

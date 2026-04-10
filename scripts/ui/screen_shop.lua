@@ -12,6 +12,8 @@ local ItemUse      = require("economy/item_use")
 local Tutorial     = require("narrative/tutorial")
 local Flags        = require("core/flags")
 local SpeechBubble = require("ui/speech_bubble")
+local F            = require("ui/ui_factory")
+local SoundMgr     = require("ui/sound_manager")
 
 --- 据点服务定价
 local SERVICE = {
@@ -93,12 +95,8 @@ function M.create(state, params, r)
         },
 
         -- ── 补给站 ──
-        UI.Panel {
-            width = "100%", padding = 12,
-            backgroundColor = Theme.colors.bg_card,
-            borderRadius = Theme.sizes.radius,
-            borderWidth = Theme.sizes.border,
-            borderColor = Theme.colors.border,
+        F.card {
+            padding = 12,
             gap = 8,
             children = {
                 UI.Label {
@@ -123,7 +121,7 @@ function M.create(state, params, r)
                                 variant = fuelPct < 25 and "danger" or fuelPct < 50 and "warning" or "success",
                             },
                         }},
-                        UI.Button {
+                        F.actionBtn {
                             text = SERVICE.refuel.label .. "  $" .. SERVICE.refuel.cost,
                             variant = "primary", height = 32, width = 110,
                             disabled = fuelFull or state.economy.credits < SERVICE.refuel.cost,
@@ -154,7 +152,7 @@ function M.create(state, params, r)
                                 variant = duraPct < 25 and "danger" or duraPct < 50 and "warning" or "success",
                             },
                         }},
-                        UI.Button {
+                        F.actionBtn {
                             text = SERVICE.repair.label .. "  $" .. SERVICE.repair.cost,
                             variant = "primary", height = 32, width = 110,
                             disabled = duraFull or state.economy.credits < SERVICE.repair.cost,
@@ -172,12 +170,7 @@ function M.create(state, params, r)
         },
 
         -- ── 分隔 ──
-        UI.Label {
-            text = "商品交易",
-            fontSize = Theme.sizes.font_normal,
-            fontColor = Theme.colors.text_secondary,
-            marginTop = 4,
-        },
+        F.sectionTitle("商品交易"),
     }
 
     for _, g in ipairs(Goods.ALL) do
@@ -225,13 +218,8 @@ function M.create(state, params, r)
             })
         end
 
-        table.insert(contentChildren, UI.Panel {
-            width = "100%",
+        table.insert(contentChildren, F.card {
             padding = 12,
-            backgroundColor = Theme.colors.bg_card,
-            borderRadius = Theme.sizes.radius,
-            borderWidth = Theme.sizes.border,
-            borderColor = Theme.colors.border,
             gap = 6,
             children = {
                 UI.Panel {
@@ -266,7 +254,7 @@ function M.create(state, params, r)
                 UI.Panel {
                     width = "100%", flexDirection = "row", gap = 8, marginTop = 4,
                     children = {
-                        UI.Button {
+                        F.actionBtn {
                             text = cargoFull and "仓位已满" or "买入",
                             variant = "primary", flexGrow = 1, height = 34,
                             disabled = cargoFull or state.economy.credits < buyP,
@@ -279,7 +267,7 @@ function M.create(state, params, r)
                                 end
                             end,
                         },
-                        UI.Button {
+                        F.actionBtn {
                             text = sellText, variant = sellVariant, flexGrow = 1, height = 34,
                             disabled = held <= 0,
                             onClick = function(self)
@@ -327,7 +315,7 @@ function M.create(state, params, r)
                                 fontSize = Theme.sizes.font_small,
                                 fontColor = Theme.colors.danger,
                             },
-                            UI.Button {
+                            F.actionBtn {
                                 text = "治疗 $" .. SERVICE.rest.cost,
                                 variant = "primary", height = 28, width = 100,
                                 disabled = not canAfford,
@@ -351,12 +339,8 @@ function M.create(state, params, r)
             })
         end
 
-        table.insert(contentChildren, UI.Panel {
-            width = "100%", padding = 12, marginTop = 4,
-            backgroundColor = Theme.colors.bg_card,
-            borderRadius = Theme.sizes.radius,
-            borderWidth = Theme.sizes.border,
-            borderColor = Theme.colors.border,
+        table.insert(contentChildren, F.card {
+            padding = 12, marginTop = 4,
             gap = 8,
             children = restChildren,
         })
@@ -434,7 +418,7 @@ function M.create(state, params, r)
                             fontSize = Theme.sizes.font_tiny,
                             fontColor = canUp and Theme.colors.text_secondary or Theme.colors.danger,
                         },
-                        UI.Button {
+                        F.actionBtn {
                             text = "升级",
                             variant = "primary", height = 28, width = 80,
                             disabled = not canUp,
@@ -464,12 +448,7 @@ function M.create(state, params, r)
     end
 
     if #upgradeCards > 0 then
-        table.insert(contentChildren, UI.Label {
-            text = "模块升级",
-            fontSize = Theme.sizes.font_normal,
-            fontColor = Theme.colors.text_secondary,
-            marginTop = 4,
-        })
+        table.insert(contentChildren, F.sectionTitle("模块升级"))
         for _, card in ipairs(upgradeCards) do
             table.insert(contentChildren, card)
         end

@@ -5,6 +5,8 @@ local Theme      = require("ui/theme")
 local Goods      = require("economy/goods")
 local ItemUse    = require("economy/item_use")
 local CargoUtils = require("economy/cargo_utils")
+local F          = require("ui/ui_factory")
+local SoundMgr   = require("ui/sound_manager")
 
 local M = {}
 ---@type table
@@ -46,10 +48,8 @@ function M.create(state, params, r)
     local children = {}
 
     -- 容量卡片
-    table.insert(children, UI.Panel {
-        width = "100%", padding = 14,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
+    table.insert(children, F.card {
+        padding = 14,
         gap = 8,
         children = {
             UI.Panel {
@@ -80,11 +80,10 @@ function M.create(state, params, r)
 
     -- 委托货物短缺警告
     if hasShortage then
-        table.insert(children, UI.Panel {
-            width = "100%", padding = 10,
-            backgroundColor = { 72, 28, 28, 220 },
-            borderRadius = Theme.sizes.radius,
+        table.insert(children, F.card {
+            padding = 10,
             borderWidth = 1, borderColor = Theme.colors.danger,
+            imageTint = { 72, 28, 28, 220 },
             flexDirection = "row", alignItems = "center", gap = 8,
             children = {
                 UI.Label {
@@ -96,11 +95,10 @@ function M.create(state, params, r)
             },
         })
     elseif totalCommitted > 0 then
-        table.insert(children, UI.Panel {
-            width = "100%", padding = 10,
-            backgroundColor = { 40, 45, 55, 200 },
-            borderRadius = Theme.sizes.radius,
+        table.insert(children, F.card {
+            padding = 10,
             borderWidth = 1, borderColor = Theme.colors.info,
+            imageTint = { 40, 45, 55, 200 },
             children = {
                 UI.Label {
                     text = "委托货物 " .. totalCommitted .. " 件 — 使用前请注意保留",
@@ -137,12 +135,7 @@ function M.create(state, params, r)
             },
         })
     else
-        table.insert(children, UI.Label {
-            text = "货物清单",
-            fontSize = Theme.sizes.font_normal,
-            fontColor = Theme.colors.text_secondary,
-            marginTop = 4,
-        })
+        table.insert(children, F.sectionTitle("货物清单"))
 
         for _, item in ipairs(itemList) do
             local catInfo = Goods.CATEGORIES and Goods.CATEGORIES[item.cat]
@@ -174,7 +167,7 @@ function M.create(state, params, r)
                 if item.shortage then
                     btnText = "⚠ " .. btnText
                 end
-                table.insert(rightChildren, UI.Button {
+                table.insert(rightChildren, F.actionBtn {
                     text = btnText,
                     variant = item.shortage and "danger" or "secondary",
                     height = 28, width = 80,
@@ -239,10 +232,8 @@ function M.create(state, params, r)
                 cardBorderColor = Theme.colors.danger
             end
 
-            table.insert(children, UI.Panel {
-                width = "100%", padding = 12,
-                backgroundColor = Theme.colors.bg_card,
-                borderRadius = Theme.sizes.radius_small,
+            table.insert(children, F.card {
+                padding = 12,
                 borderWidth = cardBorder,
                 borderColor = cardBorderColor,
                 flexDirection = "row",

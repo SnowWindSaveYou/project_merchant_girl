@@ -13,6 +13,7 @@ local Radio        = require("travel/radio")
 local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local Flags        = require("core/flags")
+local F            = require("ui/ui_factory")
 
 local M = {}
 
@@ -82,7 +83,6 @@ function M.create(state)
         flexDirection = "row", alignItems = "center",
         paddingLeft = 12, paddingRight = 12,
         backgroundColor = Theme.colors.bg_secondary,
-        borderBottomWidth = 1, borderColor = Theme.colors.border,
         children = barChildren,
     }
 
@@ -218,7 +218,7 @@ function M.createRadioStrip(state)
     local stripChildren = {}
 
     -- 左侧：开关按钮
-    table.insert(stripChildren, UI.Button {
+    table.insert(stripChildren, F.actionBtn {
         id = "shellRadioToggle",
         text = "📻",
         variant = isOn and "primary" or "secondary",
@@ -241,13 +241,14 @@ function M.createRadioStrip(state)
     if isOn then
         -- 单个频道按钮：点击循环切换
         local chName = Radio.CHANNEL_NAMES[channel] or channel
-        table.insert(stripChildren, UI.Button {
+        table.insert(stripChildren, F.actionBtn {
             id = "shellRadioCh",
             text = chName,
             variant = "primary",
+            width = "auto",
             height = 22,
             fontSize = 9,
-            paddingLeft = 6, paddingRight = 6,
+            paddingLeft = 10, paddingRight = 10,
             onClick = function(self)
                 local nextCh = _next_channel(channel)
                 Radio.switch_channel(state, nextCh)
@@ -269,13 +270,14 @@ function M.createRadioStrip(state)
                 elseif cur.reward.type == "info" then
                     rewardLabel = "记下"
                 end
-                table.insert(stripChildren, UI.Button {
+                table.insert(stripChildren, F.actionBtn {
                     id = "shellRadioReward",
                     text = rewardLabel,
                     variant = "primary",
+                    width = "auto",
                     height = 22,
                     fontSize = 9,
-                    paddingLeft = 6, paddingRight = 6,
+                    paddingLeft = 10, paddingRight = 10,
                     onClick = function(self)
                         Radio.claim_reward(state)
                     end,

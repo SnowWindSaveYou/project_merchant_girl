@@ -2,6 +2,7 @@
 --- 显示随机事件描述和选项
 local UI = require("urhox-libs/UI")
 local Theme = require("ui/theme")
+local F = require("ui/ui_factory")
 local Flags = require("core/flags")
 local EventExecutor = require("events/event_executor")
 local EventPool = require("events/event_pool")
@@ -24,11 +25,9 @@ function M.create(state, params, r)
     -- 构建选项按钮列表
     local choiceChildren = {}
     for i, choice in ipairs(visible_choices) do
-        table.insert(choiceChildren, UI.Button {
+        table.insert(choiceChildren, F.actionBtn {
             text = choice.text,
             variant = i == 1 and "primary" or "secondary",
-            width = "100%",
-            height = 44,
             onClick = function(self)
                 EventExecutor.apply(state, choice.ops)
                 -- 处理选项附带的旗标变更
@@ -77,20 +76,16 @@ function M.create(state, params, r)
         table.insert(cardChildren, btn)
     end
 
-    return UI.Panel {
+    return F.overlay {
         id = "eventScreen",
-        width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_overlay,
-        justifyContent = "center", alignItems = "center",
         children = {
-            UI.Panel {
+            F.card {
                 width = "90%", maxWidth = 420,
                 padding = Theme.sizes.padding_large,
-                backgroundColor = Theme.colors.bg_card,
-                borderRadius = Theme.sizes.radius_large,
                 borderWidth = Theme.sizes.border,
                 borderColor = Theme.colors.info,
                 gap = 14,
+                enterAnim = true,
                 children = cardChildren,
             },
         },

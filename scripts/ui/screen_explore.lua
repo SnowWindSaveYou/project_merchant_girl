@@ -2,6 +2,7 @@
 --- 显示房间描述、搜刮点列表、战斗交互、撤离
 local UI           = require("urhox-libs/UI")
 local Theme        = require("ui/theme")
+local F            = require("ui/ui_factory")
 local Explore      = require("combat/explore")
 local CombatResult = require("combat/combat_result")
 local Tutorial     = require("narrative/tutorial")
@@ -109,7 +110,7 @@ function M._build_intro_view(state)
                     UI.Panel {
                         width = "100%", flexDirection = "row", gap = 10,
                         children = {
-                            UI.Button {
+                            F.actionBtn {
                                 text = "进入探索",
                                 variant = "primary",
                                 flexGrow = 1, height = 48,
@@ -127,7 +128,7 @@ function M._build_intro_view(state)
                                     end
                                 end,
                             },
-                            UI.Button {
+                            F.actionBtn {
                                 text = "离开",
                                 variant = "outline",
                                 width = 80, height = 48,
@@ -204,10 +205,8 @@ function M._build_explore_view(state)
         local status = crate.looted and "✅ 已搜索" or "📦 未搜索"
         local statusColor = crate.looted and Theme.colors.text_dim or Theme.colors.accent
 
-        table.insert(children, UI.Panel {
+        table.insert(children, F.card {
             width = "100%", padding = 8,
-            backgroundColor = Theme.colors.bg_card,
-            borderRadius = Theme.sizes.radius_small,
             flexDirection = "row", justifyContent = "space-between", alignItems = "center",
             children = {
                 UI.Label {
@@ -254,10 +253,10 @@ function M._build_explore_view(state)
         if act.id == "flee" then variant = "outline" end
         if act.id == "fight" then variant = "primary" end
 
-        table.insert(children, UI.Button {
+        table.insert(children, F.actionBtn {
             text = act.icon .. " " .. act.name,
             variant = variant,
-            width = "100%", height = 42,
+            height = 42,
             fontSize = Theme.sizes.font_normal,
             disabled = not act.available,
             onClick = function(self)
@@ -325,13 +324,12 @@ function M._show_result_view(state)
         backgroundColor = { 18, 20, 15, 255 },
         justifyContent = "center", alignItems = "center",
         children = {
-            UI.Panel {
+            F.card {
                 width = "90%", maxWidth = 420,
                 padding = Theme.sizes.padding_large,
-                backgroundColor = Theme.colors.bg_card,
-                borderRadius = Theme.sizes.radius_large,
                 borderWidth = 2, borderColor = resultColor,
                 gap = 12, alignItems = "center",
+                enterAnim = true,
                 children = {
                     UI.Label {
                         text = summary.title,
@@ -342,10 +340,10 @@ function M._show_result_view(state)
                         width = "100%", gap = 6,
                         children = lineWidgets,
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = "继续",
                         variant = "primary",
-                        width = "100%", height = 48, marginTop = 8,
+                        height = 48, marginTop = 8,
                         onClick = function(self)
                             router.navigate("home")
                         end,

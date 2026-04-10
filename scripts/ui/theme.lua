@@ -9,13 +9,13 @@ M.colors = {
     -- 背景层次（暗灰-铁灰系）
     bg_primary   = { 32, 30, 28, 255 },   -- 深铁灰（主背景）
     bg_secondary = { 42, 40, 37, 255 },   -- 暖灰（次背景/顶栏）
-    bg_card      = { 52, 48, 44, 240 },   -- 暖深灰（卡片）
+    bg_card      = { 52, 48, 44, 220 },   -- 暖深灰（卡片）
     bg_overlay   = { 15, 14, 12, 180 },   -- 遮罩层
 
     -- 强调色
     accent     = { 198, 156, 82, 255 },   -- 旧铜金（贸易/货币）
     accent_dim = { 198, 156, 82, 100 },
-    danger     = { 168, 62, 52, 255 },     -- 锈红（危险/伤害）
+    danger     = { 188, 72, 52, 255 },     -- 锈红（危险/伤害）
     success    = { 108, 148, 96, 255 },    -- 暗绿（收益/安全）
     info       = { 112, 142, 168, 255 },   -- 灰蓝（信息/导航）
     warning    = { 188, 148, 68, 255 },    -- 暗金（警告）
@@ -88,11 +88,61 @@ M.sizes = {
     padding_small = 8,
     padding_large = 24,
 
-    radius       = 8,
-    radius_small = 4,
-    radius_large = 12,
+    radius       = 2,
+    radius_small = 1,
+    radius_large = 4,
 
     border = 1,
+}
+
+-- 新增：UI 美化扩展
+M.colors.text_header  = { 228, 218, 198, 255 }  -- 区块标题（更暖更亮）
+M.colors.glow_accent  = { 198, 156, 82, 60 }    -- 强调色辉光（脉冲动效）
+M.colors.card_border  = { 78, 72, 64, 140 }     -- 卡片边框（比 border 稍亮，手绘线条感）
+
+-- 纹理贴图路径（卡片 9-slice 备用）
+M.textures = {
+    card_slice = { 16, 16, 16, 16 },
+}
+
+-- 按钮扁平配色（程序化 UI，无纹理）
+M.btn_colors = {
+    primary = {
+        bg      = { 78, 98, 118, 255 },     -- 钢蓝灰
+        pressed = { 58, 78, 98, 255 },
+    },
+    secondary = {
+        bg      = { 62, 58, 52, 255 },      -- 暖灰
+        pressed = { 50, 46, 40, 255 },
+    },
+    danger = {
+        bg      = { 128, 52, 42, 255 },     -- 暗锈红
+        pressed = { 108, 42, 32, 255 },
+    },
+    disabled = {
+        bg      = { 46, 43, 39, 180 },      -- 禁用灰
+    },
+}
+
+-- Tab 导航图标路径
+M.icons = {
+    tab_home   = "image/icon_tab_home.png",
+    tab_map    = "image/icon_tab_map.png",
+    tab_orders = "image/icon_tab_orders.png",
+    tab_cargo  = "image/icon_tab_cargo.png",
+    tab_truck  = "image/icon_tab_truck.png",
+}
+
+-- UI 音效路径
+M.sounds = {
+    click      = "audio/sfx/sfx_ui_click.ogg",
+    click_soft = "audio/sfx/sfx_ui_click_soft.ogg",
+    open       = "audio/sfx/sfx_ui_open.ogg",
+    close      = "audio/sfx/sfx_ui_close.ogg",
+    error      = "audio/sfx/sfx_ui_error.ogg",
+    success    = "audio/sfx/sfx_ui_success.ogg",
+    coins      = "audio/sfx/sfx_ui_coins.ogg",
+    warning    = "audio/sfx/sfx_ui_warning.ogg",
 }
 
 return M

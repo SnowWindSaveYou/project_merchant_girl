@@ -13,6 +13,8 @@ local DrivingScene = require("travel/driving_scene")
 local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local Flags        = require("core/flags")
+local F            = require("ui/ui_factory")
+local SoundMgr     = require("ui/sound_manager")
 
 local M = {}
 ---@type table
@@ -141,12 +143,10 @@ function createVehicleCard(state)
     local fuelPct = math.floor(state.truck.fuel / state.truck.fuel_max * 100)
     local duraPct = math.floor(state.truck.durability / state.truck.durability_max * 100)
 
-    return UI.Panel {
-        width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
-        borderWidth = 1, borderColor = Theme.colors.border,
+    return F.card {
+        padding = 12,
         gap = 8,
+        enterAnim = true, enterDelay = 0.05,
         children = {
             -- 燃料
             UI.Panel {
@@ -266,18 +266,11 @@ function createCharacterSection(state)
         })
     end
 
-    table.insert(rows, 1, UI.Label {
-        text = "角色",
-        fontSize = Theme.sizes.font_normal,
-        fontColor = Theme.colors.info,
-    })
+    table.insert(rows, 1, F.sectionTitle("角色", { marginTop = 0 }))
 
-    return UI.Panel {
-        width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
-        borderWidth = 1, borderColor = Theme.colors.border,
-        gap = 6,
+    return F.card {
+        padding = 12, gap = 6,
+        enterAnim = true, enterDelay = 0.1,
         children = rows,
     }
 end
@@ -377,7 +370,7 @@ function createModulesSection(state, location)
                     justifyContent = "flex-end",
                     marginTop = 2,
                     children = {
-                        UI.Button {
+                        F.actionBtn {
                             text = canUp and "升级" or (reason or "无法升级"),
                             variant = canUp and "primary" or "secondary",
                             height = 30, paddingLeft = 16, paddingRight = 16,
@@ -412,18 +405,11 @@ function createModulesSection(state, location)
         })
     end
 
-    table.insert(rows, 1, UI.Label {
-        text = "模块升级",
-        fontSize = Theme.sizes.font_normal,
-        fontColor = Theme.colors.info,
-    })
+    table.insert(rows, 1, F.sectionTitle("模块升级", { marginTop = 0 }))
 
-    return UI.Panel {
-        width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
-        borderWidth = 1, borderColor = Theme.colors.border,
-        gap = 8,
+    return F.card {
+        padding = 12, gap = 8,
+        enterAnim = true, enterDelay = 0.15,
         children = rows,
     }
 end
@@ -480,18 +466,11 @@ function createGoodwillSection(state)
         })
     end
 
-    table.insert(rows, 1, UI.Label {
-        text = "聚落好感",
-        fontSize = Theme.sizes.font_normal,
-        fontColor = Theme.colors.info,
-    })
+    table.insert(rows, 1, F.sectionTitle("聚落好感", { marginTop = 0 }))
 
-    return UI.Panel {
-        width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
-        borderWidth = 1, borderColor = Theme.colors.border,
-        gap = 6,
+    return F.card {
+        padding = 12, gap = 6,
+        enterAnim = true, enterDelay = 0.2,
         children = rows,
     }
 end
@@ -504,11 +483,7 @@ function createSkillsSection(state)
     local rows = {}
 
     -- 标题
-    table.insert(rows, UI.Label {
-        text = "技能",
-        fontSize = Theme.sizes.font_normal,
-        fontColor = Theme.colors.info,
-    })
+    table.insert(rows, F.sectionTitle("技能", { marginTop = 0 }))
 
     -- ── 个人技能 ──
     for _, cid in ipairs({ "linli", "taoxia" }) do
@@ -638,12 +613,9 @@ function createSkillsSection(state)
         })
     end
 
-    return UI.Panel {
-        width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
-        borderWidth = 1, borderColor = Theme.colors.border,
-        gap = 6,
+    return F.card {
+        padding = 12, gap = 6,
+        enterAnim = true, enterDelay = 0.25,
         children = rows,
     }
 end
@@ -695,18 +667,11 @@ function createGoalsSection(state)
         })
     end
 
-    table.insert(items, 1, UI.Label {
-        text = "成长目标",
-        fontSize = Theme.sizes.font_normal,
-        fontColor = Theme.colors.info,
-    })
+    table.insert(items, 1, F.sectionTitle("成长目标", { marginTop = 0 }))
 
-    return UI.Panel {
-        width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
-        borderWidth = 1, borderColor = Theme.colors.border,
-        gap = 6,
+    return F.card {
+        padding = 12, gap = 6,
+        enterAnim = true, enterDelay = 0.3,
         children = items,
     }
 end

@@ -2,6 +2,7 @@
 --- 展示种植槽状态、可种植作物、收获操作
 local UI    = require("urhox-libs/UI")
 local Theme = require("ui/theme")
+local F     = require("ui/ui_factory")
 local Farm  = require("settlement/farm")
 local Goods = require("economy/goods")
 
@@ -133,10 +134,10 @@ function createSlotCard(state, index, slot, available)
         }
 
         if canHarvest then
-            table.insert(slotChildren, UI.Button {
+            table.insert(slotChildren, F.actionBtn {
                 text = "收获",
                 variant = "primary",
-                width = "100%", height = 36,
+                height = 36,
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
                     local ok, result = Farm.harvest(state, index)
@@ -151,12 +152,11 @@ function createSlotCard(state, index, slot, available)
             })
         end
 
-        return UI.Panel {
+        return F.card {
             width = "100%", padding = 10,
-            backgroundColor = canHarvest and { 38, 52, 38, 240 } or Theme.colors.bg_card,
-            borderRadius = Theme.sizes.radius,
+            imageTint = canHarvest and { 0.6, 0.9, 0.6, 1.0 } or nil,
             borderWidth = 1,
-            borderColor = canHarvest and Theme.colors.success or Theme.colors.border,
+            borderColor = canHarvest and Theme.colors.success or nil,
             gap = 6,
             children = slotChildren,
         }
@@ -182,13 +182,13 @@ function createSlotCard(state, index, slot, available)
                 matDesc = " (" .. table.concat(parts, ", ") .. ")"
             end
 
-            table.insert(plantButtons, UI.Button {
+            table.insert(plantButtons, F.actionBtn {
                 text = hasAll
                     and ("种植 " .. crop.name .. matDesc)
                     or  (crop.name .. matDesc .. " [不足]"),
                 variant = hasAll and "secondary" or "secondary",
                 disabled = not hasAll,
-                width = "100%", height = 32,
+                height = 32,
                 fontSize = Theme.sizes.font_small,
                 onClick = function(self)
                     if not hasAll then return end
@@ -245,10 +245,8 @@ function createCropInfo(state, crop)
     local yieldGoods = Goods.get(crop.yield_id)
     local yieldName = yieldGoods and yieldGoods.name or crop.yield_id
 
-    return UI.Panel {
+    return F.card {
         width = "100%", padding = 8,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius_small,
         gap = 2,
         children = {
             UI.Panel {

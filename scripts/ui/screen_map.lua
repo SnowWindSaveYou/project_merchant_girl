@@ -2,6 +2,7 @@
 --- 绘制网状节点、不同线型连线、拖拽平移、滚轮缩放、节点选中弹窗
 local UI           = require("urhox-libs/UI")
 local Theme        = require("ui/theme")
+local F            = require("ui/ui_factory")
 local Flow         = require("core/flow")
 local Graph        = require("map/world_graph")
 local OrderBook    = require("economy/order_book")
@@ -102,6 +103,10 @@ local inp = {
     pressX  = 0, pressY = 0,
     lastX   = 0, lastY  = 0,
     isDrag  = false,
+    -- 双指缩放状态
+    pinching      = false,
+    lastPinchDist = 0,
+    pinchCooldown = 0,   -- 松手后短暂忽略点击（防误触）
 }
 
 -- Modal 引用
@@ -1267,7 +1272,7 @@ local function openNodeModal(nodeId)
             modal_:AddContent(UI.Panel {
                 width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
                 children = {
-                    UI.Button {
+                    F.actionBtn {
                         text = "查看路线",
                         variant = "primary", flexGrow = 1, height = 40,
                         onClick = function(self)
@@ -1282,7 +1287,7 @@ local function openNodeModal(nodeId)
             modal_:AddContent(UI.Panel {
                 width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
                 children = {
-                    UI.Button {
+                    F.actionBtn {
                         text = canDepart and "直接出发" or "燃料不足",
                         variant = "primary", flexGrow = 1, height = 40,
                         disabled = not canDepart,
@@ -1295,7 +1300,7 @@ local function openNodeModal(nodeId)
                             end
                         end,
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = "查看路线",
                         variant = "secondary", flexGrow = 1, height = 40,
                         onClick = function(self)
@@ -1330,7 +1335,7 @@ local function openNodeModal(nodeId)
                 modal_:AddContent(UI.Panel {
                     width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
                     children = {
-                        UI.Button {
+                        F.actionBtn {
                             text = "规划新路线",
                             variant = "primary", flexGrow = 1, height = 40,
                             onClick = function(self)
@@ -1344,7 +1349,7 @@ local function openNodeModal(nodeId)
                 modal_:AddContent(UI.Panel {
                     width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
                     children = {
-                        UI.Button {
+                        F.actionBtn {
                             text = "规划路线",
                             variant = "primary", flexGrow = 1, height = 40,
                             onClick = function(self)
@@ -1352,7 +1357,7 @@ local function openNodeModal(nodeId)
                                 enterRoutePreview(nodeId)
                             end,
                         },
-                        UI.Button {
+                        F.actionBtn {
                             text = "手动规划",
                             variant = "secondary", flexGrow = 1, height = 40,
                             onClick = function(self)
@@ -1497,10 +1502,10 @@ local function openUnknownNodeModal(nodeId)
 
     -- 操作按钮
     local canExplore = fuelOk and not flagLocked
-    modal_:AddContent(UI.Button {
+    modal_:AddContent(F.actionBtn {
         text = flagLocked and "🔒 需要情报" or (fuelOk and "前往探索" or "燃料不足"),
         variant = canExplore and "primary" or "secondary",
-        width = "100%", height = 40, marginTop = 8,
+        height = 40, marginTop = 8,
         disabled = not canExplore,
         onClick = function(self)
             modal_:Close()
@@ -1644,7 +1649,7 @@ openAutoPlanModal = function()
                         fontSize = Theme.sizes.font_normal,
                         fontColor = Theme.colors.text_secondary,
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = ap.auto_accept_orders and "已开启" or "已关闭",
                         variant = ap.auto_accept_orders and "primary" or "secondary",
                         width = 72, height = 32,
@@ -1658,10 +1663,10 @@ openAutoPlanModal = function()
         },
     })
 
-    modal_:AddContent(UI.Button {
+    modal_:AddContent(F.actionBtn {
         text = "确定",
         variant = "primary",
-        width = "100%", height = 40, marginTop = 12,
+        height = 40, marginTop = 12,
         onClick = function(self)
             modal_:SetSize("sm")
             modal_:Close()
@@ -1731,7 +1736,7 @@ rebuildPanel = function()
                     fontSize = Theme.sizes.font_normal,
                     fontColor = isTravelling and Theme.colors.accent or Theme.colors.text_primary,
                 },
-                UI.Button {
+                F.actionBtn {
                     text = "✕", variant = "secondary",
                     width = 32, height = 32,
                     onClick = function(self) exitToBase() end,
@@ -1743,7 +1748,7 @@ rebuildPanel = function()
         local stratBtns = {}
         for _, strat in ipairs({ "fastest", "safest", "balanced" }) do
             local isActive = mapMode.strategy == strat
-            table.insert(stratBtns, UI.Button {
+            table.insert(stratBtns, F.actionBtn {
                 text = STRATEGY_NAMES[strat],
                 variant = isActive and "primary" or "secondary",
                 flexGrow = 1, height = 34,
@@ -1793,7 +1798,7 @@ rebuildPanel = function()
                 routePanel_:AddChild(UI.Panel {
                     width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
                     children = {
-                        UI.Button {
+                        F.actionBtn {
                             text = "确认改道",
                             variant = "primary", flexGrow = 1, height = 40,
                             onClick = function(self)
@@ -1811,12 +1816,12 @@ rebuildPanel = function()
                 routePanel_:AddChild(UI.Panel {
                     width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
                     children = {
-                        UI.Button {
+                        F.actionBtn {
                             text = "手动规划",
                             variant = "secondary", flexGrow = 1, height = 40,
                             onClick = function(self) enterManualPlan(mapMode.target) end,
                         },
-                        UI.Button {
+                        F.actionBtn {
                             text = canDepart and "确认出发" or "燃料不足",
                             variant = "primary", flexGrow = 2, height = 40,
                             disabled = not canDepart,
@@ -1850,7 +1855,7 @@ rebuildPanel = function()
                     fontSize = Theme.sizes.font_normal,
                     fontColor = Theme.colors.map_waypoint,
                 },
-                UI.Button {
+                F.actionBtn {
                     text = "✕", variant = "secondary",
                     width = 32, height = 32,
                     onClick = function(self) exitToBase() end,
@@ -1904,7 +1909,7 @@ rebuildPanel = function()
         routePanel_:AddChild(UI.Panel {
             width = "100%", flexDirection = "row", gap = 8, marginTop = 8,
             children = {
-                UI.Button {
+                F.actionBtn {
                     text = "撤销",
                     variant = "secondary", flexGrow = 1, height = 40,
                     disabled = #mapMode.waypoints <= 1,
@@ -1922,7 +1927,7 @@ rebuildPanel = function()
                         end
                     end,
                 },
-                UI.Button {
+                F.actionBtn {
                     text = isTravelling
                         and (plan and "确认改道" or "请选择途经点")
                         or  (plan and "确认出发" or "请选择途经点"),
@@ -2069,7 +2074,7 @@ rebuildExplorePanel = function()
                                 },
                             },
                         },
-                        UI.Button {
+                        F.actionBtn {
                             text = btnText,
                             variant = canExplore and "primary" or "secondary",
                             height = 32, paddingLeft = 14, paddingRight = 14,
@@ -2166,7 +2171,7 @@ rebuildExplorePanel = function()
                                 },
                             },
                         },
-                        UI.Button {
+                        F.actionBtn {
                             text = fuelOk and "前往" or "燃料不足",
                             variant = fuelOk and "outline" or "secondary",
                             height = 32, paddingLeft = 14, paddingRight = 14,
@@ -2312,6 +2317,56 @@ local function handleInput(dt)
     local mx  = input.mousePosition.x / uiScale
     local my  = input.mousePosition.y / uiScale
 
+    -- ── 双指缩放（移动端 pinch-to-zoom）──────────────
+    local numTouches = input:GetNumTouches()
+    if numTouches >= 2 then
+        local t0 = input:GetTouch(0)
+        local t1 = input:GetTouch(1)
+        local dx = t1.position.x / uiScale - t0.position.x / uiScale
+        local dy = t1.position.y / uiScale - t0.position.y / uiScale
+        local dist = math.sqrt(dx * dx + dy * dy)
+
+        -- 双指中心点（用于向中心缩放）
+        local cx = (t0.position.x + t1.position.x) / 2 / uiScale
+        local cy = (t0.position.y + t1.position.y) / 2 / uiScale
+
+        if inp.pinching and inp.lastPinchDist > 10 then
+            local factor = dist / inp.lastPinchDist
+            if factor > 0.5 and factor < 2.0 then  -- 安全范围
+                local lx = cx - cam.cx
+                local ly = cy - cam.cy
+                local wx = (lx - cam.panX) / cam.scale
+                local wy = (ly - cam.panY) / cam.scale
+
+                cam.scale = cam.scale * factor
+                cam.scale = math.max(ZOOM_MIN, math.min(cam.scale, ZOOM_MAX))
+
+                cam.panX = lx - wx * cam.scale
+                cam.panY = ly - wy * cam.scale
+            end
+        end
+
+        inp.pinching = true
+        inp.lastPinchDist = dist
+        inp.pinchCooldown = 0.2  -- 松手后 0.2s 不响应点击
+        inp.wasDown = false
+        return  -- 双指操作时跳过鼠标/单指逻辑
+    end
+
+    -- 双指刚松开，冷却期内忽略输入（防止残留触摸触发点击）
+    if inp.pinching then
+        inp.pinching = false
+        inp.lastPinchDist = 0
+        inp.wasDown = false
+        return
+    end
+    if inp.pinchCooldown > 0 then
+        inp.pinchCooldown = inp.pinchCooldown - dt
+        inp.wasDown = false
+        return
+    end
+
+    -- ── 鼠标/单指输入 ─────────────────────────────────
     local isDown     = input:GetMouseButtonDown(MOUSEB_LEFT)
     local justPress  = isDown and not inp.wasDown
     local justRelease = not isDown and inp.wasDown
@@ -2457,21 +2512,26 @@ end
 function M.create(state, params, r)
     router_ = r
     state_  = state
-    cam.initialized = false
-    cam.selected    = nil
+
+    -- refresh（收音机状态变化等）时保留相机和模式状态，仅重置交互态
+    local isRefresh = F.skipEnterAnim
+    if not isRefresh then
+        cam.initialized = false
+        cam.selected    = nil
+
+        -- 重置模式状态
+        mapMode.state      = MapState.BROWSE
+        mapMode.target     = nil
+        mapMode.strategy   = "fastest"
+        mapMode.plans      = nil
+        mapMode.activePlan = nil
+        mapMode.waypoints  = {}
+        mapMode.manualPlan = nil
+        mapMode.destList   = nil
+    end
     cam.dragging    = false
     inp.wasDown     = false
     inp.isDrag      = false
-
-    -- 重置模式状态
-    mapMode.state      = MapState.BROWSE
-    mapMode.target     = nil
-    mapMode.strategy   = "fastest"
-    mapMode.plans      = nil
-    mapMode.activePlan = nil
-    mapMode.waypoints  = {}
-    mapMode.manualPlan = nil
-    mapMode.destList   = nil
 
     -- 预估画布尺寸（避免首帧 cam 值为默认值导致输入失效）
     local uiScale = UI.GetScale()

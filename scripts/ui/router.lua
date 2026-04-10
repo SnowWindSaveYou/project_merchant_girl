@@ -1,7 +1,9 @@
 --- UI 页面路由器
 --- 统一控制页面切换，自动用 Shell 包裹常规页面
-local UI    = require("urhox-libs/UI")
-local Shell = require("ui/shell")
+local UI       = require("urhox-libs/UI")
+local Shell    = require("ui/shell")
+local SoundMgr = require("ui/sound_manager")
+local F        = require("ui/ui_factory")
 
 local M = {}
 
@@ -21,11 +23,23 @@ end
 
 --- 切换到指定页面
 function M.navigate(name, params)
+    -- 同页面导航 → 转为 refresh（保留滚动位置、抑制入场动画）
+    if currentName == name then
+        M.refresh(params)
+        return
+    end
+
+    local prevName = currentName
     currentName = name
     currentScreen = screens[name]
     if not currentScreen then
         print("[Router] Screen not found: " .. name)
         return
+    end
+
+    -- 页面切换音效
+    if prevName then
+        SoundMgr.play("open")
     end
 
     local ok, content = pcall(currentScreen.create, gameState, params, M)
@@ -43,53 +57,80 @@ function M.navigate(name, params)
     end
 end
 
+--- 递归遍历 widget 树，收集所有 overflow="scroll" 容器的滚动位置
+--- 以 widget id 为 key 保存，无 id 的容器跳过（无法可靠恢复）
+local function saveAllScrollPositions(widget, states)
+    if not widget then return end
+    if widget.props and widget.props.overflow == "scroll"
+        and widget.props.id and widget.GetScroll then
+        local sx, sy = widget:GetScroll()
+        if sx ~= 0 or sy ~= 0 then
+            states[widget.props.id] = { sx, sy }
+        end
+    end
+    if widget.children_ then
+        for _, child in ipairs(widget.children_) do
+            saveAllScrollPositions(child, states)
+        end
+    end
+end
+
+--- 递归遍历新 widget 树，按 id 恢复滚动位置
+--- 使用 SetScrollDirect 绕过布局依赖的钳制（UI.SetRoot 后 layout 尚未计算，
+--- 若用 SetScroll 则 contentHeight_=0 导致 maxScrollY=0 → 滚动被钳制到 0）
+local function restoreAllScrollPositions(widget, states)
+    if not widget then return end
+    if widget.props and widget.props.id and states[widget.props.id] then
+        local pos = states[widget.props.id]
+        if widget.SetScrollDirect then
+            widget:SetScrollDirect(pos[1], pos[2])
+        elseif widget.SetScroll then
+            widget:SetScroll(pos[1], pos[2])
+        end
+    end
+    if widget.children_ then
+        for _, child in ipairs(widget.children_) do
+            restoreAllScrollPositions(child, states)
+        end
+    end
+end
+
 --- 刷新当前页面（保留滚动位置）
 --- 用于页面内操作后需要更新 UI 但不应重置滚动的场景
 --- 如：交易所买入/卖出、货舱使用物品等
 function M.refresh(params)
     if not currentName or not currentScreen then return end
 
-    -- 1. 保存当前滚动位置
-    local savedScrollX, savedScrollY = 0, 0
+    -- 1. 遍历整棵 UI 树，保存所有滚动容器的位置
+    local scrollStates = {}
     local root = UI.GetRoot()
     if root then
-        local shellContent = root:FindById("shellContent")
-        if shellContent then
-            -- Shell 包裹的页面：内容区在 shellContent 的第一个子节点
-            local pageRoot = shellContent.children_ and shellContent.children_[1]
-            if pageRoot and pageRoot.GetScroll then
-                savedScrollX, savedScrollY = pageRoot:GetScroll()
-            end
-        elseif root.GetScroll then
-            -- 非 Shell 页面：root 本身可能是滚动容器
-            savedScrollX, savedScrollY = root:GetScroll()
-        end
+        saveAllScrollPositions(root, scrollStates)
     end
 
-    -- 2. 重建页面内容
-    local content = currentScreen.create(gameState, params, M)
+    -- 2. 重建页面内容（抑制入场动画，清理旧动画队列）
+    F._pendingAnims = nil
+    F.skipEnterAnim = true
+    local ok, content = pcall(currentScreen.create, gameState, params, M)
+    F.skipEnterAnim = nil
+    if not ok then
+        print("[Router] ERROR: refresh crashed: " .. tostring(content))
+        return
+    end
     if not content then return end
 
-    -- 3. 替换 UI 并恢复滚动
+    -- 3. 替换 UI
     if Shell.is_shelled(currentName) then
         local shell = Shell.create(gameState, content, currentName, M)
         UI.SetRoot(shell)
-        -- 恢复滚动位置
-        local newRoot = UI.GetRoot()
-        if newRoot then
-            local newShellContent = newRoot:FindById("shellContent")
-            if newShellContent then
-                local newPageRoot = newShellContent.children_ and newShellContent.children_[1]
-                if newPageRoot and newPageRoot.SetScroll then
-                    newPageRoot:SetScroll(savedScrollX, savedScrollY)
-                end
-            end
-        end
     else
         UI.SetRoot(content)
-        if content.SetScroll then
-            content:SetScroll(savedScrollX, savedScrollY)
-        end
+    end
+
+    -- 4. 遍历新 UI 树，恢复所有滚动位置
+    local newRoot = UI.GetRoot()
+    if newRoot then
+        restoreAllScrollPositions(newRoot, scrollStates)
     end
 end
 
@@ -113,6 +154,9 @@ function M.update(dt)
     if currentScreen and currentScreen.update then
         currentScreen.update(gameState, dt, M)
     end
+
+    -- 驱动 F.card 入场动画
+    F.update(dt)
 end
 
 --- 获取游戏状态引用

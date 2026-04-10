@@ -2,6 +2,7 @@
 --- 事件卡片式 UI，展示 2-3 个聚落场景
 local UI      = require("urhox-libs/UI")
 local Theme   = require("ui/theme")
+local F       = require("ui/ui_factory")
 local Stroll  = require("narrative/stroll")
 local Goods   = require("economy/goods")
 local Graph   = require("map/world_graph")
@@ -90,10 +91,9 @@ local function createSceneView(state, scene, sceneIdx, totalScenes)
     local choiceChildren = {}
 
     for i, choice in ipairs(choices) do
-        table.insert(choiceChildren, UI.Button {
+        table.insert(choiceChildren, F.actionBtn {
             text = choice.text,
             variant = i == 1 and "primary" or "secondary",
-            width = "100%", height = 44,
             onClick = function(self)
                 local result = Stroll.apply_choice(state, scene, i)
                 session.results[session.current] = {
@@ -137,24 +137,20 @@ local function createSceneView(state, scene, sceneIdx, totalScenes)
         table.insert(cardChildren, btn)
     end
 
-    return UI.Panel {
+    return F.overlay {
         id = "strollSceneView",
-        width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_overlay,
-        justifyContent = "center", alignItems = "center",
         children = {
             UI.ScrollView {
                 width = "90%", maxWidth = 420,
                 maxHeight = "85%",
                 children = {
-                    UI.Panel {
+                    F.card {
                         width = "100%",
                         padding = Theme.sizes.padding_large,
-                        backgroundColor = Theme.colors.bg_card,
-                        borderRadius = Theme.sizes.radius_large,
                         borderWidth = Theme.sizes.border,
                         borderColor = Theme.colors.info,
                         gap = 12,
+                        enterAnim = true,
                         children = cardChildren,
                     },
                 },
@@ -215,9 +211,9 @@ local function createResultView(state)
         })
     end
 
-    table.insert(contentChildren, UI.Button {
+    table.insert(contentChildren, F.actionBtn {
         text = btnText,
-        variant = "primary", width = "100%", height = 44, marginTop = 8,
+        variant = "primary", marginTop = 8,
         onClick = function(self)
             if isLast then
                 session.phase = "summary"
@@ -229,24 +225,18 @@ local function createResultView(state)
         end,
     })
 
-    return UI.Panel {
+    return F.overlay {
         id = "strollResultView",
-        width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_overlay,
-        justifyContent = "center", alignItems = "center",
         children = {
             UI.ScrollView {
                 width = "90%", maxWidth = 420,
                 maxHeight = "85%",
                 children = {
-                    UI.Panel {
+                    F.card {
                         width = "100%",
                         padding = Theme.sizes.padding_large,
-                        backgroundColor = Theme.colors.bg_card,
-                        borderRadius = Theme.sizes.radius_large,
-                        borderWidth = Theme.sizes.border,
-                        borderColor = Theme.colors.border,
                         gap = 12, alignItems = "center",
+                        enterAnim = true,
                         children = contentChildren,
                     },
                 },
@@ -315,9 +305,9 @@ local function createSummaryView(state)
     })
 
     -- 返回按钮
-    table.insert(summaryChildren, UI.Button {
+    table.insert(summaryChildren, F.actionBtn {
         text = "返回聚落",
-        variant = "primary", width = "100%", height = 44,
+        variant = "primary",
         onClick = function(self)
             session.scenes  = {}
             session.results = {}
@@ -326,24 +316,18 @@ local function createSummaryView(state)
         end,
     })
 
-    return UI.Panel {
+    return F.overlay {
         id = "strollSummaryView",
-        width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_overlay,
-        justifyContent = "center", alignItems = "center",
         children = {
             UI.ScrollView {
                 width = "90%", maxWidth = 420,
                 maxHeight = "85%",
                 children = {
-                    UI.Panel {
+                    F.card {
                         width = "100%",
                         padding = Theme.sizes.padding_large,
-                        backgroundColor = Theme.colors.bg_card,
-                        borderRadius = Theme.sizes.radius_large,
-                        borderWidth = Theme.sizes.border,
-                        borderColor = Theme.colors.border,
                         gap = 12,
+                        enterAnim = true,
                         children = summaryChildren,
                     },
                 },

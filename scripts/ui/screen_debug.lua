@@ -2,6 +2,7 @@
 --- 按 P 三次打开，提供旅行加速、货物调整、金币调整等功能
 local UI         = require("urhox-libs/UI")
 local Theme      = require("ui/theme")
+local F          = require("ui/ui_factory")
 local Goods      = require("economy/goods")
 local Flow       = require("core/flow")
 local RoutePlanner = require("map/route_planner")
@@ -661,10 +662,8 @@ function M._sectionCard(title, children)
     for _, c in ipairs(children) do
         table.insert(all, c)
     end
-    return UI.Panel {
+    return F.card {
         width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
         gap = 8,
         children = all,
     }

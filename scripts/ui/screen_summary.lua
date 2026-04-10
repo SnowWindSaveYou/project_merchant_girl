@@ -2,6 +2,7 @@
 --- 显示行程收益、已交付订单、耗时等摘要信息
 local UI = require("urhox-libs/UI")
 local Theme = require("ui/theme")
+local F = require("ui/ui_factory")
 local Flow = require("core/flow")
 local Graph = require("map/world_graph")
 local OrderBook = require("economy/order_book")
@@ -116,14 +117,13 @@ function M.create(state, params, r)
                 width = "100%", height = "100%",
                 justifyContent = "center", alignItems = "center",
                 children = {
-                    UI.Panel {
+                    F.card {
+                        id = "summaryScroll",
                         width = "90%", maxWidth = 420,
                         padding = Theme.sizes.padding_large,
-                        backgroundColor = Theme.colors.bg_card,
-                        borderRadius = Theme.sizes.radius_large,
-                        borderWidth = Theme.sizes.border, borderColor = Theme.colors.border,
                         gap = 10, alignItems = "center",
                         overflow = "scroll",
+                        enterAnim = true,
                         children = {
                             UI.Label {
                                 text = "行程结算",
@@ -169,9 +169,9 @@ function M.create(state, params, r)
                                 fontSize = Theme.sizes.font_small, fontColor = Theme.colors.text_dim,
                             },
                             -- 继续按钮
-                            UI.Button {
+                            F.actionBtn {
                                 text = "继续行商",
-                                variant = "primary", width = "100%", height = 48, marginTop = 8,
+                                variant = "primary", height = 48, marginTop = 8,
                                 onClick = function(self)
                                     Flow.finish_summary(state)
                                     router.navigate("home")

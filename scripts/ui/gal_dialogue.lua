@@ -8,6 +8,7 @@
 
 local UI    = require("urhox-libs/UI")
 local Theme = require("ui/theme")
+local F     = require("ui/ui_factory")
 local Factions = require("settlement/factions")
 
 local NpcManager = require("narrative/npc_manager")
@@ -268,7 +269,7 @@ function M.createDialogueView(opts)
     if allShown then
         local choices = d.choices or {}
         for i, choice in ipairs(choices) do
-            table.insert(actionChildren, UI.Button {
+            table.insert(actionChildren, F.actionBtn {
                 text = choice.text,
                 variant = i == 1 and "primary" or "secondary",
                 height = 36,
@@ -365,7 +366,7 @@ function M.createDialogueView(opts)
             UI.Panel {
                 flexDirection = "row", gap = 2,
                 children = {
-                    UI.Button {
+                    F.actionBtn {
                         text = "LOG",
                         variant = "ghost",
                         width = 48, height = 32,
@@ -374,7 +375,7 @@ function M.createDialogueView(opts)
                             if opts.onHistory then opts.onHistory() end
                         end,
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = "X",
                         variant = "ghost",
                         width = 36, height = 32,
@@ -528,7 +529,7 @@ function M.createHistoryView(opts)
                         fontSize = 13,
                         fontColor = { 200, 180, 140, 200 },
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = "返回",
                         variant = "ghost",
                         width = 56, height = 32,
@@ -652,7 +653,7 @@ function M.createResultView(opts)
     end
 
     -- 返回按钮
-    table.insert(cardChildren, UI.Button {
+    table.insert(cardChildren, F.actionBtn {
         text = "回到据点",
         variant = "primary",
         width = "80%", height = 40,

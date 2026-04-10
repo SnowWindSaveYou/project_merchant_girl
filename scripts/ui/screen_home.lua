@@ -3,6 +3,8 @@
 --- 行驶模式：进度条 + 订单摘要
 local UI           = require("urhox-libs/UI")
 local Theme        = require("ui/theme")
+local F            = require("ui/ui_factory")
+local SoundMgr     = require("ui/sound_manager")
 local Flow         = require("core/flow")
 local Graph        = require("map/world_graph")
 local OrderBook    = require("economy/order_book")
@@ -294,10 +296,10 @@ function createSettlementView(state, curNode)
 
     -- ── 教程 SPAWN 阶段：锁定操作，只允许接取委托 ──
     if tutPhase == Tutorial.Phase.SPAWN then
-        table.insert(lowerChildren, UI.Button {
+        table.insert(lowerChildren, F.actionBtn {
             text = "📋 接取委托",
             variant = "primary",
-            width = "100%", height = 48,
+            height = 48,
             fontSize = Theme.sizes.font_normal,
             borderWidth = 2,
             borderColor = Theme.colors.accent,
@@ -316,12 +318,11 @@ function createSettlementView(state, curNode)
         local settlementNpcs = NpcManager.get_npcs_for_settlement(nodeId)
         for _, npc in ipairs(settlementNpcs) do
             local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = canVisit
                     and (npc.icon .. " 拜访 " .. npc.name)
                     or  (npc.icon .. " " .. npc.name .. "（" .. (visitReason or "不可用") .. "）"),
                 variant = "secondary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 disabled = not canVisit,
                 onClick = function(self)
@@ -335,10 +336,10 @@ function createSettlementView(state, curNode)
         end
 
         -- 接取委托（高亮引导）
-        table.insert(lowerChildren, UI.Button {
+        table.insert(lowerChildren, F.actionBtn {
             text = "📋 接取委托",
             variant = "primary",
-            width = "100%", height = 48,
+            height = 48,
             fontSize = Theme.sizes.font_normal,
             borderWidth = 2,
             borderColor = Theme.colors.accent,
@@ -354,10 +355,9 @@ function createSettlementView(state, curNode)
             local campLabel = hasStoryTopic
                 and "🔥 篝火休憩 · 有话题要谈"
                 or  "🔥 篝火休憩"
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = campLabel,
                 variant = hasStoryTopic and "primary" or "secondary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 borderWidth = hasStoryTopic and 2 or 0,
                 borderColor = hasStoryTopic and Theme.colors.accent or nil,
@@ -384,10 +384,9 @@ function createSettlementView(state, curNode)
         -- 聚落事件（到达时触发的本地事件）
         local pendingEvt = state.flow and state.flow.pending_settlement_event or nil
         if pendingEvt then
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = "⚡ " .. (pendingEvt.title or "聚落事件"),
                 variant = "primary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
                     local evt = state.flow.pending_settlement_event
@@ -405,12 +404,11 @@ function createSettlementView(state, curNode)
         local settlementNpcs = NpcManager.get_npcs_for_settlement(nodeId)
         for _, npc in ipairs(settlementNpcs) do
             local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = canVisit
                     and (npc.icon .. " 拜访 " .. npc.name)
                     or  (npc.icon .. " " .. npc.name .. "（" .. (visitReason or "不可用") .. "）"),
                 variant = "secondary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 disabled = not canVisit,
                 onClick = function(self)
@@ -430,12 +428,11 @@ function createSettlementView(state, curNode)
             local wnpc = NpcManager.get_npc(wid)
             if wnpc then
                 local wCanVisit, wReason = NpcManager.can_visit(state, wid)
-                table.insert(lowerChildren, UI.Button {
+                table.insert(lowerChildren, F.actionBtn {
                     text = wCanVisit
                         and (wnpc.icon .. " 遇见 " .. wnpc.name .. "（" .. wnpc.title .. "）")
                         or  (wnpc.icon .. " " .. wnpc.name .. "（" .. (wReason or "不可用") .. "）"),
                     variant = "secondary",
-                    width = "100%", height = 44,
                     fontSize = Theme.sizes.font_normal,
                     disabled = not wCanVisit,
                     onClick = function(self)
@@ -450,10 +447,9 @@ function createSettlementView(state, curNode)
         end
 
         -- 委托
-        table.insert(lowerChildren, UI.Button {
+        table.insert(lowerChildren, F.actionBtn {
             text = "📋 接取委托",
             variant = "secondary",
-            width = "100%", height = 44,
             fontSize = Theme.sizes.font_normal,
             onClick = function(self)
                 Flow.enter_prepare(state)
@@ -462,10 +458,9 @@ function createSettlementView(state, curNode)
         })
 
         -- 交易所
-        table.insert(lowerChildren, UI.Button {
+        table.insert(lowerChildren, F.actionBtn {
             text = "🏪 交易所",
             variant = "secondary",
-            width = "100%", height = 44,
             fontSize = Theme.sizes.font_normal,
             onClick = function(self)
                 router.navigate("shop")
@@ -483,10 +478,9 @@ function createSettlementView(state, curNode)
             local archLabel = archUnlocked
                 and ("📖 档案阅览" .. (unreadCount > 0 and (" (" .. unreadCount .. " 未读)") or ""))
                 or  "📖 档案阅览（好感不足）"
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = archLabel,
                 variant = "secondary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 disabled = not archUnlocked,
                 onClick = function(self)
@@ -512,10 +506,9 @@ function createSettlementView(state, curNode)
             local farmLabel = farmUnlocked
                 and ("🌱 培育农场" .. (busyCount > 0 and (" (" .. busyCount .. " 栽种中)") or ""))
                 or  "🌱 培育农场（好感不足）"
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = farmLabel,
                 variant = "secondary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 disabled = not farmUnlocked,
                 onClick = function(self)
@@ -540,10 +533,9 @@ function createSettlementView(state, curNode)
             local intelLabel = intelUnlocked
                 and ("📡 情报站" .. (routeData > 0 and (" (数据点: " .. routeData .. ")") or ""))
                 or  "📡 情报站（好感不足）"
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = intelLabel,
                 variant = "secondary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 disabled = not intelUnlocked,
                 onClick = function(self)
@@ -569,10 +561,9 @@ function createSettlementView(state, curNode)
             local marketLabel = marketUnlocked
                 and ("🏚 黑市" .. (itemCount > 0 and (" (" .. itemCount .. " 件商品)") or ""))
                 or  "🏚 黑市（好感不足）"
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = marketLabel,
                 variant = "secondary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 disabled = not marketUnlocked,
                 onClick = function(self)
@@ -595,10 +586,9 @@ function createSettlementView(state, curNode)
         else
             strollLabel = "🚶 四处逛逛（" .. (strollReason or "不可用") .. "）"
         end
-        table.insert(lowerChildren, UI.Button {
+        table.insert(lowerChildren, F.actionBtn {
             text = strollLabel,
             variant = "secondary",
-            width = "100%", height = 44,
             fontSize = Theme.sizes.font_normal,
             disabled = not canStroll,
             onClick = function(self)
@@ -628,10 +618,9 @@ function createSettlementView(state, curNode)
         else
             campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
         end
-        table.insert(lowerChildren, UI.Button {
+        table.insert(lowerChildren, F.actionBtn {
             text = campLabel,
             variant = hasStoryTopic and "primary" or "secondary",
-            width = "100%", height = 44,
             fontSize = Theme.sizes.font_normal,
             disabled = not canCamp,
             borderWidth = hasStoryTopic and 2 or 0,
@@ -647,10 +636,9 @@ function createSettlementView(state, curNode)
 
         -- 出发（仅有活跃订单时）
         if #activeOrders > 0 then
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = "🚚 出发",
                 variant = "primary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
                     Flow.enter_map(state)
@@ -667,12 +655,11 @@ function createSettlementView(state, curNode)
             local wnpc = NpcManager.get_npc(wid)
             if wnpc then
                 local wCanVisit, wReason = NpcManager.can_visit(state, wid)
-                table.insert(lowerChildren, UI.Button {
+                table.insert(lowerChildren, F.actionBtn {
                     text = wCanVisit
                         and (wnpc.icon .. " 遇见 " .. wnpc.name .. "（" .. wnpc.title .. "）")
                         or  (wnpc.icon .. " " .. wnpc.name .. "（" .. (wReason or "不可用") .. "）"),
                     variant = "secondary",
-                    width = "100%", height = 44,
                     fontSize = Theme.sizes.font_normal,
                     disabled = not wCanVisit,
                     onClick = function(self)
@@ -688,10 +675,9 @@ function createSettlementView(state, curNode)
 
         -- 非聚落节点：出发按钮（如有订单）
         if #activeOrders > 0 then
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = "🚚 出发",
                 variant = "primary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
                     Flow.enter_map(state)
@@ -711,10 +697,9 @@ function createSettlementView(state, curNode)
         else
             campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
         end
-        table.insert(lowerChildren, UI.Button {
+        table.insert(lowerChildren, F.actionBtn {
             text = campLabel,
             variant = hasStoryTopic and "primary" or "secondary",
-            width = "100%", height = 44,
             fontSize = Theme.sizes.font_normal,
             disabled = not canCamp,
             borderWidth = hasStoryTopic and 2 or 0,
@@ -730,10 +715,9 @@ function createSettlementView(state, curNode)
 
         -- 资源点特殊行动：搜刮此地
         if NODE_EXPLORE_ROOM[nodeId] then
-            table.insert(lowerChildren, UI.Button {
+            table.insert(lowerChildren, F.actionBtn {
                 text = "🔍 搜刮此地",
                 variant = "secondary",
-                width = "100%", height = 44,
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
                     router.navigate("explore", { room_id = NODE_EXPLORE_ROOM[nodeId] })
@@ -746,15 +730,13 @@ function createSettlementView(state, curNode)
 
     -- 探索区域已迁移到地图页面（screen_map）
 
-    local lowerPanel = UI.Panel {
+    local lowerPanel = F.card {
         id = "settlementActions",
         width = "100%",
         padding = Theme.sizes.padding, gap = 10,
-        paddingTop = 10,
         overflow = "scroll",
-        backgroundColor = { 16, 18, 20, 200 },
-        borderTopLeftRadius = Theme.sizes.radius,
-        borderTopRightRadius = Theme.sizes.radius,
+        enterAnim = true, enterDelay = 0.05,
+        imageTint = { 16, 18, 20, 200 },
         children = lowerChildren,
     }
 
@@ -850,9 +832,10 @@ function createSettlementView(state, curNode)
         -- 不添加任何悬浮按钮
     else
     -- 成长目标按钮
-    table.insert(floatingButtons, UI.Button {
+    table.insert(floatingButtons, F.actionBtn {
         text = "📊 成长目标",
         variant = "secondary",
+        width = "auto",
         height = 32,
         fontSize = Theme.sizes.font_small,
         backgroundColor = { 30, 34, 40, 200 },
@@ -866,9 +849,10 @@ function createSettlementView(state, curNode)
     })
     -- 活跃订单按钮
     if #activeOrders > 0 then
-        table.insert(floatingButtons, UI.Button {
+        table.insert(floatingButtons, F.actionBtn {
             text = "📋 订单 " .. #activeOrders,
             variant = "secondary",
+            width = "auto",
             height = 32,
             fontSize = Theme.sizes.font_small,
             backgroundColor = { 30, 34, 40, 200 },
@@ -907,6 +891,7 @@ function createSettlementView(state, curNode)
             end,
             children = {
                 UI.Panel {
+                    id = "homeProgressScroll",
                     width = "100%", maxHeight = "80%",
                     backgroundColor = Theme.colors.bg_primary,
                     borderRadius = Theme.sizes.radius,
@@ -916,10 +901,10 @@ function createSettlementView(state, curNode)
                     onClick = function(self) end,  -- 阻止穿透关闭
                     children = {
                         createProgressCard(state),
-                        UI.Button {
+                        F.actionBtn {
                             text = "关闭",
                             variant = "secondary",
-                            width = "100%", height = 40,
+                            height = 40,
                             marginTop = 8,
                             fontSize = Theme.sizes.font_normal,
                             onClick = function(self)
@@ -992,11 +977,11 @@ function createTravelView(state)
     end
 
     -- 行驶进度卡片
-    table.insert(contentChildren, UI.Panel {
+    table.insert(contentChildren, F.card {
         id = "travelStrip",
         width = "100%", padding = 14,
-        backgroundColor = { 28, 42, 58, 240 },
-        borderRadius = Theme.sizes.radius,
+        enterAnim = true, enterDelay = 0.1,
+        imageTint = { 28, 42, 58, 240 },
         borderWidth = 1, borderColor = Theme.colors.info,
         gap = 10,
         children = {
@@ -1226,9 +1211,8 @@ function createCargoSummary(state)
         })
     end
 
-    return UI.Panel {
+    return F.card {
         width = "100%", padding = 10,
-        backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
         borderWidth = hasShortage and 1 or 0,
         borderColor = hasShortage and Theme.colors.danger or nil,
         gap = 2,
@@ -1558,7 +1542,7 @@ function createChatterBubble(state)
 
     -- 可回应的对话：显示回应按钮
     if cur.response then
-        table.insert(bubbleChildren, UI.Button {
+        table.insert(bubbleChildren, F.actionBtn {
             text = cur.response.label or "回应",
             variant = "secondary",
             height = 30,

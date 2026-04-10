@@ -11,6 +11,7 @@ local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local DialoguePool = require("narrative/dialogue_pool")
 local Flags        = require("core/flags")
+local F            = require("ui/ui_factory")
 
 local M = {}
 ---@type table
@@ -105,9 +106,8 @@ function M.create(state, params, r)
     local contentChildren = {}
 
     -- ── 仓位状态栏 ──
-    table.insert(contentChildren, UI.Panel {
+    table.insert(contentChildren, F.card {
         width = "100%", padding = 10,
-        backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
         flexDirection = "row", justifyContent = "space-between", alignItems = "center",
         children = {
             UI.Label {
@@ -169,9 +169,8 @@ function M.create(state, params, r)
                 marginTop = 4, marginBottom = 4,
             })
         else
-            table.insert(contentChildren, UI.Panel {
+            table.insert(contentChildren, F.card {
                 width = "100%", padding = 12,
-                backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
                 alignItems = "center",
                 children = {
                     UI.Label {
@@ -185,9 +184,8 @@ function M.create(state, params, r)
     end
 
     -- ── 持有订单区域 ──
-    table.insert(contentChildren, UI.Panel {
+    table.insert(contentChildren, F.card {
         width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
         flexDirection = "row", justifyContent = "space-between", alignItems = "center",
         children = {
             UI.Label { text = "持有订单", fontSize = Theme.sizes.font_large, fontColor = Theme.colors.text_primary },
@@ -199,9 +197,8 @@ function M.create(state, params, r)
     })
 
     if #activeOrders == 0 then
-        table.insert(contentChildren, UI.Panel {
+        table.insert(contentChildren, F.card {
             width = "100%", padding = 20,
-            backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
             alignItems = "center", gap = 4,
             children = {
                 UI.Label {
@@ -220,9 +217,9 @@ function M.create(state, params, r)
     local bottomChildren = {}
 
     if #activeOrders > 0 and not isTravelling then
-        table.insert(bottomChildren, UI.Button {
+        table.insert(bottomChildren, F.actionBtn {
             text = "规划路线并出发",
-            variant = "primary", width = "100%", height = 48,
+            variant = "primary", height = 48,
             onClick = function(self)
                 -- 教程"麻薯号出发"：首次接单出发前触发过渡对话
                 local tutPhase = Tutorial.get_phase(state)
@@ -251,6 +248,7 @@ function M.create(state, params, r)
         children = {
             -- 内容（可滚动）
             UI.Panel {
+                id = "prepareScroll",
                 width = "100%", flexGrow = 1, flexShrink = 1,
                 padding = Theme.sizes.padding, gap = 10,
                 overflow = "scroll",
@@ -336,9 +334,9 @@ function createDestGroup(state, group)
                                 },
                             },
                         },
-                        OrderBook.can_abandon(order) and UI.Button {
+                        OrderBook.can_abandon(order) and F.actionBtn {
                             text = "放弃",
-                            variant = "text", height = 24,
+                            variant = "text", width = "auto", height = 24,
                             onClick = function(self)
                                 OrderBook.abandon_order(state, order.order_id)
                                 router.navigate("orders") -- 刷新
@@ -350,9 +348,8 @@ function createDestGroup(state, group)
         })
     end
 
-    return UI.Panel {
+    return F.card {
         width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
         borderWidth = Theme.sizes.border, borderColor = Theme.colors.accent,
         gap = 8,
         children = {
@@ -380,9 +377,8 @@ function createAvailableOrderCard(state, order)
     local needSlots = order.count or 1
     local canAccept = free >= needSlots
 
-    return UI.Panel {
+    return F.card {
         width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
         borderWidth = 1, borderColor = canAccept and Theme.colors.success or Theme.colors.border,
         gap = 6,
         children = {
@@ -427,10 +423,10 @@ function createAvailableOrderCard(state, order)
                             },
                         },
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = canAccept and "接取" or "仓位不足",
                         variant = canAccept and "primary" or "secondary",
-                        height = 28, paddingLeft = 14, paddingRight = 14,
+                        width = "auto", height = 28, paddingLeft = 14, paddingRight = 14,
                         disabled = not canAccept,
                         onClick = function(self)
                             local ok, err = OrderBook.accept_order(state, order)

@@ -1,17 +1,18 @@
 --- 全局底部导航栏
---- 4 个固定 tab：首页 / 地图 / 委托 / 货舱
-local UI    = require("urhox-libs/UI")
-local Theme = require("ui/theme")
-local Flow  = require("core/flow")
+--- 5 个固定 tab：首页 / 地图 / 委托 / 货舱 / 货车
+local UI       = require("urhox-libs/UI")
+local Theme    = require("ui/theme")
+local Flow     = require("core/flow")
+local SoundMgr = require("ui/sound_manager")
 
 local M = {}
 
 local TABS = {
-    { id = "home",   icon = "🏠", label = "首页"  },
-    { id = "map",    icon = "🗺",  label = "地图"  },
-    { id = "orders", icon = "📋", label = "委托"  },
-    { id = "cargo",  icon = "📦", label = "货舱"  },
-    { id = "truck",  icon = "🚚", label = "货车"  },
+    { id = "home",   iconKey = "tab_home",   label = "首页"  },
+    { id = "map",    iconKey = "tab_map",    label = "地图"  },
+    { id = "orders", iconKey = "tab_orders", label = "委托"  },
+    { id = "cargo",  iconKey = "tab_cargo",  label = "货舱"  },
+    { id = "truck",  iconKey = "tab_truck",  label = "货车"  },
 }
 
 --- 创建底部导航栏
@@ -24,7 +25,9 @@ function M.create(state, activeTab, screenName, router)
     local tabChildren = {}
     for _, tab in ipairs(TABS) do
         local isActive = (tab.id == activeTab)
-        local color = isActive and Theme.colors.accent or Theme.colors.text_dim
+        local tint = isActive
+            and Theme.colors.accent
+            or  Theme.colors.text_dim
 
         table.insert(tabChildren, UI.Panel {
             flexGrow = 1, alignItems = "center",
@@ -34,6 +37,8 @@ function M.create(state, activeTab, screenName, router)
                 -- 只有当前页面确实是该 tab 本身时才跳过
                 -- shop 映射到 home tab，但点击 home 仍应导航回首页
                 if tab.id == screenName then return end
+
+                SoundMgr.play("click_soft")
 
                 local ok, err = pcall(function()
                     -- 旅行中：只切换显示页面，不修改 flow.phase
@@ -66,14 +71,16 @@ function M.create(state, activeTab, screenName, router)
                 end
             end,
             children = {
-                UI.Label {
-                    text = tab.icon, fontSize = 18,
-                    fontColor = color,
-                    textAlign = "center",
+                -- 图标：用 Panel + backgroundImage 代替 emoji Label
+                UI.Panel {
+                    width = 22, height = 22,
+                    backgroundImage = Theme.icons[tab.iconKey],
+                    backgroundFit = "contain",
+                    imageTint = tint,
                 },
                 UI.Label {
                     text = tab.label, fontSize = 10,
-                    fontColor = color,
+                    fontColor = tint,
                     textAlign = "center",
                 },
             },
@@ -85,7 +92,6 @@ function M.create(state, activeTab, screenName, router)
         width = "100%", height = 56,
         flexDirection = "row", alignItems = "center",
         backgroundColor = Theme.colors.bg_secondary,
-        borderTopWidth = 1, borderColor = Theme.colors.border,
         children = tabChildren,
     }
 end

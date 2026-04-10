@@ -2,6 +2,7 @@
 --- FTL 式战术选择界面：威胁条 + 逃脱进度 + 4个战术按钮
 local UI           = require("urhox-libs/UI")
 local Theme        = require("ui/theme")
+local F            = require("ui/ui_factory")
 local Ambush       = require("combat/ambush")
 local CombatResult = require("combat/combat_result")
 local Config       = require("combat/combat_config")
@@ -77,10 +78,10 @@ function M._build_intro_view(state)
                             M._info_chip("💨", "烟雾弹", tostring(combat.smoke_available)),
                         },
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = "迎战！",
                         variant = "primary",
-                        width = "100%", height = 48,
+                        height = 48,
                         onClick = function(self)
                             Ambush.start_combat(combat)
                             M._refresh_combat_view(state)
@@ -173,10 +174,10 @@ function M._build_combat_view(state)
             label = label .. "（" .. t.reason .. "）"
         end
 
-        table.insert(children, UI.Button {
+        table.insert(children, F.actionBtn {
             text = label,
             variant = t.available and "secondary" or "outline",
-            width = "100%", height = 42,
+            height = 42,
             fontSize = Theme.sizes.font_normal,
             disabled = not t.available,
             onClick = function(self)
@@ -286,10 +287,10 @@ function M._show_result_view(state)
     for _, w in ipairs(reviewWidgets) do
         table.insert(cardChildren, w)
     end
-    table.insert(cardChildren, UI.Button {
+    table.insert(cardChildren, F.actionBtn {
         text = "继续",
         variant = "primary",
-        width = "100%", height = 48, marginTop = 8,
+        height = 48, marginTop = 8,
         onClick = function(self)
             router.navigate("home")
         end,
@@ -302,13 +303,12 @@ function M._show_result_view(state)
         justifyContent = "center", alignItems = "center",
         overflow = "scroll",
         children = {
-            UI.Panel {
+            F.card {
                 width = "90%", maxWidth = 420,
                 padding = Theme.sizes.padding_large,
-                backgroundColor = Theme.colors.bg_card,
-                borderRadius = Theme.sizes.radius_large,
                 borderWidth = 2, borderColor = resultColor,
                 gap = 12, alignItems = "center",
+                enterAnim = true,
                 children = cardChildren,
             },
         },

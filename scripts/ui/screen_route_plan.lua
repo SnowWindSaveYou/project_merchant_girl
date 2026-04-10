@@ -6,6 +6,7 @@ local Flow = require("core/flow")
 local Graph = require("map/world_graph")
 local RoutePlanner = require("map/route_planner")
 local OrderBook = require("economy/order_book")
+local F = require("ui/ui_factory")
 
 local M = {}
 ---@type table
@@ -67,9 +68,8 @@ function M.create(state, params, r)
     })
 
     if #destList == 0 then
-        table.insert(contentChildren, UI.Panel {
+        table.insert(contentChildren, F.card {
             width = "100%", padding = 16,
-            backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
             children = {
                 UI.Label {
                     text = "尚未接取任何订单",
@@ -81,9 +81,8 @@ function M.create(state, params, r)
     else
         local groups = OrderBook.group_by_destination(state)
         for _, group in pairs(groups) do
-            table.insert(contentChildren, UI.Panel {
+            table.insert(contentChildren, F.card {
                 width = "100%", padding = 10,
-                backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
                 gap = 2,
                 children = {
                     UI.Label {
@@ -134,9 +133,8 @@ function M.create(state, params, r)
         })
 
         -- 路线概览
-        table.insert(contentChildren, UI.Panel {
+        table.insert(contentChildren, F.card {
             width = "100%", padding = 12,
-            backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
             gap = 6,
             children = {
                 createInfoRow("总耗时", formatTime(plan.total_time)),
@@ -152,10 +150,10 @@ function M.create(state, params, r)
 
         -- 出发按钮
         local canDepart = state.truck.fuel >= plan.total_fuel
-        table.insert(contentChildren, UI.Button {
+        table.insert(contentChildren, F.actionBtn {
             text = canDepart and "确认出发" or "燃料不足",
             variant = "primary",
-            width = "100%", height = 48, marginTop = 8,
+            height = 48, marginTop = 8,
             disabled = not canDepart,
             onClick = function(self)
                 if canDepart then
@@ -181,7 +179,7 @@ function M.update(state, dt, r) end
 --- 策略选择按钮
 function createStrategyBtn(state, destId, strat, current)
     local isActive = strat == current
-    return UI.Button {
+    return F.actionBtn {
         text = STRATEGY_NAMES[strat] or strat,
         variant = isActive and "primary" or "secondary",
         flexGrow = 1, height = 36,
@@ -255,9 +253,8 @@ function createPathVisualization(plan, destSet)
         end
     end
 
-    return UI.Panel {
+    return F.card {
         width = "100%", padding = 12,
-        backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
         gap = 4,
         children = children,
     }

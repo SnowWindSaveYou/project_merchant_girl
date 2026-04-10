@@ -2,6 +2,7 @@
 --- 随机商品 + 3 回合砍价博弈 UI
 local UI          = require("urhox-libs/UI")
 local Theme       = require("ui/theme")
+local F           = require("ui/ui_factory")
 local BlackMarket = require("settlement/black_market")
 local Goods       = require("economy/goods")
 
@@ -128,10 +129,8 @@ function createItemCard(state, index, item)
         qualityDesc = "品相堪忧"
     end
 
-    return UI.Panel {
+    return F.card {
         width = "100%", padding = 10,
-        backgroundColor = Theme.colors.bg_card,
-        borderRadius = Theme.sizes.radius,
         borderWidth = 1, borderColor = { 168, 128, 82, 120 },
         gap = 4,
         children = {
@@ -161,9 +160,10 @@ function createItemCard(state, index, item)
                         fontSize = Theme.sizes.font_small,
                         fontColor = Theme.colors.accent,
                     },
-                    UI.Button {
+                    F.actionBtn {
                         text = "砍价",
                         variant = "secondary",
+                        width = "auto",
                         height = 30,
                         fontSize = Theme.sizes.font_small,
                         onClick = function(self)
@@ -247,10 +247,10 @@ function createHaggleView(state, hs)
 
     -- 操作按钮
     -- 接受当前价格
-    table.insert(haggleChildren, UI.Button {
+    table.insert(haggleChildren, F.actionBtn {
         text = "接受 $" .. currentAsk,
         variant = "primary",
-        width = "100%", height = 36,
+        height = 36,
         fontSize = Theme.sizes.font_normal,
         disabled = state.economy.credits < currentAsk,
         onClick = function(self)
@@ -269,7 +269,7 @@ function createHaggleView(state, hs)
         local offerBtns = {}
         for _, pct in ipairs(offerLevels) do
             local offerPrice = math.floor(currentAsk * pct + 0.5)
-            table.insert(offerBtns, UI.Button {
+            table.insert(offerBtns, F.actionBtn {
                 text = "$" .. offerPrice,
                 variant = "secondary",
                 height = 32, flexGrow = 1,
@@ -323,10 +323,10 @@ function createHaggleView(state, hs)
     end
 
     -- 放弃
-    table.insert(haggleChildren, UI.Button {
+    table.insert(haggleChildren, F.actionBtn {
         text = "算了，不买了",
         variant = "secondary",
-        width = "100%", height = 32,
+        height = 32,
         fontSize = Theme.sizes.font_small,
         onClick = function(self)
             _haggleState = nil
