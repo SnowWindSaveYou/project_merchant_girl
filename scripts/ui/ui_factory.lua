@@ -49,10 +49,7 @@ function F.card(props)
         borderWidth     = p.borderWidth or 1,
         borderColor     = p.borderColor or Theme.colors.card_border,
         borderRadius    = p.borderRadius or Theme.sizes.radius,
-        -- 入场动画初始态
-        opacity    = wantAnim and 0 or nil,
-        translateY = wantAnim and 8 or nil,
-        transition = wantAnim and "opacity 0.3s easeOut, translateY 0.3s easeOut" or nil,
+        -- 入场动画已禁用（opacity 闪烁 + translateY 抖动体验不佳）
         -- onClick
         onClick         = p.onClick or nil,
         children        = p.children or {},
@@ -75,7 +72,7 @@ function F.update(dt)
     for _, entry in ipairs(F._pendingAnims) do
         entry.delay = entry.delay - dt
         if entry.delay <= 0 then
-            entry.widget:SetStyle({ opacity = 1, translateY = 0 })
+            entry.widget:SetStyle({ translateY = 0 })
         else
             table.insert(remaining, entry)
         end

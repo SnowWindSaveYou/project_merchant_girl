@@ -57,42 +57,44 @@ function M.navigate(name, params)
     end
 end
 
---- 递归遍历 widget 树，收集所有 overflow="scroll" 容器的滚动位置
---- 以 widget id 为 key 保存，无 id 的容器跳过（无法可靠恢复）
-local function saveAllScrollPositions(widget, states)
+--- 递归遍历 widget 树，收集所有 ScrollView 的滚动位置
+--- 通过 GetScroll 方法存在性识别 ScrollView（overflow="scroll" 的 Panel 会被自动升级）
+--- 使用深度优先遍历的顺序索引作为 key（无需每个容器都有 id）
+local function collectScrollPositions(widget, list)
     if not widget then return end
-    if widget.props and widget.props.overflow == "scroll"
-        and widget.props.id and widget.GetScroll then
+    if widget.GetScroll then
         local sx, sy = widget:GetScroll()
-        if sx ~= 0 or sy ~= 0 then
-            states[widget.props.id] = { sx, sy }
-        end
+        list[#list + 1] = { sx, sy }
     end
-    if widget.children_ then
-        for _, child in ipairs(widget.children_) do
-            saveAllScrollPositions(child, states)
+    if widget.children then
+        for _, child in ipairs(widget.children) do
+            collectScrollPositions(child, list)
         end
     end
 end
 
---- 递归遍历新 widget 树，按 id 恢复滚动位置
+--- 递归遍历新 widget 树，按深度优先顺序恢复滚动位置
 --- 使用 SetScrollDirect 绕过布局依赖的钳制（UI.SetRoot 后 layout 尚未计算，
 --- 若用 SetScroll 则 contentHeight_=0 导致 maxScrollY=0 → 滚动被钳制到 0）
-local function restoreAllScrollPositions(widget, states)
-    if not widget then return end
-    if widget.props and widget.props.id and states[widget.props.id] then
-        local pos = states[widget.props.id]
-        if widget.SetScrollDirect then
-            widget:SetScrollDirect(pos[1], pos[2])
-        elseif widget.SetScroll then
-            widget:SetScroll(pos[1], pos[2])
+local function applyScrollPositions(widget, list, idx)
+    if not widget then return idx end
+    if widget.SetScrollDirect or widget.SetScroll then
+        if idx <= #list then
+            local pos = list[idx]
+            if widget.SetScrollDirect then
+                widget:SetScrollDirect(pos[1], pos[2])
+            else
+                widget:SetScroll(pos[1], pos[2])
+            end
+        end
+        idx = idx + 1
+    end
+    if widget.children then
+        for _, child in ipairs(widget.children) do
+            idx = applyScrollPositions(child, list, idx)
         end
     end
-    if widget.children_ then
-        for _, child in ipairs(widget.children_) do
-            restoreAllScrollPositions(child, states)
-        end
-    end
+    return idx
 end
 
 --- 刷新当前页面（保留滚动位置）
@@ -101,11 +103,11 @@ end
 function M.refresh(params)
     if not currentName or not currentScreen then return end
 
-    -- 1. 遍历整棵 UI 树，保存所有滚动容器的位置
-    local scrollStates = {}
+    -- 1. 遍历整棵 UI 树，按深度优先顺序收集所有滚动位置
+    local scrollList = {}
     local root = UI.GetRoot()
     if root then
-        saveAllScrollPositions(root, scrollStates)
+        collectScrollPositions(root, scrollList)
     end
 
     -- 2. 重建页面内容（抑制入场动画，清理旧动画队列）
@@ -127,10 +129,10 @@ function M.refresh(params)
         UI.SetRoot(content)
     end
 
-    -- 4. 遍历新 UI 树，恢复所有滚动位置
+    -- 4. 按同样的深度优先顺序恢复滚动位置
     local newRoot = UI.GetRoot()
-    if newRoot then
-        restoreAllScrollPositions(newRoot, scrollStates)
+    if newRoot and #scrollList > 0 then
+        applyScrollPositions(newRoot, scrollList, 1)
     end
 end
 
