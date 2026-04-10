@@ -28,6 +28,7 @@ local Intel               = require("settlement/intel")
 local BlackMarket         = require("settlement/black_market")
 local Flags               = require("core/flags")
 local UnlockStories       = require("narrative/unlock_stories")
+local Stroll              = require("narrative/stroll")
 local MainStory           = require("narrative/main_story")
 local Tutorial            = require("narrative/tutorial")
 local SpeechBubble        = require("ui/speech_bubble")
@@ -139,6 +140,7 @@ function M.create(state, params, r)
                 OrderBook.generate_on_arrival(state, loc)
             end
         end
+
         return createSettlementView(state, curNode)
     end
 end
@@ -585,14 +587,44 @@ function createSettlementView(state, curNode)
             })
         end
 
+        -- 闲逛
+        local canStroll, strollReason = Stroll.can_start(state)
+        local strollLabel
+        if canStroll then
+            strollLabel = "🚶 四处逛逛（消耗 1 饮用水）"
+        else
+            strollLabel = "🚶 四处逛逛（" .. (strollReason or "不可用") .. "）"
+        end
+        table.insert(lowerChildren, UI.Button {
+            text = strollLabel,
+            variant = "secondary",
+            width = "100%", height = 44,
+            fontSize = Theme.sizes.font_normal,
+            disabled = not canStroll,
+            onClick = function(self)
+                if not canStroll then return end
+                local scenes, consumed = Stroll.start(state)
+                if scenes and #scenes > 0 then
+                    router.navigate("stroll", { scenes = scenes, consumed = consumed })
+                end
+            end,
+        })
+
         -- 篝火（有主线话题且可用时高亮）
         local canCamp, campReason, isCampFree = Campfire.can_start(state)
         local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
         local campLabel
         if canCamp then
-            campLabel = hasStoryTopic
-                and "🔥 篝火休憩 · 有话题要谈"
-                or  "🔥 篝火休憩"
+            if hasStoryTopic then
+                campLabel = "🔥 篝火休憩 · 有话题要谈"
+            elseif isCampFree then
+                campLabel = "🔥 篝火休憩"
+            else
+                -- 显示将消耗的物品
+                local cargo = state.truck.cargo or {}
+                local costName = (cargo.food_can or 0) >= 1 and "罐头食品" or "燃料芯"
+                campLabel = "🔥 篝火休憩（消耗 1 " .. costName .. "）"
+            end
         else
             campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
         end

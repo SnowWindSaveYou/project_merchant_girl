@@ -224,6 +224,20 @@ function M.create(state, params, r)
             text = "规划路线并出发",
             variant = "primary", width = "100%", height = 48,
             onClick = function(self)
+                -- 教程"麻薯号出发"：首次接单出发前触发过渡对话
+                local tutPhase = Tutorial.get_phase(state)
+                if tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE
+                    and not Flags.has(state, "tutorial_first_departure_done") then
+                    local departure = DialoguePool.get("SD_TUTORIAL_FIRST_DEPARTURE")
+                    if departure then
+                        router.navigate("campfire", {
+                            dialogue = departure,
+                            consumed = false,
+                            returnTo = "orders",
+                        })
+                        return
+                    end
+                end
                 Flow.enter_map(state)
                 router.navigate("map", { mode = "route_plan" })
             end,

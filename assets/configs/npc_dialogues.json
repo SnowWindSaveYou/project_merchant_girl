@@ -3,54 +3,61 @@
     {
       "id": "NPC_SH_001",
       "npc_id": "shen_he",
-      "title": "温室的新面孔",
+      "title": "沈禾的温室",
       "goodwill_min": 0,
       "goodwill_max": 999,
       "weight": 80,
       "cooldown": 99,
-      "required_flags": [],
-      "forbidden_flags": [
+      "required_flags": [
         "npc_shen_he_intro"
+      ],
+      "forbidden_flags": [
+        "npc_shen_he_visited"
       ],
       "steps": [
         {
           "speaker": "npc",
-          "text": "你好，是新来的行商吧？我是沈禾，负责这片温室的日常运转。"
-        },
-        {
-          "speaker": "linli",
-          "text": "……嗯，我叫林砾。这是陶夏。"
-        },
-        {
-          "speaker": "npc",
-          "text": "路上辛苦了。这里虽然不大，但至少能吃上热饭。"
-        },
-        {
-          "speaker": "npc",
-          "text": "如果你们愿意帮忙运些物资，我可以给你们一个公道的价格。"
+          "text": "又来了？坐吧。上次走得急，没来得及细说。"
         },
         {
           "speaker": "taoxia",
-          "text": "有饭吃就行！我们正好饿得前胸贴后背了。",
-          "expression": "happy"
+          "text": "沈禾姐，这个温室到底有多大？从外面看不出来。",
+          "expression": "surprised"
+        },
+        {
+          "speaker": "npc",
+          "text": "三个穹顶，加上外围农场。养活五十多口人，勉强够。"
+        },
+        {
+          "speaker": "linli",
+          "text": "灾前的生态实验设施？",
+          "expression": "thinking"
+        },
+        {
+          "speaker": "npc",
+          "text": "对。穹顶原来是研究用的，现在种粮食。能用的东西，就别浪费。"
+        },
+        {
+          "speaker": "npc",
+          "text": "你们要是长期跑这条线，我可以给一个稳定的收购价。行商不容易，但稳定的合作对双方都好。"
         }
       ],
       "choices": [
         {
-          "text": "我们很乐意合作",
+          "text": "当然，稳定合作最好",
           "ops": [
             "add_goodwill:greenhouse:5",
-            "set_flag:npc_shen_he_intro"
+            "set_flag:npc_shen_he_visited"
           ],
-          "result_text": "沈禾微微笑了笑，递过一杯热水。这个地方让人安心。"
+          "result_text": "沈禾微微笑了笑，递过一杯热水。\"有来有往的路，才走得长。\""
         },
         {
-          "text": "先看看再说吧",
+          "text": "先跑几趟看看行情",
           "ops": [
-            "add_goodwill:greenhouse:2",
-            "set_flag:npc_shen_he_intro"
+            "add_goodwill:greenhouse:3",
+            "set_flag:npc_shen_he_visited"
           ],
-          "result_text": "沈禾点点头，没有多说什么。她似乎习惯了行商的谨慎。"
+          "result_text": "沈禾点点头：\"务实。我喜欢跟务实的人打交道。\""
         }
       ]
     },
@@ -63,7 +70,7 @@
       "weight": 50,
       "cooldown": 4,
       "required_flags": [
-        "npc_shen_he_intro"
+        "npc_shen_he_visited"
       ],
       "forbidden_flags": [],
       "steps": [
@@ -236,54 +243,61 @@
     {
       "id": "NPC_HC_001",
       "npc_id": "han_ce",
-      "title": "塔台的规矩",
+      "title": "韩策的数据板",
       "goodwill_min": 0,
       "goodwill_max": 999,
       "weight": 80,
       "cooldown": 99,
-      "required_flags": [],
-      "forbidden_flags": [
+      "required_flags": [
         "npc_han_ce_intro"
+      ],
+      "forbidden_flags": [
+        "npc_han_ce_visited"
       ],
       "steps": [
         {
           "speaker": "npc",
-          "text": "身份登记，货物清单，行驶路线。三样交齐了再谈交易。"
+          "text": "你们的登记信息我核过了。没问题。"
         },
         {
           "speaker": "taoxia",
-          "text": "呃……我们就是来送货的，用不着这么严格吧？",
-          "expression": "surprised"
+          "text": "韩策先生，有件事我一直想问——为什么塔台要这么严格的登记制度？",
+          "expression": "thinking"
         },
         {
           "speaker": "npc",
-          "text": "正因为是送货的才要严格。上个月有人借送货之名运了违禁品进来。"
+          "text": "因为废土上什么人都有。我见过行商藏武器，见过难民带病进来。不登记就不知道谁进了门。"
         },
         {
           "speaker": "linli",
-          "text": "……我们不会。"
+          "text": "……合理。",
+          "expression": "thinking"
         },
         {
           "speaker": "npc",
-          "text": "希望如此。我是韩策，塔台负责人。规矩是死的，但可以让活人安心。"
+          "text": "塔台能撑到现在，靠的不是运气。是规矩。"
+        },
+        {
+          "speaker": "npc",
+          "text": "你们要是稳定跑温室到塔台这条线，我这边可以给你们长期通行码。省得每次登记。"
         }
       ],
       "choices": [
         {
-          "text": "理解，规矩我们遵守",
+          "text": "谢谢，长期通行码太方便了",
           "ops": [
             "add_goodwill:tower:5",
-            "set_flag:npc_han_ce_intro"
+            "set_flag:npc_han_ce_visited"
           ],
-          "result_text": "韩策微微颔首，在数据板上记下了什么。至少第一印象不差。"
+          "result_text": "韩策在数据板上操作了几下，递过一串编码。\"别弄丢。补办要重新审核。\""
         },
         {
-          "text": "真麻烦……不过算了",
+          "text": "我们再看看，先不定",
           "ops": [
-            "add_goodwill:tower:2",
-            "set_flag:npc_han_ce_intro"
+            "add_goodwill:tower:3",
+            "set_flag:npc_han_ce_visited"
           ],
-          "result_text": "韩策面无表情地递过登记表。效率，是他唯一在乎的东西。"
+          "result_text": "韩策收回数据板，面无表情：\"随时来找我。条件不变。\""
         }
       ]
     },
@@ -296,7 +310,7 @@
       "weight": 50,
       "cooldown": 4,
       "required_flags": [
-        "npc_han_ce_intro"
+        "npc_han_ce_visited"
       ],
       "forbidden_flags": [],
       "steps": [

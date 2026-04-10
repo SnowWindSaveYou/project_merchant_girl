@@ -13,6 +13,8 @@ local Farm       = require("settlement/farm")
 local Intel      = require("settlement/intel")
 local BlackMarket = require("settlement/black_market")
 local Archives   = require("settlement/archives")
+local Flags      = require("core/flags")
+local Tutorial   = require("narrative/tutorial")
 
 local M = {}
 ---@type table
@@ -116,6 +118,59 @@ function M._build(state)
             },
         },
     })
+
+    -- ── 0. 教程快捷 ──
+    local tutPhase = Tutorial.get_phase(state)
+    local tutComplete = Tutorial.is_complete(state)
+    local tutChildren = {
+        UI.Label {
+            text = "当前阶段: " .. tutPhase .. (tutComplete and " (已完成)" or ""),
+            fontSize = Theme.sizes.font_normal,
+            fontColor = tutComplete and Theme.colors.text_dim or Theme.colors.warning,
+        },
+    }
+    if not tutComplete then
+        table.insert(tutChildren, UI.Button {
+            text = "一键完成所有教程",
+            width = "100%", height = 40,
+            fontSize = Theme.sizes.font_normal,
+            variant = "danger",
+            onClick = function()
+                -- 设置所有教程相关 flags
+                local tutFlags = {
+                    "tutorial_started",
+                    "tutorial_arrived_greenhouse",
+                    "tutorial_campfire_done",
+                    "tutorial_explore_guided",
+                    "tutorial_arrived_tower",
+                    "tutorial_explore_home_shown",
+                    "tutorial_map_explore_shown",
+                    "tutorial_shop_intro",
+                    "tutorial_truck_intro",
+                    "tutorial_radio_intro",
+                    "tutorial_auto_plan_intro",
+                    "tutorial_explore_scavenge",
+                }
+                for _, f in ipairs(tutFlags) do
+                    Flags.set(state, f)
+                end
+                -- 清理教程订单
+                local book = state.economy and state.economy.order_book or {}
+                local cleaned = {}
+                for _, o in ipairs(book) do
+                    if not o.is_tutorial then
+                        table.insert(cleaned, o)
+                    end
+                end
+                if state.economy then
+                    state.economy.order_book = cleaned
+                end
+                print("[Debug] All tutorials completed, " .. #tutFlags .. " flags set")
+                M._refresh(state)
+            end,
+        })
+    end
+    table.insert(sections, M._sectionCard("教程", tutChildren))
 
     -- ── 1. 金币调整 ──
     table.insert(sections, M._sectionCard("金币", {

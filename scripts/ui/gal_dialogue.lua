@@ -194,33 +194,62 @@ function M.createDialogueView(opts)
     local curText = steps[curStep] and steps[curStep].text or ""
     local curExpression = steps[curStep] and steps[curStep].expression or nil
 
-    -- 确定左右两侧角色
-    -- 篝火模式：左林砾 右陶夏
-    -- NPC模式：左主角（最近说话的主角）右NPC
+    -- 确定左右两侧立绘（统一逻辑：NPC 拜访 / 主线剧情 / 纯主角篝火）
     local leftCfg, rightCfg, leftDim, rightDim
     local leftPortrait, rightPortrait  -- 实际显示的立绘路径（含表情差分）
 
-    if npc then
-        -- NPC 模式：主角在左，NPC 在右
-        local curIsNpc = is_npc_speaker(curSpeakerKey)
-        local protagonistKey = (not curIsNpc) and curSpeakerKey or "linli"
-        leftCfg  = get_speaker_cfg(protagonistKey, nil)
-        -- 右侧立绘：当前说话的 NPC（可能是主 NPC 或具体 NPC ID）
-        rightCfg = curIsNpc and get_speaker_cfg(curSpeakerKey, npc) or get_speaker_cfg("npc", npc)
-        leftDim  = curIsNpc
-        rightDim = not curIsNpc
-        -- 主角侧应用表情差分
-        leftPortrait = (not curIsNpc and curExpression)
-            and get_expression_portrait(protagonistKey, curExpression)
-            or leftCfg.portrait
+    -- ── 统一立绘决策（不再区分 NPC 模式 / 篝火模式）──
+    local curIsNpc = is_npc_speaker(curSpeakerKey)
+    local curIsProtagonist = PROTAGONIST_PORTRAITS[curSpeakerKey] ~= nil
+
+    -- 回溯查找当前步及之前最近出现的 NPC 说话者（用于"NPC 留在场上"效果）
+    local recentNpcKey = nil
+    for si = curStep, 1, -1 do
+        local sp = steps[si] and steps[si].speaker
+        if is_npc_speaker(sp) then
+            recentNpcKey = sp
+            break
+        end
+    end
+    -- 场景中是否有 NPC 对手方（npc 参数 或 对话中出现过 NPC）
+    local hasNpcCounterpart = (recentNpcKey ~= nil) or (npc ~= nil)
+
+    if curIsNpc then
+        -- ① NPC 说话：左侧回溯最近主角，右侧当前 NPC
+        local lastProtagonist = "linli"
+        for si = curStep - 1, 1, -1 do
+            local prev = steps[si] and steps[si].speaker
+            if PROTAGONIST_PORTRAITS[prev] then
+                lastProtagonist = prev
+                break
+            end
+        end
+        leftCfg   = PROTAGONIST_PORTRAITS[lastProtagonist]
+        rightCfg  = get_speaker_cfg(curSpeakerKey, npc)
+        leftDim   = true
+        rightDim  = false
+        leftPortrait  = leftCfg.portrait
         rightPortrait = rightCfg.portrait
+
+    elseif hasNpcCounterpart then
+        -- ② 主角说话，场景中有 NPC：左侧主角，右侧 NPC（暗）
+        leftCfg  = curIsProtagonist and PROTAGONIST_PORTRAITS[curSpeakerKey]
+                                     or PROTAGONIST_PORTRAITS.linli
+        rightCfg = recentNpcKey and get_speaker_cfg(recentNpcKey, npc)
+                                 or get_speaker_cfg("npc", npc)
+        leftDim   = not curIsProtagonist  -- 旁白时左侧也暗
+        rightDim  = true
+        leftPortrait  = curIsProtagonist
+            and get_expression_portrait(curSpeakerKey, curExpression)
+             or leftCfg.portrait
+        rightPortrait = rightCfg.portrait
+
     else
-        -- 篝火模式：林砾在左，陶夏在右
+        -- ③ 纯主角篝火：林砾固定左，陶夏固定右
         leftCfg  = PROTAGONIST_PORTRAITS.linli
         rightCfg = PROTAGONIST_PORTRAITS.taoxia
         leftDim  = (curSpeakerKey ~= "linli")
         rightDim = (curSpeakerKey ~= "taoxia")
-        -- 当前说话角色应用表情差分
         if curSpeakerKey == "linli" then
             leftPortrait  = get_expression_portrait("linli", curExpression)
             rightPortrait = rightCfg.portrait
