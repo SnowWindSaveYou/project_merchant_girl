@@ -1,9 +1,10 @@
 --- UI 页面路由器
 --- 统一控制页面切换，自动用 Shell 包裹常规页面
-local UI       = require("urhox-libs/UI")
-local Shell    = require("ui/shell")
-local SoundMgr = require("ui/sound_manager")
-local F        = require("ui/ui_factory")
+local UI           = require("urhox-libs/UI")
+local Shell        = require("ui/shell")
+local SoundMgr     = require("ui/sound_manager")
+local F            = require("ui/ui_factory")
+local SketchBorder = require("ui/sketch_border")
 
 local M = {}
 
@@ -41,6 +42,9 @@ function M.navigate(name, params)
     if prevName then
         SoundMgr.play("open")
     end
+
+    -- 清空旧页面的手绘边框注册表（新页面 create 会重新注册）
+    SketchBorder.clear()
 
     local ok, content = pcall(currentScreen.create, gameState, params, M)
     if not ok then
@@ -110,9 +114,10 @@ function M.refresh(params)
         collectScrollPositions(root, scrollList)
     end
 
-    -- 2. 重建页面内容（抑制入场动画，清理旧动画队列）
+    -- 2. 重建页面内容（抑制入场动画，清理旧动画队列 + 手绘边框注册表）
     F._pendingAnims = nil
     F.skipEnterAnim = true
+    SketchBorder.clear()
     local ok, content = pcall(currentScreen.create, gameState, params, M)
     F.skipEnterAnim = nil
     if not ok then
@@ -159,6 +164,9 @@ function M.update(dt)
 
     -- 驱动 F.card 入场动画
     F.update(dt)
+
+    -- 推进手绘边框呼吸动画时间
+    SketchBorder.update(dt)
 end
 
 --- 获取游戏状态引用

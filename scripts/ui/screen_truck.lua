@@ -14,6 +14,7 @@ local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local Flags        = require("core/flags")
 local F            = require("ui/ui_factory")
+local SketchBorder = require("ui/sketch_border")
 local SoundMgr     = require("ui/sound_manager")
 
 local M = {}
@@ -48,10 +49,12 @@ function M.create(state, params, r)
     DrivingScene.setDriving(isTravelling)
     drivingSceneInited_ = true
 
-    table.insert(children, DrivingScene.createWidget({
+    local drivingWidget = DrivingScene.createWidget({
         height = 260,
         borderRadius = Theme.sizes.radius,
-    }))
+    })
+    SketchBorder.register(drivingWidget, "card")
+    table.insert(children, drivingWidget)
 
     -- ── 标题 ──
     table.insert(children, UI.Label {

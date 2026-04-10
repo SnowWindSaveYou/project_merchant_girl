@@ -9,6 +9,7 @@
 local UI    = require("urhox-libs/UI")
 local Theme = require("ui/theme")
 local F     = require("ui/ui_factory")
+local SketchBorder = require("ui/sketch_border")
 local Factions = require("settlement/factions")
 
 local NpcManager = require("narrative/npc_manager")
@@ -350,13 +351,13 @@ function M.createDialogueView(opts)
 
     -- ▼ 前景 UI 层（normal flow，顶栏 + 弹性空白 + 底部对话框）
     -- 顶栏
-    table.insert(galChildren, UI.Panel {
+    local galTopBar = UI.Panel {
         width = "100%", height = 44,
         flexDirection = "row",
         justifyContent = "space-between",
         alignItems = "center",
         paddingLeft = 16, paddingRight = 8,
-        backgroundColor = { 22, 19, 16, 180 },
+        backgroundColor = { 22, 19, 16, 120 },
         children = {
             UI.Panel {
                 flexDirection = "row", gap = 8, alignItems = "center",
@@ -387,29 +388,35 @@ function M.createDialogueView(opts)
                 },
             },
         },
-    })
+    }
+    SketchBorder.register(galTopBar, "card")
+    table.insert(galChildren, galTopBar)
+    -- 顶栏下方分割线
+    local topDivider = UI.Panel { width = "100%", height = 1 }
+    SketchBorder.register(topDivider, "divider")
+    table.insert(galChildren, topDivider)
 
     -- 空白区域（固定占 55%，让立绘在此区域透出）
     table.insert(galChildren, UI.Panel { height = "55%" })
 
     -- 底部对话框（占剩余 ~40% 空间，覆盖立绘下半身）
     -- 点击对话框即可推进对话（未读完时）
+    -- 名字下方分割线
+    local nameDivider = UI.Panel {
+        width = "100%", height = 1,
+        marginBottom = 2,
+    }
+    SketchBorder.register(nameDivider, "divider")
+
     local dialogueBoxChildren = {
-        -- 说话人名字
-        UI.Panel {
-            paddingLeft = 6, paddingRight = 6,
-            paddingTop = 2, paddingBottom = 2,
-            backgroundColor = curCfg.bgColor,
-            borderRadius = 4,
+        -- 说话人名字（无背景，下方素描分割线）
+        UI.Label {
+            text = curCfg.name,
+            fontSize = 13,
+            fontColor = curCfg.color,
             alignSelf = "flex-start",
-            children = {
-                UI.Label {
-                    text = curCfg.name,
-                    fontSize = 13,
-                    fontColor = curCfg.color,
-                },
-            },
         },
+        nameDivider,
         -- 对话文字
         UI.Label {
             text = curText,
@@ -432,10 +439,10 @@ function M.createDialogueView(opts)
         })
     end
 
-    table.insert(galChildren, UI.Panel {
+    local dialogueBox = UI.Panel {
         width = "100%",
         flexGrow = 1,
-        backgroundColor = { 15, 13, 10, 240 },
+        backgroundColor = { 15, 13, 10, 180 },
         borderTopWidth = 1,
         borderColor = { 80, 65, 40, 80 },
         paddingLeft = 20, paddingRight = 20,
@@ -445,7 +452,9 @@ function M.createDialogueView(opts)
             if opts.onAdvance then opts.onAdvance() end
         end or nil,
         children = dialogueBoxChildren,
-    })
+    }
+    SketchBorder.register(dialogueBox, "card")
+    table.insert(galChildren, dialogueBox)
 
     return UI.Panel {
         id = "galScreen",
@@ -522,7 +531,7 @@ function M.createHistoryView(opts)
                 justifyContent = "space-between",
                 alignItems = "center",
                 paddingLeft = 16, paddingRight = 8,
-                backgroundColor = { 22, 19, 16, 200 },
+                backgroundColor = { 22, 19, 16, 120 },
                 children = {
                     UI.Label {
                         text = (d.title or "") .. " - LOG",
@@ -587,21 +596,20 @@ function M.createResultView(opts)
     table.insert(cardChildren, UI.Label {
         text = d and d.title or "",
         fontSize = 18,
-        fontColor = { 255, 220, 160, 255 },
+        fontColor = Theme.colors.accent,
         textAlign = "center",
     })
 
-    table.insert(cardChildren, UI.Panel {
-        width = "80%", height = 1,
-        backgroundColor = { 80, 65, 40, 80 },
-    })
+    local resultDivider = UI.Panel { width = "80%", height = 1 }
+    SketchBorder.register(resultDivider, "divider")
+    table.insert(cardChildren, resultDivider)
 
     -- 结果文字
     if result.result_text and result.result_text ~= "" then
         table.insert(cardChildren, UI.Label {
             text = result.result_text,
             fontSize = 14,
-            fontColor = { 200, 195, 185, 255 },
+            fontColor = Theme.colors.text_primary,
             lineHeight = 1.7,
             textAlign = "center",
             whiteSpace = "normal",
@@ -611,33 +619,34 @@ function M.createResultView(opts)
 
     -- 回忆碎片
     if result.memory then
-        table.insert(cardChildren, UI.Panel {
+        local memoryCard = UI.Panel {
             width = "90%", padding = 12,
-            backgroundColor = { 40, 35, 28, 240 },
+            backgroundColor = Theme.colors.bg_secondary,
             borderRadius = 8,
-            borderWidth = 1, borderColor = { 120, 100, 60, 80 },
             gap = 4, alignItems = "center",
             children = {
                 UI.Label {
                     text = "获得回忆碎片",
                     fontSize = 11,
-                    fontColor = { 218, 168, 102, 255 },
+                    fontColor = Theme.colors.accent,
                 },
                 UI.Label {
                     text = result.memory.title,
                     fontSize = 15,
-                    fontColor = { 230, 225, 218, 255 },
+                    fontColor = Theme.colors.text_primary,
                     textAlign = "center",
                 },
                 UI.Label {
                     text = result.memory.desc,
                     fontSize = 12,
-                    fontColor = { 170, 165, 155, 255 },
+                    fontColor = Theme.colors.text_secondary,
                     textAlign = "center",
                     whiteSpace = "normal",
                 },
             },
-        })
+        }
+        SketchBorder.register(memoryCard, "accent_card")
+        table.insert(cardChildren, memoryCard)
     end
 
     -- 额外信息（仅限玩家可见的提示）
@@ -706,16 +715,16 @@ function M.createResultView(opts)
     table.insert(resultChildren, UI.Panel { flexGrow = 1, flexBasis = 0 })
 
     -- ▼ 结果卡片（半透明叠在立绘前面）
-    table.insert(resultChildren, UI.Panel {
+    local resultCard = UI.Panel {
         width = "100%",
         backgroundColor = { 15, 13, 10, 200 },
-        borderTopWidth = 1,
-        borderColor = { 80, 65, 40, 80 },
         padding = 20,
         gap = 10,
         alignItems = "center",
         children = cardChildren,
-    })
+    }
+    SketchBorder.register(resultCard, "card")
+    table.insert(resultChildren, resultCard)
 
     return UI.Panel {
         id = "galScreen",

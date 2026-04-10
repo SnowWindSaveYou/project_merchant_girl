@@ -9,6 +9,7 @@ local Ticker         = require("core/ticker")
 local SaveLocal      = require("save/save_local")
 local Offline        = require("save/offline")
 local Router         = require("ui/router")
+local SketchBorder   = require("ui/sketch_border")
 local EventPool      = require("events/event_pool")
 local EventScheduler = require("events/event_scheduler")
 local RoutePlanner   = require("map/route_planner")
@@ -78,6 +79,9 @@ function Start()
         },
         scale = UI.Scale.DEFAULT,
     })
+
+    -- 1b. 初始化手绘边框 NanoVG overlay
+    SketchBorder.init()
 
     -- 2. 加载或创建状态
     local saved = SaveLocal.load()

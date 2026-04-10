@@ -14,6 +14,7 @@ local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local Flags        = require("core/flags")
 local F            = require("ui/ui_factory")
+local SketchBorder = require("ui/sketch_border")
 
 local M = {}
 
@@ -85,6 +86,7 @@ function M.create(state)
         backgroundColor = Theme.colors.bg_secondary,
         children = barChildren,
     }
+    SketchBorder.register(statusBar, "card")
 
     -- 旅行进度条（仅旅行中显示）
     local isTravelling = Flow.get_phase(state) == Flow.Phase.TRAVELLING

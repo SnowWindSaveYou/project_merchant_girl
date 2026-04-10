@@ -12,6 +12,7 @@ local Intel        = require("settlement/intel")
 local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local Flags        = require("core/flags")
+local SketchBorder = require("ui/sketch_border")
 
 local M = {}
 
@@ -2033,12 +2034,10 @@ rebuildExplorePanel = function()
                 local labelText = flagLocked and ("🔒 " .. (targetDef and targetDef.name or "未知区域"))
                     or "❓ 未知区域"
 
-                explorePanel_:AddChild(UI.Panel {
+                local unknownCard = UI.Panel {
                     width = "100%", padding = 10,
-                    backgroundColor = flagLocked and { 30, 28, 26, 200 } or { 40, 36, 28, 220 },
+                    backgroundColor = Theme.colors.bg_card,
                     borderRadius = Theme.sizes.radius_small,
-                    borderWidth = 1,
-                    borderColor = flagLocked and Theme.colors.text_dim or Theme.colors.warning,
                     flexDirection = "row", justifyContent = "space-between",
                     alignItems = "center",
                     children = {
@@ -2089,7 +2088,9 @@ rebuildExplorePanel = function()
                             end,
                         },
                     },
-                })
+                }
+                SketchBorder.register(unknownCard, "card")
+                explorePanel_:AddChild(unknownCard)
             end
         end
     end
@@ -2138,7 +2139,7 @@ rebuildExplorePanel = function()
                 local tName      = targetNode and targetNode.name or adj.to
                 local tType      = targetNode and (NODE_TYPE_LABEL[targetNode.type] or "") or ""
 
-                explorePanel_:AddChild(UI.Panel {
+                local knownCard = UI.Panel {
                     width = "100%", padding = 10,
                     backgroundColor = Theme.colors.bg_card,
                     borderRadius = Theme.sizes.radius_small,
@@ -2186,7 +2187,9 @@ rebuildExplorePanel = function()
                             end,
                         },
                     },
-                })
+                }
+                SketchBorder.register(knownCard, "card")
+                explorePanel_:AddChild(knownCard)
             end
         end
     end
@@ -2565,6 +2568,102 @@ function M.create(state, params, r)
         end,
     }
 
+    -- Modal 使用 QueueOverlay 渲染，SketchBorder.register 无法生效
+    -- monkey-patch RenderModalContent 来：
+    --   1) 覆盖背景色为游戏主题色
+    --   2) 在渲染完成后画素描边框
+    local origRenderModal = modal_.RenderModalContent
+    modal_.RenderModalContent = function(self, nvg)
+        -- 先让 Modal 自行绘制全部内容（背景、标题、内容、页脚）
+        origRenderModal(self, nvg)
+
+        -- 在 Modal 内容上方叠加：覆盖背景色 + 素描边框
+        local ml = self.modalLayout_
+        if ml then
+            local br = self.borderRadius_ or 12
+
+            -- 覆盖背景色：用游戏主题色重绘背景 + 边框
+            local bg = Theme.colors.bg_card
+            nvgBeginPath(nvg)
+            nvgRoundedRect(nvg, ml.x, ml.y, ml.w, ml.h, br)
+            nvgFillColor(nvg, nvgRGBA(bg[1], bg[2], bg[3], 245))
+            nvgFill(nvg)
+
+            -- 重绘边框（游戏主题色）
+            local bc = Theme.colors.border
+            nvgBeginPath(nvg)
+            nvgRoundedRect(nvg, ml.x, ml.y, ml.w, ml.h, br)
+            nvgStrokeColor(nvg, nvgRGBA(bc[1], bc[2], bc[3], 100))
+            nvgStrokeWidth(nvg, 1)
+            nvgStroke(nvg)
+        end
+
+        -- 重新绘制内容（因为我们覆盖了背景）
+        origRenderModal(self, nvg)
+
+        -- 最后画素描边框
+        if ml then
+            local sk = SketchBorder.styles.card
+            nvgSave(nvg)
+            -- 复用 SketchBorder 内部绘制逻辑不太方便，
+            -- 直接在此绘制简化版素描矩形
+            local ink = Theme.sketch.ink_color
+            local function sketchLine(x1, y1, x2, y2, seed)
+                local segs = 16
+                local dx, dy = x2 - x1, y2 - y1
+                local len = math.sqrt(dx * dx + dy * dy)
+                if len < 1 then return end
+                local nx, ny = -dy / len, dx / len
+                nvgBeginPath(nvg)
+                for i = 0, segs do
+                    local t = i / segs
+                    local jx = (math.sin(seed + i * 2.3) * 0.5) * 1.5
+                    local jy = (math.cos(seed + i * 3.1) * 0.5) * 1.5
+                    local px = x1 + dx * t + nx * jx
+                    local py = y1 + dy * t + ny * jy
+                    if i == 0 then
+                        nvgMoveTo(nvg, px, py)
+                    else
+                        nvgLineTo(nvg, px, py)
+                    end
+                end
+                nvgStrokeColor(nvg, nvgRGBA(ink[1], ink[2], ink[3], ink[4]))
+                nvgStrokeWidth(nvg, 1.2)
+                nvgLineCap(nvg, NVG_ROUND)
+                nvgLineJoin(nvg, NVG_ROUND)
+                nvgStroke(nvg)
+            end
+
+            local x, y, w, h = ml.x, ml.y, ml.w, ml.h
+            local seed = 42
+            sketchLine(x, y, x + w, y, seed + 1)
+            sketchLine(x + w, y, x + w, y + h, seed + 2)
+            sketchLine(x + w, y + h, x, y + h, seed + 3)
+            sketchLine(x, y + h, x, y, seed + 4)
+
+            -- 角落强调
+            local cornerLen = math.min(w, h) * 0.06
+            nvgStrokeColor(nvg, nvgRGBA(ink[1], ink[2], ink[3], ink[4]))
+            nvgStrokeWidth(nvg, 2.0)
+            nvgLineCap(nvg, NVG_ROUND)
+            local corners = {
+                { x, y,         x + cornerLen, y,         x, y + cornerLen },
+                { x + w, y,     x + w - cornerLen, y,     x + w, y + cornerLen },
+                { x + w, y + h, x + w - cornerLen, y + h, x + w, y + h - cornerLen },
+                { x, y + h,     x + cornerLen, y + h,     x, y + h - cornerLen },
+            }
+            for _, c in ipairs(corners) do
+                nvgBeginPath(nvg)
+                nvgMoveTo(nvg, c[3], c[4])
+                nvgLineTo(nvg, c[1], c[2])
+                nvgLineTo(nvg, c[5], c[6])
+                nvgStroke(nvg)
+            end
+
+            nvgRestore(nvg)
+        end
+    end
+
     -- 探索区域面板（地图下方，可折叠）
     explorePanel_ = UI.Panel {
         id = "explorePanel",
@@ -2575,6 +2674,7 @@ function M.create(state, params, r)
         overflow = "scroll",
         flexShrink = 1,
     }
+    SketchBorder.register(explorePanel_, "card")
     rebuildExplorePanel()
 
     -- 底部路线面板（初始隐藏）

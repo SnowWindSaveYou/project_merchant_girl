@@ -1,9 +1,10 @@
 --- UI 组件工厂：少女终末旅行风格封装
 --- 扁平色彩 + 细边框 + 微圆角 · 极简手绘感
 --- 页面代码只需调用 F.card / F.actionBtn 即可获得统一风格的组件。
-local UI       = require("urhox-libs/UI")
-local Theme    = require("ui/theme")
-local SoundMgr = require("ui/sound_manager")
+local UI           = require("urhox-libs/UI")
+local Theme        = require("ui/theme")
+local SoundMgr     = require("ui/sound_manager")
+local SketchBorder = require("ui/sketch_border")
 
 local F = {}
 
@@ -45,15 +46,20 @@ function F.card(props)
         backgroundFit   = useTexture and "sliced" or nil,
         backgroundSlice = useTexture and (p.backgroundSlice or Theme.textures.card_slice) or nil,
         imageTint       = p.imageTint or nil,
-        -- 细边框 + 微圆角
-        borderWidth     = p.borderWidth or 1,
-        borderColor     = p.borderColor or Theme.colors.card_border,
+        -- 原生边框隐藏，由 SketchBorder 绘制手绘线条
+        borderWidth     = p.borderWidth or 0,
+        borderColor     = p.borderColor or nil,
         borderRadius    = p.borderRadius or Theme.sizes.radius,
-        -- 入场动画已禁用（opacity 闪烁 + translateY 抖动体验不佳）
         -- onClick
         onClick         = p.onClick or nil,
         children        = p.children or {},
     }
+
+    -- 注册手绘边框（sketch=false 可关闭）
+    if p.sketch ~= false then
+        local skStyle = p.sketchStyle or "card"
+        SketchBorder.register(panel, skStyle, p.sketchOverrides)
+    end
 
     -- 延迟触发入场
     if wantAnim then
@@ -114,7 +120,7 @@ function F.actionBtn(props)
         btnWidth = p.flexGrow and nil or "100%"
     end
 
-    return UI.Button {
+    local btn = UI.Button {
         id         = p.id or nil,
         text       = p.text or "",
         disabled   = disabled,
@@ -125,10 +131,10 @@ function F.actionBtn(props)
         alignSelf  = p.alignSelf or nil,
         fontSize   = p.fontSize or Theme.sizes.font_normal,
         fontColor  = textColor,
-        -- 扁平背景 + 细边框 + 微圆角
+        -- 原生边框隐藏，由 SketchBorder 绘制手绘线条
         backgroundColor = bgColor,
-        borderWidth     = p.borderWidth or 1,
-        borderColor     = p.borderColor or Theme.colors.card_border,
+        borderWidth     = p.borderWidth or 0,
+        borderColor     = p.borderColor or nil,
         borderRadius    = p.borderRadius or Theme.sizes.radius,
         -- 外边距 / 内边距透传
         marginTop    = p.marginTop or nil,
@@ -143,6 +149,14 @@ function F.actionBtn(props)
             if p.onClick then p.onClick(self) end
         end,
     }
+
+    -- 注册手绘边框（sketch=false 可关闭）
+    if p.sketch ~= false then
+        local skStyle = p.sketchStyle or "button"
+        SketchBorder.register(btn, skStyle, p.sketchOverrides)
+    end
+
+    return btn
 end
 
 -- ============================================================
@@ -182,13 +196,20 @@ end
 -- ============================================================
 function F.divider(props)
     local p = props or {}
-    return UI.Panel {
+    local div = UI.Panel {
         width  = p.width or "100%",
         height = p.height or 1,
         backgroundColor = p.backgroundColor or Theme.colors.divider,
         marginTop    = p.marginTop or 4,
         marginBottom = p.marginBottom or 4,
     }
+
+    -- 注册手绘分割线（sketch=false 可关闭）
+    if p.sketch ~= false then
+        SketchBorder.register(div, "divider", p.sketchOverrides)
+    end
+
+    return div
 end
 
 -- ============================================================

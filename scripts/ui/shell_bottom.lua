@@ -5,6 +5,8 @@ local Theme    = require("ui/theme")
 local Flow     = require("core/flow")
 local SoundMgr = require("ui/sound_manager")
 
+local SketchBorder = require("ui/sketch_border")
+
 local M = {}
 
 local TABS = {
@@ -23,7 +25,16 @@ local TABS = {
 ---@return table widget
 function M.create(state, activeTab, screenName, router)
     local tabChildren = {}
-    for _, tab in ipairs(TABS) do
+    for i, tab in ipairs(TABS) do
+        -- 在 tab 之间插入竖直分割线（第 2 个起）
+        if i > 1 then
+            local vdiv = UI.Panel {
+                width = 1, height = "60%", alignSelf = "center",
+            }
+            SketchBorder.register(vdiv, "vdivider")
+            table.insert(tabChildren, vdiv)
+        end
+
         local isActive = (tab.id == activeTab)
         local tint = isActive
             and Theme.colors.accent
@@ -87,13 +98,15 @@ function M.create(state, activeTab, screenName, router)
         })
     end
 
-    return UI.Panel {
+    local bar = UI.Panel {
         id = "shellBottomBar",
         width = "100%", height = 56,
         flexDirection = "row", alignItems = "center",
         backgroundColor = Theme.colors.bg_secondary,
         children = tabChildren,
     }
+    SketchBorder.register(bar, "card")
+    return bar
 end
 
 return M

@@ -34,6 +34,7 @@ local Stroll              = require("narrative/stroll")
 local MainStory           = require("narrative/main_story")
 local Tutorial            = require("narrative/tutorial")
 local SpeechBubble        = require("ui/speech_bubble")
+local SketchBorder        = require("ui/sketch_border")
 
 local M = {}
 ---@type table
@@ -810,7 +811,7 @@ function createSettlementView(state, curNode)
                         fontColor = { 255, 255, 255, 160 },
                     })
                 end
-                return UI.Panel {
+                local infoPanel = UI.Panel {
                     width = "100%",
                     padding = 10,
                     backgroundColor = { 0, 0, 0, 140 },
@@ -818,6 +819,8 @@ function createSettlementView(state, curNode)
                     gap = 4,
                     children = infoChildren,
                 }
+                SketchBorder.register(infoPanel, "card")
+                return infoPanel
             end)(),
         },
     })

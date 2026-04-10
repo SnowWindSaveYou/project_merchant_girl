@@ -1,8 +1,9 @@
 --- 气泡对话组件
 --- 用于非对话场景内的引导提示，带角色头像
 --- 可复用的绝对定位气泡，支持自动消失和点击关闭
-local UI    = require("urhox-libs/UI")
-local Theme = require("ui/theme")
+local UI           = require("urhox-libs/UI")
+local Theme        = require("ui/theme")
+local SketchBorder = require("ui/sketch_border")
 
 local M = {}
 
@@ -47,56 +48,58 @@ function M.show(parent, config)
             M.hide()
         end,
         children = {
-            -- 气泡卡片
-            UI.Panel {
-                width = "90%", maxWidth = 400,
-                flexDirection = "row",
-                alignItems = "flex-start",
-                backgroundColor = { 28, 26, 24, 230 },
-                borderRadius = 12,
-                borderWidth = 1,
-                borderColor = Theme.colors.accent_dim,
-                padding = 12,
-                gap = 10,
-                children = {
-                    -- 头像
-                    UI.Panel {
-                        width = 48, height = 48,
-                        borderRadius = 24,
-                        backgroundImage = portrait,
-                        backgroundFit = "cover",
-                        flexShrink = 0,
-                    },
-                    -- 文字区域
-                    UI.Panel {
-                        flex = 1,
-                        flexShrink = 1,
-                        children = {
-                            -- 说话者名字
-                            UI.Label {
-                                text = speaker,
-                                fontSize = 13,
-                                color = Theme.colors.accent,
-                                marginBottom = 4,
-                            },
-                            -- 对话内容
-                            UI.Label {
-                                text = text,
-                                fontSize = 15,
-                                color = Theme.colors.text_primary,
-                                lineHeight = 1.4,
-                            },
-                            -- 关闭提示
-                            UI.Label {
-                                text = autoHide > 0 and "" or "点击任意处关闭",
-                                fontSize = 11,
-                                color = Theme.colors.text_dim,
-                                marginTop = 6,
+            -- 气泡卡片（先保存引用以注册素描边框）
+            (function()
+                local bubbleCard = UI.Panel {
+                    width = "90%", maxWidth = 400,
+                    flexDirection = "row",
+                    alignItems = "flex-start",
+                    backgroundColor = Theme.colors.bg_card,
+                    borderRadius = 12,
+                    padding = 12,
+                    gap = 10,
+                    children = {
+                        -- 头像
+                        UI.Panel {
+                            width = 48, height = 48,
+                            borderRadius = 24,
+                            backgroundImage = portrait,
+                            backgroundFit = "cover",
+                            flexShrink = 0,
+                        },
+                        -- 文字区域
+                        UI.Panel {
+                            flex = 1,
+                            flexShrink = 1,
+                            children = {
+                                -- 说话者名字
+                                UI.Label {
+                                    text = speaker,
+                                    fontSize = 13,
+                                    fontColor = Theme.colors.accent,
+                                    marginBottom = 4,
+                                },
+                                -- 对话内容
+                                UI.Label {
+                                    text = text,
+                                    fontSize = 15,
+                                    fontColor = Theme.colors.text_primary,
+                                    lineHeight = 1.4,
+                                },
+                                -- 关闭提示
+                                UI.Label {
+                                    text = autoHide > 0 and "" or "点击任意处关闭",
+                                    fontSize = 11,
+                                    fontColor = Theme.colors.text_dim,
+                                    marginTop = 6,
+                                },
                             },
                         },
                     },
-                },
-            },
+                }
+                SketchBorder.register(bubbleCard, "card")
+                return bubbleCard
+            end)(),
         },
     }
 
@@ -163,52 +166,54 @@ function M.createWidget(config)
             if onDismiss then onDismiss() end
         end,
         children = {
-            -- 气泡卡片
-            UI.Panel {
-                width = "90%", maxWidth = 400,
-                flexDirection = "row",
-                alignItems = "flex-start",
-                backgroundColor = { 28, 26, 24, 230 },
-                borderRadius = 12,
-                borderWidth = 1,
-                borderColor = Theme.colors.accent,
-                padding = 12,
-                gap = 10,
-                children = {
-                    -- 头像
-                    UI.Panel {
-                        width = 48, height = 48,
-                        borderRadius = 24,
-                        backgroundImage = portrait,
-                        backgroundFit = "cover",
-                        flexShrink = 0,
-                    },
-                    -- 文字区域
-                    UI.Panel {
-                        flexGrow = 1,
-                        flexShrink = 1,
-                        children = {
-                            UI.Label {
-                                text = speaker,
-                                fontSize = 13,
-                                fontColor = Theme.colors.accent,
-                                marginBottom = 4,
+            -- 气泡卡片（IIFE 用于注册素描边框）
+            (function()
+                local bubbleCard = UI.Panel {
+                    width = "90%", maxWidth = 400,
+                    flexDirection = "row",
+                    alignItems = "flex-start",
+                    backgroundColor = Theme.colors.bg_card,
+                    borderRadius = 12,
+                    padding = 12,
+                    gap = 10,
+                    children = {
+                        -- 头像
+                        UI.Panel {
+                            width = 48, height = 48,
+                            borderRadius = 24,
+                            backgroundImage = portrait,
+                            backgroundFit = "cover",
+                            flexShrink = 0,
+                        },
+                        -- 文字区域
+                        UI.Panel {
+                            flexGrow = 1,
+                            flexShrink = 1,
+                            children = {
+                                UI.Label {
+                                    text = speaker,
+                                    fontSize = 13,
+                                    fontColor = Theme.colors.accent,
+                                    marginBottom = 4,
+                                },
+                                UI.Label {
+                                    text = text,
+                                    fontSize = 15,
+                                    fontColor = Theme.colors.text_primary,
+                                },
+                                autoHide <= 0 and UI.Label {
+                                    text = "点击任意处继续",
+                                    fontSize = 11,
+                                    fontColor = Theme.colors.text_dim,
+                                    marginTop = 6,
+                                } or nil,
                             },
-                            UI.Label {
-                                text = text,
-                                fontSize = 15,
-                                fontColor = Theme.colors.text_primary,
-                            },
-                            autoHide <= 0 and UI.Label {
-                                text = "点击任意处继续",
-                                fontSize = 11,
-                                fontColor = Theme.colors.text_dim,
-                                marginTop = 6,
-                            } or nil,
                         },
                     },
-                },
-            },
+                }
+                SketchBorder.register(bubbleCard, "card")
+                return bubbleCard
+            end)(),
         },
     }
 end
