@@ -1,14 +1,17 @@
 --- 聚落交易所
 --- 在当前聚落买卖商品 + 补给维修服务 + 模块升级 + 休整
-local UI         = require("urhox-libs/UI")
-local Theme      = require("ui/theme")
-local Goods      = require("economy/goods")
-local Pricing    = require("economy/pricing")
-local Graph      = require("map/world_graph")
-local CargoUtils = require("economy/cargo_utils")
-local Goodwill   = require("settlement/goodwill")
-local Modules    = require("truck/modules")
-local ItemUse    = require("economy/item_use")
+local UI           = require("urhox-libs/UI")
+local Theme        = require("ui/theme")
+local Goods        = require("economy/goods")
+local Pricing      = require("economy/pricing")
+local Graph        = require("map/world_graph")
+local CargoUtils   = require("economy/cargo_utils")
+local Goodwill     = require("settlement/goodwill")
+local Modules      = require("truck/modules")
+local ItemUse      = require("economy/item_use")
+local Tutorial     = require("narrative/tutorial")
+local Flags        = require("core/flags")
+local SpeechBubble = require("ui/speech_bubble")
 
 --- 据点服务定价
 local SERVICE = {
@@ -20,6 +23,9 @@ local SERVICE = {
 local M = {}
 ---@type table
 local router = nil
+
+--- 交易所教程气泡：逐步展示并在最后设置 flag
+local shopTutorialShown_ = false
 
 function M.create(state, params, r)
     router = r
@@ -469,7 +475,14 @@ function M.create(state, params, r)
         end
     end
 
-    return UI.Panel {
+    -- 检查是否需要显示交易所教程
+    local needShopTutorial = not shopTutorialShown_
+        and Tutorial.get_shop_tutorial_steps(state) ~= nil
+    if needShopTutorial then
+        shopTutorialShown_ = true
+    end
+
+    local rootPanel = UI.Panel {
         id = "shopScreen",
         width = "100%", height = "100%",
         backgroundColor = Theme.colors.bg_primary,
@@ -477,8 +490,45 @@ function M.create(state, params, r)
         overflow = "scroll",
         children = contentChildren,
     }
+
+    -- 教程气泡：在 create 阶段排入，由 update 首帧触发
+    M._pendingTutorial = needShopTutorial and state or nil
+    M._rootPanel = rootPanel
+
+    return rootPanel
 end
 
-function M.update(state, dt, r) end
+--- 逐步展示教程气泡序列
+local function showTutorialStep(parent, state, steps, index)
+    if index > #steps then
+        -- 全部播完，设置 flag
+        Flags.set(state, "tutorial_shop_intro")
+        return
+    end
+    local step = steps[index]
+    SpeechBubble.show(parent, {
+        portrait = step.portrait,
+        speaker  = step.speaker,
+        text     = step.text,
+        autoHide = 0,
+        onDismiss = function()
+            showTutorialStep(parent, state, steps, index + 1)
+        end,
+    })
+end
+
+function M.update(state, dt, r)
+    SpeechBubble.update(dt)
+
+    -- 首帧触发教程气泡序列
+    if M._pendingTutorial and M._rootPanel then
+        local tutState = M._pendingTutorial
+        M._pendingTutorial = nil
+        local steps = Tutorial.get_shop_tutorial_steps(tutState)
+        if steps then
+            showTutorialStep(M._rootPanel, tutState, steps, 1)
+        end
+    end
+end
 
 return M

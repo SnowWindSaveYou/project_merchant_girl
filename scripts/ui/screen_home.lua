@@ -29,6 +29,8 @@ local BlackMarket         = require("settlement/black_market")
 local Flags               = require("core/flags")
 local UnlockStories       = require("narrative/unlock_stories")
 local MainStory           = require("narrative/main_story")
+local Tutorial            = require("narrative/tutorial")
+local SpeechBubble        = require("ui/speech_bubble")
 
 local M = {}
 ---@type table
@@ -111,6 +113,32 @@ function M.create(state, params, r)
     if isTravelling then
         return createTravelView(state)
     else
+        -- 教程阶段：确保教程订单已生成
+        -- SPAWN：序章对话设置 tutorial_started 后回到 home，需要重新生成
+        -- GREENHOUSE_FREE：到达温室社区时 generate_on_arrival 在对话前调用，
+        --   此时 phase 还是 TRAVEL_TO_GREENHOUSE，教程订单2 不会生成。
+        --   对话完成后 flag 切换为 GREENHOUSE_FREE，需重新生成以产出北穹塔台订单。
+        local tutPhase = Tutorial.get_phase(state)
+        if tutPhase == Tutorial.Phase.SPAWN
+            or tutPhase == Tutorial.Phase.GREENHOUSE_FREE
+            or tutPhase == Tutorial.Phase.EXPLORE then
+            local loc = state.map.current_location
+            -- 检查教程订单是否已在 order_book 中（已接则不需要重新生成）
+            local needRegen = true
+            local book = state.economy and state.economy.order_book or {}
+            for _, o in ipairs(book) do
+                if o.is_tutorial and (o.status == "accepted" or o.status == "loaded") then
+                    needRegen = false
+                    break
+                end
+            end
+            if needRegen then
+                if state.map.available_orders then
+                    state.map.available_orders[loc] = nil
+                end
+                OrderBook.generate_on_arrival(state, loc)
+            end
+        end
         return createSettlementView(state, curNode)
     end
 end
@@ -149,6 +177,44 @@ function M.update(state, dt, r)
     DrivingScene.update(dt)
     RoadLoot.update(state, dt)
     DrivingScene.setDrops(RoadLoot.get_active_drops(state))
+
+    -- ── 教程：路面拾取提示（首次出现掉落物时触发一次）──
+    if not Flags.has(state, "tutorial_loot_hint_shown") then
+        local tutPhase = Tutorial.get_phase(state)
+        if tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE
+            or tutPhase == Tutorial.Phase.EXPLORE then
+            local drops = RoadLoot.get_active_drops(state)
+            if drops and #drops > 0 then
+                Flags.set(state, "tutorial_loot_hint_shown")
+                -- 延迟 1 秒后显示提示，避免和其他 UI 冲突
+                local hintTimer = 1.0
+                local hintShown = false
+                local origUpdate = M._lootHintUpdate
+                M._lootHintUpdate = function(ldt)
+                    if hintShown then return end
+                    hintTimer = hintTimer - ldt
+                    if hintTimer <= 0 then
+                        hintShown = true
+                        M._lootHintUpdate = nil
+                        local uiRoot = UI.GetRoot()
+                        if uiRoot then
+                            SpeechBubble.show(uiRoot, {
+                                portrait = Tutorial.AVATAR_LINLI,
+                                speaker  = "林砾",
+                                text     = "路上有些散落的物资，点一下就能捡起来！",
+                                autoHide = 4,
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+    -- 驱动拾取提示延迟计时
+    if M._lootHintUpdate then
+        M._lootHintUpdate(dt)
+    end
+
     Chatter.update(state, dt, progress, seg)
     local chatterActive = Chatter.get_current(state) ~= nil
     Scenery.update(state, dt, progress, seg, chatterActive)
@@ -222,6 +288,88 @@ function createSettlementView(state, curNode)
 
     -- ── 下半部：操作按钮列表 ──
     local lowerChildren = {}
+    local tutPhase = Tutorial.get_phase(state)
+
+    -- ── 教程 SPAWN 阶段：锁定操作，只允许接取委托 ──
+    if tutPhase == Tutorial.Phase.SPAWN then
+        table.insert(lowerChildren, UI.Button {
+            text = "📋 接取委托",
+            variant = "primary",
+            width = "100%", height = 48,
+            fontSize = Theme.sizes.font_normal,
+            borderWidth = 2,
+            borderColor = Theme.colors.accent,
+            onClick = function(self)
+                Flow.enter_prepare(state)
+                router.navigate("orders")
+            end,
+        })
+        -- 跳过后续所有按钮，直接进入下方 UI 组装
+
+    elseif tutPhase == Tutorial.Phase.GREENHOUSE_FREE then
+        -- GREENHOUSE_FREE = 到达温室但未接北穹订单
+        -- 允许：NPC 对话 + 接单（高亮）+ 篝火；阻止：出发
+
+        -- NPC 拜访
+        local settlementNpcs = NpcManager.get_npcs_for_settlement(nodeId)
+        for _, npc in ipairs(settlementNpcs) do
+            local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
+            table.insert(lowerChildren, UI.Button {
+                text = canVisit
+                    and (npc.icon .. " 拜访 " .. npc.name)
+                    or  (npc.icon .. " " .. npc.name .. "（" .. (visitReason or "不可用") .. "）"),
+                variant = "secondary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                disabled = not canVisit,
+                onClick = function(self)
+                    if not canVisit then return end
+                    local dialogue = NpcManager.start_visit(state, npc.id)
+                    if dialogue then
+                        router.navigate("npc", { npc_id = npc.id, dialogue = dialogue })
+                    end
+                end,
+            })
+        end
+
+        -- 接取委托（高亮引导）
+        table.insert(lowerChildren, UI.Button {
+            text = "📋 接取委托",
+            variant = "primary",
+            width = "100%", height = 48,
+            fontSize = Theme.sizes.font_normal,
+            borderWidth = 2,
+            borderColor = Theme.colors.accent,
+            onClick = function(self)
+                Flow.enter_prepare(state)
+                router.navigate("orders")
+            end,
+        })
+        -- 篝火仍可用
+        local canCamp, campReason = Campfire.can_start(state)
+        local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
+        if canCamp then
+            local campLabel = hasStoryTopic
+                and "🔥 篝火休憩 · 有话题要谈"
+                or  "🔥 篝火休憩"
+            table.insert(lowerChildren, UI.Button {
+                text = campLabel,
+                variant = hasStoryTopic and "primary" or "secondary",
+                width = "100%", height = 44,
+                fontSize = Theme.sizes.font_normal,
+                borderWidth = hasStoryTopic and 2 or 0,
+                borderColor = hasStoryTopic and Theme.colors.accent or nil,
+                onClick = function(self)
+                    local dialogue, consumed = Campfire.start(state)
+                    if dialogue then
+                        router.navigate("campfire", { dialogue = dialogue, consumed = consumed })
+                    end
+                end,
+            })
+        end
+        -- 不显示出发按钮，阻止跑路
+
+    else -- 正常流程
 
     -- 积压警告（保留，重要信息）
     local backlogInfo = OrderBook.get_backlog_info(state)
@@ -437,14 +585,25 @@ function createSettlementView(state, curNode)
             })
         end
 
-        -- 篝火
-        local canCamp, campReason = Campfire.can_start(state)
+        -- 篝火（有主线话题且可用时高亮）
+        local canCamp, campReason, isCampFree = Campfire.can_start(state)
+        local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
+        local campLabel
+        if canCamp then
+            campLabel = hasStoryTopic
+                and "🔥 篝火休憩 · 有话题要谈"
+                or  "🔥 篝火休憩"
+        else
+            campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
+        end
         table.insert(lowerChildren, UI.Button {
-            text = canCamp and "🔥 篝火休憩" or ("🔥 篝火（" .. (campReason or "不可用") .. "）"),
-            variant = "secondary",
+            text = campLabel,
+            variant = hasStoryTopic and "primary" or "secondary",
             width = "100%", height = 44,
             fontSize = Theme.sizes.font_normal,
             disabled = not canCamp,
+            borderWidth = hasStoryTopic and 2 or 0,
+            borderColor = hasStoryTopic and Theme.colors.accent or nil,
             onClick = function(self)
                 if not canCamp then return end
                 local dialogue, consumed = Campfire.start(state)
@@ -509,14 +668,25 @@ function createSettlementView(state, curNode)
             })
         end
 
-        -- 篝火（非聚落节点）
-        local canCamp, campReason = Campfire.can_start(state)
+        -- 篝火（非聚落节点，有主线话题且可用时高亮）
+        local canCamp, campReason, isCampFree = Campfire.can_start(state)
+        local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
+        local campLabel
+        if canCamp then
+            campLabel = hasStoryTopic
+                and "🔥 篝火休憩 · 有话题要谈"
+                or  "🔥 篝火休憩"
+        else
+            campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
+        end
         table.insert(lowerChildren, UI.Button {
-            text = canCamp and "🔥 篝火休憩" or ("🔥 篝火（" .. (campReason or "不可用") .. "）"),
-            variant = "secondary",
+            text = campLabel,
+            variant = hasStoryTopic and "primary" or "secondary",
             width = "100%", height = 44,
             fontSize = Theme.sizes.font_normal,
             disabled = not canCamp,
+            borderWidth = hasStoryTopic and 2 or 0,
+            borderColor = hasStoryTopic and Theme.colors.accent or nil,
             onClick = function(self)
                 if not canCamp then return end
                 local dialogue, consumed = Campfire.start(state)
@@ -539,6 +709,8 @@ function createSettlementView(state, curNode)
             })
         end
     end
+
+    end -- 教程 SPAWN 锁定分支结束
 
     -- 探索区域已迁移到地图页面（screen_map）
 
@@ -640,7 +812,11 @@ function createSettlementView(state, curNode)
     table.insert(rootChildren, UI.Panel { flexGrow = 1, flexBasis = 0 })
 
     -- 层 4：悬浮按钮行（成长目标 + 活跃订单）
+    -- 教程 SPAWN 阶段隐藏悬浮按钮，减少干扰
     local floatingButtons = {}
+    if tutPhase == Tutorial.Phase.SPAWN then
+        -- 不添加任何悬浮按钮
+    else
     -- 成长目标按钮
     table.insert(floatingButtons, UI.Button {
         text = "📊 成长目标",
@@ -673,6 +849,7 @@ function createSettlementView(state, curNode)
             end,
         })
     end
+    end -- 教程 SPAWN 悬浮按钮分支结束
     table.insert(rootChildren, UI.Panel {
         width = "100%",
         paddingLeft = 12, paddingRight = 12, paddingBottom = 4,
@@ -722,6 +899,13 @@ function createSettlementView(state, curNode)
                 },
             },
         })
+    end
+
+    -- 层 7：教程引导气泡（绝对定位浮层）
+    -- [Layout] 气泡位置和显示条件可能需要随 UI 重构调整
+    local bubbleCfg = Tutorial.get_bubble_config(state, "home")
+    if bubbleCfg then
+        table.insert(rootChildren, SpeechBubble.createWidget(bubbleCfg))
     end
 
     return UI.Panel {

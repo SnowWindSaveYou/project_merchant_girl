@@ -10,6 +10,9 @@ local Graph        = require("map/world_graph")
 local Skills       = require("character/skills")
 local Flow         = require("core/flow")
 local DrivingScene = require("travel/driving_scene")
+local Tutorial     = require("narrative/tutorial")
+local SpeechBubble = require("ui/speech_bubble")
+local Flags        = require("core/flags")
 
 local M = {}
 ---@type table
@@ -28,6 +31,12 @@ local SETT_NAMES = {
 -- ============================================================
 function M.create(state, params, r)
     router = r
+
+    -- 初次进入货车页面：标记待触发的气泡对话（延迟到 update 首帧）
+    local introSteps = Tutorial.get_truck_intro_steps(state)
+    M._pendingIntro = introSteps and state or nil
+    M._introSteps   = introSteps
+
     local location = state.map.current_location
     local children = {}
 
@@ -67,7 +76,7 @@ function M.create(state, params, r)
     -- ── 成长目标 ──
     table.insert(children, createGoalsSection(state))
 
-    return UI.Panel {
+    local rootPanel = UI.Panel {
         id = "truckScreen",
         width = "100%", height = "100%",
         backgroundColor = Theme.colors.bg_primary,
@@ -75,9 +84,43 @@ function M.create(state, params, r)
         overflow = "scroll",
         children = children,
     }
+    M._rootPanel = rootPanel
+    return rootPanel
+end
+
+--- 逐步展示教程气泡序列
+local function showTruckTutorialStep(parent, state, steps, index)
+    if index > #steps then
+        -- 全部播完，设置 flag
+        Flags.set(state, "tutorial_truck_intro")
+        return
+    end
+    local step = steps[index]
+    SpeechBubble.show(parent, {
+        portrait  = step.portrait,
+        speaker   = step.speaker,
+        text      = step.text,
+        autoHide  = 0,
+        onDismiss = function()
+            showTruckTutorialStep(parent, state, steps, index + 1)
+        end,
+    })
 end
 
 function M.update(state, dt, r)
+    -- 首帧触发货车初访气泡对话
+    if M._pendingIntro and M._rootPanel then
+        local tutState = M._pendingIntro
+        local steps    = M._introSteps
+        M._pendingIntro = nil
+        M._introSteps   = nil
+        if steps then
+            showTruckTutorialStep(M._rootPanel, tutState, steps, 1)
+        end
+    end
+
+    SpeechBubble.update(dt)
+
     -- 驱动行驶场景动画（纸娃娃 AI + 滚动 + 天气粒子）
     if drivingSceneInited_ then
         DrivingScene.update(dt)
@@ -341,7 +384,19 @@ function createModulesSection(state, location)
                             disabled = not canUp,
                             onClick = function(self)
                                 local ok, err = Modules.upgrade(state, mid)
-                                if ok then router.refresh() end
+                                if ok then
+                                    local newLv = Modules.get_level(state, mid)
+                                    local dialogue = Tutorial.get_upgrade_dialogue(mid, newLv)
+                                    if dialogue then
+                                        router.navigate("campfire", {
+                                            dialogue = dialogue,
+                                            consumed = false,
+                                            returnTo = "truck",
+                                        })
+                                    else
+                                        router.refresh()
+                                    end
+                                end
                             end,
                         },
                     },

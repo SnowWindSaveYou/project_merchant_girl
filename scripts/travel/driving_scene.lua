@@ -11,10 +11,14 @@
 ---   -- 环境切换（segment 变化时）：
 ---   DrivingScene.setEnvironment({ region="farm", weather="rain", timeOfDay="dusk" })
 
-local Widget     = require("urhox-libs/UI/Core/Widget")
-local ImageCache = require("urhox-libs/UI/Core/ImageCache")
-local RoadLoot   = require("travel/road_loot")
-local Modules    = require("truck/modules")
+local Widget      = require("urhox-libs/UI/Core/Widget")
+local ImageCache  = require("urhox-libs/UI/Core/ImageCache")
+local RoadLoot    = require("travel/road_loot")
+local Modules     = require("truck/modules")
+local Graph       = require("map/world_graph")
+local Factions    = require("settlement/factions")
+local NpcManager  = require("narrative/npc_manager")
+local WanderingNpc = require("narrative/wandering_npc")
 
 local M = {}
 
@@ -60,6 +64,48 @@ local CHIBI_IMAGES = {
     },
 }
 
+--- 特殊 NPC chibi 映射 (npc_id → chibi path)
+local NPC_CHIBI_MAP = {
+    shen_he    = "image/chibi_npc_shen_he_20260409101614.png",
+    han_ce     = "image/chibi_npc_han_ce_20260409102702.png",
+    wu_shiqi   = "image/chibi_npc_wu_shiqi_20260409102746.png",
+    bai_shu    = "image/chibi_npc_bai_shu_20260409101846.png",
+    zhao_miao  = "image/chibi_npc_zhao_miao_20260409101609.png",
+    ji_wei     = "image/chibi_npc_ji_wei_20260409120514.png",
+    old_gan    = "image/chibi_npc_old_gan_20260409120642.png",
+    dao_yu     = "image/chibi_npc_dao_yu_20260409120745.png",
+    xie_ling   = "image/chibi_npc_xie_ling_20260409120841.png",
+    meng_hui   = "image/chibi_npc_meng_hui_20260409120916.png",
+    ming_sha   = "image/chibi_npc_ming_sha_20260409121030.png",
+    a_xiu      = "image/chibi_npc_a_xiu_20260409121138.png",
+    cheng_yuan = "image/chibi_npc_cheng_yuan_20260409121235.png",
+    su_mo      = "image/chibi_npc_su_mo_20260409121902.png",
+}
+
+--- 势力→通用路人 chibi
+local FACTION_GENERIC_CHIBI = {
+    farm    = "image/chibi_npc_farmer_20260409100017.png",
+    tech    = "image/chibi_npc_tech_20260409100016.png",
+    scav    = "image/chibi_npc_scavenger_20260409100005.png",
+    scholar = "image/chibi_npc_monk_20260409100009.png",
+}
+
+--- 额外路人池（可作为任意势力的随机路人）
+local EXTRA_PASSERBY = {
+    "image/chibi_npc_han_ce_20260409102125.png",
+    "image/chibi_npc_wu_shiqi_20260409101613.png",
+    "image/chibi_npc_a_xiu_20260409113139.png",
+}
+
+--- 势力→气泡表情池
+local FACTION_EMOTES = {
+    farm    = { "🌾", "🌱", "☀️", "💧", "👋", "..." },
+    tech    = { "⚙", "📡", "🔋", "💡", "👋", "..." },
+    scav    = { "🔧", "🔩", "📦", "🔪", "👋", "..." },
+    scholar = { "📖", "🕯", "✍️", "🔔", "👋", "..." },
+}
+local DEFAULT_EMOTES = { "👋", "...", "💬", "❓", "🎒" }
+
 --- 区域→姿势映射
 local ZONE_POSE = {
     cabin     = "drive",
@@ -91,9 +137,11 @@ local CHIBI_WALK_SPEED = 0.10
 --- 切换区域间隔范围（秒）
 local CHIBI_ZONE_SWITCH_MIN = 20
 local CHIBI_ZONE_SWITCH_MAX = 40
---- 行走颠动参数
+--- 行走动画参数
 local WOBBLE_FREQ   = 2.2   -- 颠动频率 (Hz)
 local WOBBLE_PX     = 6.0   -- 颠动幅度 (像素，上下位移)
+local WALK_SQUASH_AMP = 0.04  -- 走路挤压拉伸幅度 (±4%)
+local WALK_LEAN_DEG   = 2.5   -- 走路左右倾斜角度 (度)
 --- 纸片翻转转身时长（秒）
 local FLIP_DURATION = 0.25
 --- idle 呼吸缩放参数
@@ -226,6 +274,8 @@ local isDriving_ = true
 ---@param c table 角色状态
 ---@return string 图片路径
 local function getChibiImage(c)
+    -- NPC 路人使用固定图片
+    if c.npcImage then return c.npcImage end
     local poses = CHIBI_IMAGES[c.id]
     if not poses then return "" end
     local pose = ZONE_POSE[c.zone] or "default"
@@ -269,6 +319,142 @@ local chibis_ = {
         emoteCD = 8 + math.random() * 12,
     },
 }
+
+--- 聚落路人 NPC 纸娃娃（停车时出现，行驶时清除）
+local npcs_ = {}  -- 动态数组，和 chibis_ 同结构但只在 outside 区域
+
+--- 创建 NPC 路人（感知聚落类型/势力/驻扎&流浪 NPC）
+local function spawnNPCs()
+    npcs_ = {}
+    if not gameState_ then return end
+
+    local currentLoc = gameState_.map and gameState_.map.current_location
+    if not currentLoc then return end
+
+    -- 1. 获取当前节点
+    local node = Graph.get_node(currentLoc)
+    if not node then return end
+
+    -- 2. 判断节点类型和势力
+    local isSettlement = (node.type == "settlement")
+    local factionId = isSettlement and Factions.get_faction(currentLoc) or nil
+    local factionEmotes = (factionId and FACTION_EMOTES[factionId]) or DEFAULT_EMOTES
+
+    -- 3. 收集候选 NPC（按优先级）
+    local candidates = {}
+    local usedImages = {}  -- 去重
+
+    -- 3a. 流浪 NPC（任何节点都可能出现）
+    local wanderers = WanderingNpc.get_wanderers_at(gameState_, currentLoc)
+    for _, w in ipairs(wanderers) do
+        if NPC_CHIBI_MAP[w.id] and not usedImages[NPC_CHIBI_MAP[w.id]] then
+            table.insert(candidates, {
+                id     = w.id,
+                image  = NPC_CHIBI_MAP[w.id],
+                priority = 8,
+                emotes = DEFAULT_EMOTES,
+            })
+            usedImages[NPC_CHIBI_MAP[w.id]] = true
+        end
+    end
+
+    -- 以下仅聚落节点
+    if isSettlement then
+        -- 3b. 驻扎特殊 NPC（该聚落的居民）
+        local residents = NpcManager.get_npcs_for_settlement(currentLoc)
+        for _, npc in ipairs(residents) do
+            if NPC_CHIBI_MAP[npc.id] and not usedImages[NPC_CHIBI_MAP[npc.id]] then
+                table.insert(candidates, {
+                    id     = npc.id,
+                    image  = NPC_CHIBI_MAP[npc.id],
+                    priority = 10,
+                    emotes = factionEmotes,
+                })
+                usedImages[NPC_CHIBI_MAP[npc.id]] = true
+            end
+        end
+
+        -- 3c. 势力通用路人（补充人气）
+        if factionId and FACTION_GENERIC_CHIBI[factionId] then
+            local genImg = FACTION_GENERIC_CHIBI[factionId]
+            if not usedImages[genImg] then
+                table.insert(candidates, {
+                    id     = "generic_" .. factionId,
+                    image  = genImg,
+                    priority = 3,
+                    emotes = factionEmotes,
+                })
+                usedImages[genImg] = true
+            end
+        end
+
+        -- 3d. 额外路人池（随机选一个）
+        if #EXTRA_PASSERBY > 0 then
+            local shuffled = {}
+            for i = 1, #EXTRA_PASSERBY do shuffled[i] = EXTRA_PASSERBY[i] end
+            for i = #shuffled, 2, -1 do
+                local j = math.random(i)
+                shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+            end
+            for _, img in ipairs(shuffled) do
+                if not usedImages[img] then
+                    table.insert(candidates, {
+                        id     = "extra_passerby",
+                        image  = img,
+                        priority = 1,
+                        emotes = factionEmotes,
+                    })
+                    usedImages[img] = true
+                    break
+                end
+            end
+        end
+    end
+
+    -- 非聚落且无流浪 NPC → 不生成
+    if #candidates == 0 then return end
+
+    -- 5. 按优先级排序，取 2~3 个
+    table.sort(candidates, function(a, b) return a.priority > b.priority end)
+    local maxNPCs = math.min(#candidates, 2 + math.random(0, 1))
+
+    for i = 1, maxNPCs do
+        local c = candidates[i]
+        local npc = {
+            id = c.id,
+            npcImage = c.image,
+            npcEmotes = c.emotes,
+            zone = "outside",
+            x = 0.15 + math.random() * 0.7,
+            targetX = 0.5,
+            facing = (math.random() > 0.5) and 1 or -1,
+            scaleX = 1,
+            state = "idle",
+            stateTimer = 1 + math.random() * 3,
+            switchTimer = 999, -- NPC 不切换区域
+            flipTimer = 0,
+            flipFrom = 1,
+            walkTime = 0,
+            idleTime = math.random() * 5,
+            emote = nil,
+            emoteTimer = 0,
+            emoteCD = 6 + math.random() * 15,
+        }
+        npc.scaleX = npc.facing
+        npc.flipFrom = npc.facing
+        table.insert(npcs_, npc)
+    end
+
+    if #npcs_ > 0 then
+        print("[DrivingScene] Spawned " .. #npcs_ .. " NPCs at " .. currentLoc
+            .. " (faction=" .. (factionId or "none") .. ")")
+    end
+end
+
+--- 清除 NPC 路人
+local function clearNPCs()
+    npcs_ = {}
+end
 
 --- 自管理的图片缓存（需要 REPEATX 标记，ImageCache 不支持自定义 flags）
 local imageCache_ = {}       -- path -> { handle, w, h }
@@ -339,14 +525,19 @@ end
 -- ============================================================
 
 --- 计算掉落物因路面滚动产生的归一化 x 漂移量
+--- 直接使用 scrollOffset_ 差值，与地面层完全同步
 ---@param drop table
 ---@param widgetW number widget 宽度（像素）
 ---@return number driftNorm
 local function calcDropDrift(drop, widgetW)
     if widgetW <= 0 then return 0 end
-    local lt = drop.lifetime or 0
-    -- 地面层向右滚动 → 掉落物也向右漂移
-    return lt * RoadLoot.SCROLL_SPEED * RoadLoot.GROUND_SPEED / widgetW
+    -- 首次渲染时记录出生偏移量
+    if not drop._spawnScroll then
+        drop._spawnScroll = scrollOffset_
+    end
+    -- 地面层偏移 = scrollOffset_ * 1.0（speed=1.0），掉落物跟随
+    local pixelDrift = (scrollOffset_ - drop._spawnScroll) * RoadLoot.GROUND_SPEED
+    return pixelDrift / widgetW
 end
 
 -- ============================================================
@@ -388,29 +579,29 @@ function DrivingSceneWidget:Render(nvg)
     -- 5) 地面（LAYER_DEFS[4]）
     self:drawLayer(nvg, l, LAYER_DEFS[4])
 
-    -- 6) 天气效果（地面之上、卡车之下）
-    self:drawWeather(nvg, l)
-
-    -- 7) 路面掉落物
+    -- 6) 路面掉落物
     self:drawDrops(nvg, l)
 
-    -- 8) 计算卡车位置（供后续所有层使用）
+    -- 7) 计算卡车位置（供后续所有层使用）
     self:computeTruckBounds(l)
 
-    -- 9) 驾驶舱纸娃娃（卡车后面，只露头）
+    -- 8) 驾驶舱纸娃娃（卡车后面，只露头）
     self:drawCabinChibis(nvg)
 
-    -- 10) 卡车车身 + 车轮
+    -- 9) 卡车车身 + 车轮
     self:drawTruck(nvg)
 
-    -- 11) 装备（炮塔/雷达，在车身之上）
+    -- 10) 装备（炮塔/雷达，在车身之上）
     self:drawEquipment(nvg)
 
-    -- 12) 货厢纸娃娃（在卡车上面）
+    -- 11) 货厢纸娃娃（在卡车上面）
     self:drawContainerChibis(nvg)
 
-    -- 13) 车外纸娃娃（停泊时）
+    -- 12) 车外纸娃娃（停泊时）
     self:drawOutsideChibis(nvg, l)
+
+    -- 13) 天气效果（最上层，雨雪覆盖所有物体）
+    self:drawWeather(nvg, l)
 
     -- 14) 拾取反馈浮字
     self:drawPickupFeedback(nvg, l)
@@ -754,14 +945,17 @@ local function startFlip(c, newFacing)
 end
 
 --- 可用区域列表（行驶/停泊不同）
---- 车厢内细分为：table（饭桌）、stove（灶台）、bed（床铺）
-local INTERIOR_ZONES = { "cabin", "table", "stove", "bed" }
+--- container 是主要走动区域，其余为固定姿势区域（偶尔去做事）
+local FIXED_ZONE_DURATION_MIN = 8   -- 固定区域停留最短时间（秒）
+local FIXED_ZONE_DURATION_MAX = 15  -- 固定区域停留最长时间（秒）
 
 local function getAvailableZones(chibiIdx)
     if isDriving_ then
-        return { "cabin", "table", "stove", "bed" }
+        -- 行驶：container 为主，偶尔去固定区域做事
+        return { "container", "container", "container", "cabin", "table", "stove", "bed" }
     else
-        return { "cabin", "table", "stove", "bed", "outside" }
+        -- 停车：车外为主，其次车内，不去驾驶室
+        return { "outside", "outside", "outside", "outside", "container", "container", "table", "stove", "bed" }
     end
 end
 
@@ -806,12 +1000,19 @@ local function updateChibis(dt)
                 end
             end
             if #candidates > 0 then
-                c.zone = candidates[math.random(#candidates)]
+                local newZone = candidates[math.random(#candidates)]
+                c.zone = newZone
                 c.x = 0.5
                 c.targetX = 0.5
                 c.state = "idle"
                 c.stateTimer = 1 + math.random() * 2
                 c.walkTime = 0
+                -- 固定区域停留时间短，container 正常间隔
+                local isFixed = (newZone == "cabin" or newZone == "table" or newZone == "stove" or newZone == "bed")
+                if isFixed then
+                    c.switchTimer = FIXED_ZONE_DURATION_MIN
+                        + math.random() * (FIXED_ZONE_DURATION_MAX - FIXED_ZONE_DURATION_MIN)
+                end
             end
         end
 
@@ -901,6 +1102,68 @@ local function updateChibis(dt)
 
         ::continue::
     end
+
+    -- ── NPC 路人更新（仅 outside 走动，不切换区域）──
+    for _, c in ipairs(npcs_) do
+        -- 翻转动画
+        if c.state == "turning" then
+            c.flipTimer = c.flipTimer + dt
+            local progress = math.min(1, c.flipTimer / FLIP_DURATION)
+            c.scaleX = c.flipFrom * math.cos(progress * math.pi)
+            if progress >= 0.5 and c.facing == c.flipFrom then
+                c.facing = -c.flipFrom
+            end
+            if progress >= 1 then
+                c.scaleX = c.facing
+                c.state = "walk"
+                c.walkTime = 0
+            end
+        elseif c.state == "idle" then
+            c.stateTimer = c.stateTimer - dt
+            c.idleTime = c.idleTime + dt
+            c.walkTime = 0
+            if c.stateTimer <= 0 then
+                c.targetX = 0.05 + math.random() * 0.90
+                local newFacing = (c.targetX > c.x) and 1 or -1
+                if newFacing ~= c.facing then
+                    startFlip(c, newFacing)
+                else
+                    c.state = "walk"
+                    c.walkTime = 0
+                end
+            end
+        elseif c.state == "walk" then
+            c.walkTime = c.walkTime + dt
+            local dx = c.targetX - c.x
+            if math.abs(dx) < CHIBI_WALK_SPEED * dt then
+                c.x = c.targetX
+                c.state = "idle"
+                c.stateTimer = 2 + math.random() * 5
+                c.walkTime = 0
+                c.idleTime = 0
+            else
+                local dir = dx > 0 and 1 or -1
+                c.x = c.x + dir * CHIBI_WALK_SPEED * dt
+                if dir ~= c.facing then startFlip(c, dir) end
+            end
+            c.scaleX = c.facing
+        end
+        -- 气泡表情
+        if c.emote then
+            c.emoteTimer = c.emoteTimer + dt
+            if c.emoteTimer >= EMOTE_DURATION then
+                c.emote = nil; c.emoteTimer = 0
+                c.emoteCD = EMOTE_INTERVAL_MIN + math.random() * (EMOTE_INTERVAL_MAX - EMOTE_INTERVAL_MIN)
+            end
+        else
+            c.emoteCD = c.emoteCD - dt
+            if c.emoteCD <= 0 then
+                local pool = c.npcEmotes or DEFAULT_EMOTES
+                c.emote = pool[math.random(#pool)]
+                c.emoteTimer = 0
+            end
+        end
+    end
 end
 
 --- 绘制单个纸娃娃（带颠动 + 纸片缩放 + 呼吸 + 气泡表情）
@@ -928,17 +1191,29 @@ local function drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
         bobY = -math.abs(math.sin(c.idleTime * IDLE_BOB_FREQ * math.pi)) * IDLE_BOB_PX
     end
 
-    -- 呼吸缩放（微微纵向伸缩，从脚底向上）
-    local breathScaleY = 1.0
-    if (c.state == "idle" or c.state == "turning") and c.idleTime > 0 then
-        breathScaleY = 1.0 + math.sin(c.idleTime * BREATH_FREQ * 2 * math.pi) * BREATH_AMP
+    -- 身体形变动画
+    local scaleY = 1.0
+    local leanRad = 0  -- 左右倾斜弧度
+    if c.state == "walk" and c.walkTime > 0 then
+        -- 走路：纵向挤压拉伸（模拟脚步着地/弹起）
+        local walkPhase = c.walkTime * WOBBLE_FREQ * 2 * math.pi
+        scaleY = 1.0 + math.sin(walkPhase) * WALK_SQUASH_AMP
+        -- 走路：左右倾斜摇摆（模拟重心转移）
+        leanRad = math.sin(walkPhase * 0.5) * math.rad(WALK_LEAN_DEG)
+    elseif (c.state == "idle" or c.state == "turning") and c.idleTime > 0 then
+        -- idle：呼吸缩放
+        scaleY = 1.0 + math.sin(c.idleTime * BREATH_FREQ * 2 * math.pi) * BREATH_AMP
     end
 
     nvgSave(nvg)
     nvgTranslate(nvg, cx, cy + bobY)
 
-    -- 纸片翻转缩放 + 呼吸
-    nvgScale(nvg, c.scaleX, breathScaleY)
+    -- 走路倾斜（绕脚底支点旋转）
+    if leanRad ~= 0 then
+        nvgRotate(nvg, leanRad)
+    end
+    -- 纸片翻转缩放 + 身体形变
+    nvgScale(nvg, c.scaleX, scaleY)
 
     nvgTranslate(nvg, -cx, -cy - bobY)
 
@@ -1052,21 +1327,31 @@ function DrivingSceneWidget:drawOutsideChibis(nvg, l)
     local tb = truckBounds_
     if tb.w <= 0 then return end
 
+    -- 车外角色距镜头更近 → 统一比车上角色大（近大远小）
+    local outsideH = tb.h * CHIBI_H_RATIO * 1.2
+    local outsideW = outsideH
+    local groundY = l.y + l.h * 0.88
+
+    -- 主角在卡车前方地面活动（卡车左侧区域）
+    local areaX = tb.x - tb.w * 0.3
+    local areaW = tb.w * 0.35
+
     for _, c in ipairs(chibis_) do
         if c.zone == "outside" then
-            local chibiH = tb.h * CHIBI_H_RATIO
-            local chibiW = chibiH
-
-            -- 在卡车前方地面活动（卡车左侧区域）
-            local groundY = l.y + l.h * 0.88
-            local areaX = tb.x - tb.w * 0.3
-            local areaW = tb.w * 0.35
-
-            local drawX = areaX + c.x * areaW - chibiW / 2
-            local drawY = groundY - chibiH
-
-            drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
+            local drawX = areaX + c.x * areaW - outsideW / 2
+            local drawY = groundY - outsideH
+            drawSingleChibi(nvg, c, drawX, drawY, outsideW, outsideH)
         end
+    end
+
+    -- NPC 路人（卡车两侧更宽范围，同等大小）
+    local npcAreaX = tb.x - tb.w * 0.45
+    local npcAreaW = tb.w * 0.9
+
+    for _, c in ipairs(npcs_) do
+        local drawX = npcAreaX + c.x * npcAreaW - outsideW / 2
+        local drawY = groundY - outsideH
+        drawSingleChibi(nvg, c, drawX, drawY, outsideW, outsideH)
     end
 end
 
@@ -1315,7 +1600,9 @@ function M.setDriving(driving)
     if isDriving_ == driving then return end
     isDriving_ = driving
     if driving then
-        -- 开始行驶：确保至少一人在驾驶舱
+        -- 开始行驶：清除 NPC 路人
+        clearNPCs()
+        -- 确保至少一人在驾驶舱
         local anyInCabin = false
         for _, c in ipairs(chibis_) do
             if c.zone == "cabin" then anyInCabin = true; break end
@@ -1327,17 +1614,19 @@ function M.setDriving(driving)
             chibis_[1].state = "idle"
             chibis_[1].stateTimer = 2
         end
-        -- 把 outside 的角色拉回车厢内（随机选一个子区域）
+        -- 把 outside 的角色拉回车厢内
         for _, c in ipairs(chibis_) do
             if c.zone == "outside" then
-                local interiors = { "table", "stove", "bed" }
-                c.zone = interiors[math.random(#interiors)]
+                c.zone = "container"
                 c.x = 0.5
                 c.targetX = 0.5
                 c.state = "idle"
                 c.stateTimer = 1
             end
         end
+    else
+        -- 停车：根据当前聚落生成 NPC 路人
+        spawnNPCs()
     end
 end
 
@@ -1361,8 +1650,8 @@ function M.reset()
         c.emote = nil; c.emoteTimer = 0
         c.emoteCD = EMOTE_INTERVAL_MIN + math.random() * (EMOTE_INTERVAL_MAX - EMOTE_INTERVAL_MIN)
     end
-    resetChibi(chibis_[1], "cabin", 0.5,  1, 0,   25)
-    resetChibi(chibis_[2], "table", 0.5, -1, 1.5, 35)
+    resetChibi(chibis_[1], "cabin",     0.5,  1, 0,   25)
+    resetChibi(chibis_[2], "container", 0.3, -1, 1.5, 20)
 end
 
 return M

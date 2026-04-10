@@ -4,6 +4,9 @@ local UI           = require("urhox-libs/UI")
 local Theme        = require("ui/theme")
 local Explore      = require("combat/explore")
 local CombatResult = require("combat/combat_result")
+local Tutorial     = require("narrative/tutorial")
+local SpeechBubble = require("ui/speech_bubble")
+local Flags        = require("core/flags")
 
 local M = {}
 ---@type table
@@ -12,6 +15,30 @@ local router = nil
 local explore = nil
 ---@type string
 local lastNarration = ""
+---@type table|nil
+local state_ = nil
+
+-- ============================================================
+-- 气泡教程辅助
+-- ============================================================
+
+local function showExploreTutorialStep(parent, state, steps, index, onComplete)
+    if index > #steps then
+        Flags.set(state, "tutorial_explore_scavenge")
+        if onComplete then onComplete() end
+        return
+    end
+    local step = steps[index]
+    SpeechBubble.show(parent, {
+        portrait  = step.portrait,
+        speaker   = step.speaker,
+        text      = step.text,
+        autoHide  = 0,
+        onDismiss = function()
+            showExploreTutorialStep(parent, state, steps, index + 1, onComplete)
+        end,
+    })
+end
 
 -- ============================================================
 -- 页面创建
@@ -19,6 +46,7 @@ local lastNarration = ""
 
 function M.create(state, params, r)
     router = r
+    state_ = state
     local room_id = params and params.room_id or nil
 
     explore = Explore.create(state, room_id)
@@ -88,6 +116,15 @@ function M._build_intro_view(state)
                                 onClick = function(self)
                                     Explore.start_explore(explore)
                                     M._refresh(state)
+
+                                    -- 首次搜刮教程气泡
+                                    local introSteps = Tutorial.get_explore_intro_steps(state)
+                                    if introSteps then
+                                        local root = UI.GetRoot()
+                                        if root then
+                                            showExploreTutorialStep(root, state, introSteps, 1)
+                                        end
+                                    end
                                 end,
                             },
                             UI.Button {
@@ -342,6 +379,8 @@ function M._danger_text()
     return "低"
 end
 
-function M.update(state, dt, r) end
+function M.update(state, dt, r)
+    SpeechBubble.update(dt)
+end
 
 return M

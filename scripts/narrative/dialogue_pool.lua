@@ -146,6 +146,14 @@ function M.filter(state, node_type)
             end
         end
 
+        -- 6. min_trips（最低行程数要求）
+        if ok and d.min_trips then
+            local trips = state.stats and state.stats.total_trips or 0
+            if trips < d.min_trips then
+                ok = false
+            end
+        end
+
         if ok then
             table.insert(available, d)
         end

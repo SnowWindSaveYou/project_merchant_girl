@@ -209,6 +209,13 @@ function M.can_visit(state, npc_id)
         end
     end
 
+    -- 本次停留已拜访过该 NPC
+    local used = state._visit_used or {}
+    local visited_npcs = used.npcs or {}
+    if visited_npcs[npc_id] then
+        return false, "本次停留已拜访过"
+    end
+
     -- 必须有可用对话
     local pool = NpcDialoguePool.filter(state, npc_id)
     if #pool == 0 then
@@ -243,6 +250,11 @@ function M.start_visit(state, npc_id)
 
     -- 设置冷却
     NpcDialoguePool.set_cooldown(state, dialogue.id)
+
+    -- 标记本次停留已拜访该 NPC
+    if not state._visit_used then state._visit_used = {} end
+    if not state._visit_used.npcs then state._visit_used.npcs = {} end
+    state._visit_used.npcs[npc_id] = true
 
     -- 计数
     if not state.narrative then state.narrative = {} end

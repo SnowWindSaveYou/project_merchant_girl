@@ -44,6 +44,7 @@ local Farm              = require("settlement/farm")
 local Intel             = require("settlement/intel")
 local BlackMarket       = require("settlement/black_market")
 local MainStory         = require("narrative/main_story")
+local Tutorial          = require("narrative/tutorial")
 
 -- 游戏状态
 ---@type table
@@ -260,7 +261,10 @@ function Start()
     -- 5. 主循环
     SubscribeToEvent("Update", "HandleUpdate")
 
-    -- 6. 调试面板触发：监听触摸和鼠标点击事件
+    -- 6. 后台/息屏：监听焦点变化，失去焦点时保存，恢复时补偿离线时间
+    SubscribeToEvent("InputFocus", "HandleInputFocus")
+
+    -- 7. 调试面板触发：监听触摸和鼠标点击事件
     SubscribeToEvent("TouchBegin", "HandleDebugTouch")
     SubscribeToEvent("MouseButtonDown", "HandleDebugClick")
 
@@ -273,6 +277,46 @@ function Stop()
         print("[Main] Saved on exit")
     end
     UI.Shutdown()
+end
+
+-- ============================================================
+-- 后台/息屏处理（挂机核心）
+-- ============================================================
+
+---@param eventType string
+---@param eventData InputFocusEventData
+function HandleInputFocus(eventType, eventData)
+    local focus = eventData:GetBool("Focus")
+    local minimized = eventData:GetBool("Minimized")
+
+    if not focus or minimized then
+        -- 失去焦点（息屏/切后台）：立即保存状态
+        if gameState then
+            SaveLocal.save(gameState)
+            print("[Main] Saved on focus lost (minimized=" .. tostring(minimized) .. ")")
+        end
+    else
+        -- 恢复焦点（亮屏/切回前台）：计算离线补偿
+        if gameState then
+            local offResult = Offline.apply(gameState, Ticker)
+            if offResult then
+                print("[Main] Resume: offline " .. offResult.elapsed_sec .. "s")
+                -- 处理离线期间的到达事件
+                if offResult.arrivals then
+                    for _, arrival in ipairs(offResult.arrivals) do
+                        print("[Main] Resume arrival: " .. arrival.arrived_node)
+                        handleNodeArrival(arrival)
+                    end
+                end
+                if offResult.arrived then
+                    print("[Main] Arrived during background!")
+                end
+            end
+            -- 更新 timestamp 为当前时间，避免下次重复补偿
+            gameState.timestamp = os.time()
+            saveTimer = 0 -- 重置自动保存计时器
+        end
+    end
 end
 
 -- ============================================================
@@ -324,6 +368,22 @@ function handleNodeArrival(arrivalInfo)
         end
         print("[Main] 自动交付 " .. #arrResult.delivered .. " 个订单于 "
             .. Graph.get_node_name(arrResult.node_id))
+    end
+
+    -- 教程到达拦截：温室社区首次到达触发强制介绍对话
+    local tutAction = Tutorial.on_arrival(gameState, arrResult.node_id)
+    if tutAction and tutAction.type == "dialogue" and tutAction.dialogue then
+        print("[Main] Tutorial intercept at " .. arrResult.node_id)
+        -- 先完成行程结算（如果是最终节点）
+        if arrResult.is_final then
+            handleTripFinish()
+        end
+        -- 然后跳转到篝火对话（强制触发，免费）
+        Router.navigate("campfire", {
+            dialogue = tutAction.dialogue,
+            consumed = false,
+        })
+        return
     end
 
     -- 如果是最终节点，进入结算

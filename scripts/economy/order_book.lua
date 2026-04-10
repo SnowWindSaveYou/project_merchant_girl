@@ -122,6 +122,14 @@ function M.generate_on_arrival(state, settlement_id)
         state.map.available_orders = {}
     end
 
+    -- 教程订单覆盖：教程阶段生成固定订单
+    local Tutorial = require("narrative/tutorial")
+    local tutorial_orders = Tutorial.get_tutorial_orders(state, settlement_id)
+    if tutorial_orders then
+        state.map.available_orders[settlement_id] = tutorial_orders
+        return tutorial_orders
+    end
+
     -- 如果缓存中已有该聚落的订单（同次停留），直接返回
     if state.map.available_orders[settlement_id]
        and #state.map.available_orders[settlement_id] > 0 then
@@ -348,6 +356,24 @@ function M.accept_order(state, order)
     state.truck.cargo[gid] = (state.truck.cargo[gid] or 0) + order.count
     CargoUtils.add_committed(state, gid, order.count)
 
+    -- 接单时解锁目的地节点（使其在地图上可见）
+    if order.to and state.map.known_nodes then
+        if not state.map.known_nodes[order.to] then
+            state.map.known_nodes[order.to] = true
+            print("[OrderBook] Discovered destination: " .. order.to)
+        end
+    end
+
+    return true
+end
+
+--- 检查订单是否可放弃（教程/任务订单不可放弃）
+---@param order table
+---@return boolean
+function M.can_abandon(order)
+    if order.is_tutorial or order.no_abandon then
+        return false
+    end
     return true
 end
 
@@ -356,6 +382,10 @@ function M.abandon_order(state, order_id)
     local book = M.get_book(state)
     for _, o in ipairs(book) do
         if o.order_id == order_id then
+            -- 教程/任务订单不可放弃
+            if not M.can_abandon(o) then
+                return false, "该委托无法放弃"
+            end
             if o.status == M.Status.ACCEPTED or o.status == M.Status.LOADED then
                 o.status = M.Status.ABANDONED
                 -- 轻微信誉扣分

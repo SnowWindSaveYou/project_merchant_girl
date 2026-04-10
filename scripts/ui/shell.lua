@@ -9,6 +9,7 @@ local Flow         = require("core/flow")
 local RoutePlanner = require("map/route_planner")
 local Graph        = require("map/world_graph")
 local Radio        = require("travel/radio")
+local SpeechBubble = require("ui/speech_bubble")
 
 local M = {}
 
@@ -223,6 +224,9 @@ function M.update(state, dt)
     local root = UI.GetRoot()
     if not root then return false end
 
+    -- 驱动全局气泡（收音机教程等）
+    SpeechBubble.update(dt)
+
     -- 确保 radio 状态存在（兼容旧存档 & 据点阶段）
     if not state.flow.radio then
         state.flow.radio = Radio.init()
@@ -325,6 +329,14 @@ function M.update(state, dt)
             _radioTickerActive   = false
         end
         return true
+    end
+
+    -- 收音机教程气泡：pending → 等 shell 重建完成后的首帧再触发
+    -- 必须在 needRebuild 之后，确保 UI root 已稳定
+    if ShellTop._pendingRadioTutorial then
+        local pending = ShellTop._pendingRadioTutorial
+        ShellTop._pendingRadioTutorial = nil
+        ShellTop._showBubbleSequence(root, pending.state, pending.steps, 1)
     end
 
     -- ── NanoVG 像素级平滑 ticker 驱动 ──

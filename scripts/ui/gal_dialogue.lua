@@ -18,19 +18,35 @@ local M = {}
 -- 立绘资源映射
 -- ============================================================
 
---- 主角立绘
+--- 主角立绘（含表情差分）
 local PROTAGONIST_PORTRAITS = {
     linli = {
         name     = "林砾",
         color    = { 142, 178, 210, 255 },
         bgColor  = { 42, 52, 58, 240 },
         portrait = "image/linli_portrait_20260405231808.png",
+        expressions = {
+            normal    = "image/linli_portrait_20260405231808.png",
+            happy     = "image/linli_happy_v2_20260409082011.png",
+            sad       = "image/linli_sad_20260409080555.png",
+            surprised = "image/linli_surprised_20260409080550.png",
+            angry     = "image/linli_angry_v2_20260409082114.png",
+            thinking  = "image/linli_thinking_20260409080553.png",
+        },
     },
     taoxia = {
         name     = "陶夏",
         color    = { 218, 168, 102, 255 },
         bgColor  = { 58, 48, 36, 240 },
         portrait = "image/taoxia_portrait_v3.png",
+        expressions = {
+            normal    = "image/taoxia_portrait_v3.png",
+            happy     = "image/taoxia_happy_20260409080542.png",
+            sad       = "image/taoxia_sad_20260409080556.png",
+            surprised = "image/taoxia_surprised_20260409080548.png",
+            angry     = "image/taoxia_angry_20260409080551.png",
+            thinking  = "image/taoxia_thinking_20260409080547.png",
+        },
     },
 }
 
@@ -44,8 +60,11 @@ local NPC_PORTRAITS = {
     ming_sha  = "image/portrait_ming_sha_20260406000227.png",
     dao_yu    = "image/portrait_dao_yu_20260408072957.png",
     xie_ling  = "image/portrait_xie_ling_20260408073029.png",
-    ji_wei    = "image/portrait_ji_wei_20260408124639.png",
-    old_gan   = "image/portrait_old_gan_20260408124632.png",
+    ji_wei     = "image/portrait_ji_wei_20260408124639.png",
+    old_gan    = "image/portrait_old_gan_20260408124632.png",
+    a_xiu      = "image/portrait_a_xiu_20260409120249.png",
+    cheng_yuan = "image/portrait_cheng_yuan_20260409120343.png",
+    su_mo      = "image/portrait_su_mo_20260409120418.png",
 }
 
 --- 势力通用立绘（非领袖 NPC 使用）
@@ -55,6 +74,23 @@ local FACTION_PORTRAITS = {
     scav    = "image/portrait_faction_scav_20260406000214.png",
     scholar = "image/portrait_faction_scholar_20260406000214.png",
 }
+
+-- ============================================================
+-- 表情差分辅助
+-- ============================================================
+
+--- 获取主角指定表情的立绘路径
+---@param key string  主角 key ("linli"|"taoxia")
+---@param expression string|nil  表情 key ("happy"|"sad"|"surprised"|"angry"|"thinking"|nil)
+---@return string portrait_path
+local function get_expression_portrait(key, expression)
+    local cfg = PROTAGONIST_PORTRAITS[key]
+    if not cfg then return "" end
+    if expression and cfg.expressions and cfg.expressions[expression] then
+        return cfg.expressions[expression]
+    end
+    return cfg.portrait
+end
 
 -- ============================================================
 -- 根据 NPC 信息获取立绘路径
@@ -156,11 +192,13 @@ function M.createDialogueView(opts)
     local curSpeakerKey = steps[curStep] and steps[curStep].speaker or "linli"
     local curCfg = get_speaker_cfg(curSpeakerKey, npc)
     local curText = steps[curStep] and steps[curStep].text or ""
+    local curExpression = steps[curStep] and steps[curStep].expression or nil
 
     -- 确定左右两侧角色
     -- 篝火模式：左林砾 右陶夏
     -- NPC模式：左主角（最近说话的主角）右NPC
     local leftCfg, rightCfg, leftDim, rightDim
+    local leftPortrait, rightPortrait  -- 实际显示的立绘路径（含表情差分）
 
     if npc then
         -- NPC 模式：主角在左，NPC 在右
@@ -171,12 +209,28 @@ function M.createDialogueView(opts)
         rightCfg = curIsNpc and get_speaker_cfg(curSpeakerKey, npc) or get_speaker_cfg("npc", npc)
         leftDim  = curIsNpc
         rightDim = not curIsNpc
+        -- 主角侧应用表情差分
+        leftPortrait = (not curIsNpc and curExpression)
+            and get_expression_portrait(protagonistKey, curExpression)
+            or leftCfg.portrait
+        rightPortrait = rightCfg.portrait
     else
         -- 篝火模式：林砾在左，陶夏在右
         leftCfg  = PROTAGONIST_PORTRAITS.linli
         rightCfg = PROTAGONIST_PORTRAITS.taoxia
         leftDim  = (curSpeakerKey ~= "linli")
         rightDim = (curSpeakerKey ~= "taoxia")
+        -- 当前说话角色应用表情差分
+        if curSpeakerKey == "linli" then
+            leftPortrait  = get_expression_portrait("linli", curExpression)
+            rightPortrait = rightCfg.portrait
+        elseif curSpeakerKey == "taoxia" then
+            leftPortrait  = leftCfg.portrait
+            rightPortrait = get_expression_portrait("taoxia", curExpression)
+        else
+            leftPortrait  = leftCfg.portrait
+            rightPortrait = rightCfg.portrait
+        end
     end
 
     -- ── 操作区（仅在所有对话展示完毕后显示选项按钮）──
@@ -241,20 +295,20 @@ function M.createDialogueView(opts)
         position = "absolute",
         left = 0, top = 0,
         children = {
-            -- 左侧立绘（偏左放置）
+            -- 左侧立绘（偏左放置，使用表情差分）
             UI.Panel {
                 width = "95%", height = "95%",
-                backgroundImage = leftCfg.portrait,
+                backgroundImage = leftPortrait,
                 backgroundFit = "contain",
                 imageTint = leftDim and { 80, 80, 80, 160 } or nil,
                 position = "absolute",
                 left = "-22%",
                 top = "3%",
             },
-            -- 右侧立绘（偏右放置）
+            -- 右侧立绘（偏右放置，使用表情差分）
             UI.Panel {
                 width = "95%", height = "95%",
-                backgroundImage = rightCfg.portrait,
+                backgroundImage = rightPortrait,
                 backgroundFit = "contain",
                 imageTint = rightDim and { 80, 80, 80, 160 } or nil,
                 position = "absolute",

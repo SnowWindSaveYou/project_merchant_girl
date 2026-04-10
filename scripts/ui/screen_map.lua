@@ -8,6 +8,9 @@ local OrderBook    = require("economy/order_book")
 local RoutePlanner = require("map/route_planner")
 local Goods        = require("economy/goods")
 local Intel        = require("settlement/intel")
+local Tutorial     = require("narrative/tutorial")
+local SpeechBubble = require("ui/speech_bubble")
+local Flags        = require("core/flags")
 
 local M = {}
 
@@ -1119,6 +1122,25 @@ local function openNodeModal(nodeId)
     if not node then return end
 
     local current = state_.map.current_location
+
+    -- ── 教程锁定：到达温室社区前，禁止探索非目标节点 ──
+    local tutPhase = Tutorial.get_phase(state_)
+    if (tutPhase == Tutorial.Phase.SPAWN or tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE)
+        and nodeId ~= current and nodeId ~= "greenhouse" then
+        -- 用角色气泡提示，比系统弹窗更自然
+        local root = UI.GetRoot()
+        if root then
+            local hints = {
+                { portrait = Tutorial.AVATAR_LINLI,  speaker = "林砾", text = "先别急，把手头的委托办了再说。" },
+                { portrait = Tutorial.AVATAR_TAOXIA, speaker = "陶夏", text = "那边以后再去吧，我们先到温室社区看看。" },
+            }
+            local hint = hints[math.random(#hints)]
+            hint.autoHide = 3
+            SpeechBubble.show(root, hint)
+        end
+        return
+    end
+
     local destSet = OrderBook.get_destination_set(state_)
     local isCur   = nodeId == current
     local isDest  = destSet[nodeId]
@@ -1371,6 +1393,23 @@ local function openUnknownNodeModal(nodeId)
     local node = Graph.get_node(nodeId)
     if not node then return end
     local current = state_.map.current_location
+
+    -- ── 教程锁定：到达温室社区前，禁止探索未知区域 ──
+    local tutPhase = Tutorial.get_phase(state_)
+    if tutPhase == Tutorial.Phase.SPAWN or tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE then
+        local root = UI.GetRoot()
+        if root then
+            local hints = {
+                { portrait = Tutorial.AVATAR_LINLI,  speaker = "林砾", text = "未知区域先不急，等把这单跑完再探索。" },
+                { portrait = Tutorial.AVATAR_TAOXIA, speaker = "陶夏", text = "感觉那边挺危险的……我们还是先完成委托吧。" },
+            }
+            local hint = hints[math.random(#hints)]
+            hint.autoHide = 3
+            SpeechBubble.show(root, hint)
+        end
+        return
+    end
+
     local edge = Graph.get_edge(current, nodeId)
     if not edge then return end
 
@@ -1480,9 +1519,40 @@ end
 -- ============================================================
 -- Modal 弹窗：自动计划设置
 -- ============================================================
+--- 逐步展示自动计划教程气泡序列
+local function showAutoPlanTutorialStep(parent, state, steps, index, onComplete)
+    if index > #steps then
+        Flags.set(state, "tutorial_auto_plan_intro")
+        if onComplete then onComplete() end
+        return
+    end
+    local step = steps[index]
+    SpeechBubble.show(parent, {
+        portrait  = step.portrait,
+        speaker   = step.speaker,
+        text      = step.text,
+        autoHide  = 0,
+        onDismiss = function()
+            showAutoPlanTutorialStep(parent, state, steps, index + 1, onComplete)
+        end,
+    })
+end
+
 local openAutoPlanModal  -- forward declaration
 openAutoPlanModal = function()
     if not modal_ or not state_ then return end
+
+    -- 首次打开自动计划：先显示教程气泡
+    local introSteps = Tutorial.get_auto_plan_intro_steps(state_)
+    if introSteps then
+        local root = UI.GetRoot()
+        if root then
+            showAutoPlanTutorialStep(root, state_, introSteps, 1, function()
+                openAutoPlanModal()  -- 气泡结束后再打开弹窗
+            end)
+            return
+        end
+    end
 
     -- 确保 auto_plan 存在（兼容旧存档）
     if not state_.auto_plan then
@@ -2465,6 +2535,14 @@ function M.create(state, params, r)
         enterOrderRoutePreview()
     end
 
+    -- 教程引导气泡（绝对定位浮层）
+    -- [Layout] 气泡位置和显示条件可能需要随 UI 重构调整
+    local tutBubble = nil
+    local bubbleCfg = Tutorial.get_bubble_config(state, "map")
+    if bubbleCfg then
+        tutBubble = SpeechBubble.createWidget(bubbleCfg)
+    end
+
     return UI.Panel {
         id = "mapScreen",
         width = "100%", height = "100%",
@@ -2473,12 +2551,14 @@ function M.create(state, params, r)
             explorePanel_,
             routePanel_,
             modal_,
+            tutBubble,
         },
     }
 end
 
 function M.update(state, dt, r)
     state_ = state
+    SpeechBubble.update(dt)
     handleInput(dt)
 end
 

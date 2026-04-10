@@ -47,11 +47,11 @@ function M.new()
         -- 聚落
         settlements = {
             tower            = { goodwill = 0,  visited = false, reputation = 100 },
-            greenhouse       = { goodwill = 10, visited = true,  reputation = 100 },
+            greenhouse       = { goodwill = 0,  visited = false, reputation = 100 },
             ruins_camp       = { goodwill = 0,  visited = false, reputation = 100 },
             bell_tower       = { goodwill = 0,  visited = false, reputation = 100 },
             -- 前哨站（Phase 11）
-            greenhouse_farm  = { goodwill = 5,  visited = false, reputation = 100 },
+            greenhouse_farm  = { goodwill = 5,  visited = true,  reputation = 100 },
             dome_outpost     = { goodwill = 0,  visited = false, reputation = 100 },
             metro_camp       = { goodwill = 0,  visited = false, reputation = 100 },
             old_church       = { goodwill = 0,  visited = false, reputation = 100 },
@@ -68,11 +68,9 @@ function M.new()
 
         -- 地图
         map = {
-            current_location = "greenhouse",
+            current_location = "greenhouse_farm",
             known_nodes = {
-                greenhouse = true,
-                tower      = true,
-                crossroads = true,
+                greenhouse_farm = true,
             },
             -- 当前聚落可接订单缓存（到达时生成，接完即空，同次停留不刷新）
             available_orders = {},

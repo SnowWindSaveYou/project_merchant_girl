@@ -14,6 +14,7 @@ local session = {
     step        = 0,
     result      = nil,
     showHistory = false,
+    returnTo    = nil,   -- 对话结束后返回的页面（默认 "home"）
 }
 
 -- ============================================================
@@ -45,6 +46,7 @@ function M.create(state, params, r)
         session.step        = 1
         session.result      = nil
         session.showHistory = false
+        session.returnTo    = params.returnTo or nil
     end
 
     if params._continue then
@@ -63,9 +65,11 @@ function M.create(state, params, r)
             npc        = nil,
             background = resolve_background(state, session.dialogue),
             onClose    = function()
+                local dest = session.returnTo or "home"
                 session.dialogue = nil
                 session.result   = nil
-                router.navigate("home")
+                session.returnTo = nil
+                router.navigate(dest)
             end,
         })
     end
@@ -114,8 +118,10 @@ function M.create(state, params, r)
             router.navigate("campfire", { _toggle_history = true })
         end,
         onClose = function()
+            local dest = session.returnTo or "home"
             session.dialogue = nil
-            router.navigate("home")
+            session.returnTo = nil
+            router.navigate(dest)
         end,
     })
 end

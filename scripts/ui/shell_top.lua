@@ -10,6 +10,9 @@ local Flow         = require("core/flow")
 local RoutePlanner = require("map/route_planner")
 local Graph        = require("map/world_graph")
 local Radio        = require("travel/radio")
+local Tutorial     = require("narrative/tutorial")
+local SpeechBubble = require("ui/speech_bubble")
+local Flags        = require("core/flags")
 
 local M = {}
 
@@ -185,6 +188,21 @@ local function _next_channel(current)
     return Radio.CHANNELS[1]
 end
 
+--- 逐步展示气泡序列（供收音机教程使用）
+function M._showBubbleSequence(parent, state, steps, index)
+    if index > #steps then return end
+    local step = steps[index]
+    SpeechBubble.show(parent, {
+        portrait  = step.portrait,
+        speaker   = step.speaker,
+        text      = step.text,
+        autoHide  = 0,
+        onDismiss = function()
+            M._showBubbleSequence(parent, state, steps, index + 1)
+        end,
+    })
+end
+
 --- 收音机迷你面板（紧凑横条样式，嵌入顶栏）
 --- 据点和旅行中都可见；无 radio 状态时返回 nil
 ---@param state table
@@ -207,7 +225,16 @@ function M.createRadioStrip(state)
         height = 24, width = 36,
         fontSize = 12,
         onClick = function(self)
-            Radio.set_on(state, not isOn)
+            local turningOn = not isOn
+            Radio.set_on(state, turningOn)
+            -- 首次打开收音机：标记 pending，等 shell 重建后再触发气泡
+            if turningOn then
+                local steps = Tutorial.get_radio_intro_steps(state)
+                if steps then
+                    Flags.set(state, "tutorial_radio_intro")
+                    M._pendingRadioTutorial = { state = state, steps = steps }
+                end
+            end
         end,
     })
 

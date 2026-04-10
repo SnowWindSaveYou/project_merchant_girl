@@ -124,6 +124,9 @@ function M.handle_node_arrival(state, arrival_info)
     local node_id = arrival_info.arrived_node
     state.map.current_location = node_id
 
+    -- 0. 重置本次停留使用标记（篝火/NPC拜访 每次到达只能各一次）
+    state._visit_used = {}
+
     -- 1. 自动交付匹配的订单
     local delivered, reward = OrderBook.auto_deliver(state, node_id)
 

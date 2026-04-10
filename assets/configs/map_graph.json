@@ -23,6 +23,7 @@
       "name": "灌溉水渠",
       "type": "resource",
       "desc": "农耕派维护的旧灌溉渠道，沿途可见锈迹斑斑的水泵和蓄水池",
+      "bg": "image/bg_generic_wilderness_20260409080002.png",
       "x": 50,
       "y": 300
     },
@@ -31,6 +32,7 @@
       "name": "蘑菇洞穴",
       "type": "resource",
       "desc": "潮湿的地下溶洞，农耕派在此培育夜光蘑菇和药用真菌",
+      "bg": "image/bg_generic_underground_20260409080000.png",
       "x": 180,
       "y": 580
     },
@@ -57,6 +59,7 @@
       "name": "太阳能田",
       "type": "resource",
       "desc": "成排倾斜的旧太阳能板，多数已碎裂，少数仍能勉强发电",
+      "bg": "image/bg_generic_tech_facility_20260409080009.png",
       "x": 620,
       "y": 50
     },
@@ -65,6 +68,7 @@
       "name": "气象观测站",
       "type": "story",
       "desc": "塔台在高处设立的气象哨，记录风向和辐射尘浓度",
+      "bg": "image/bg_generic_tech_facility_20260409080009.png",
       "x": 440,
       "y": 30
     },
@@ -91,6 +95,7 @@
       "name": "废品堆场",
       "type": "resource",
       "desc": "层叠的废旧汽车和家电，拾荒者在此翻找零件和稀有金属",
+      "bg": "image/bg_generic_ruins_industrial_20260409080003.png",
       "x": 520,
       "y": 540
     },
@@ -99,6 +104,7 @@
       "name": "下水道迷宫",
       "type": "hazard",
       "desc": "坍塌的旧城下水管网，据说深处有变异蛛群巢穴，但也藏着旧时代的秘密",
+      "bg": "image/bg_generic_underground_20260409080000.png",
       "x": 600,
       "y": 580
     },
@@ -125,6 +131,7 @@
       "name": "碑林花园",
       "type": "story",
       "desc": "学者们竖立的纪念碑林，刻着灾变中消逝的城镇名和人口数字",
+      "bg": "image/bg_generic_cultural_20260409075953.png",
       "x": 880,
       "y": 230
     },
@@ -133,6 +140,7 @@
       "name": "印刷厂遗址",
       "type": "resource",
       "desc": "废弃的旧时代印刷工厂，纸张和油墨残存，学者们来此抄录修复典籍",
+      "bg": "image/bg_generic_ruins_industrial_20260409080003.png",
       "x": 730,
       "y": 380
     },
@@ -141,6 +149,7 @@
       "name": "旧公路交叉口",
       "type": "transit",
       "desc": "一处半废弃的高速匝道，可补给和分道",
+      "bg": "image/bg_generic_road_20260409075956.png",
       "x": 280,
       "y": 250
     },
@@ -149,6 +158,7 @@
       "name": "废弃仓库",
       "type": "resource",
       "desc": "锈蚀铁皮仓库群，可能有旧时代物资",
+      "bg": "image/bg_generic_ruins_industrial_20260409080003.png",
       "x": 350,
       "y": 420
     },
@@ -157,6 +167,7 @@
       "name": "信号中继站",
       "type": "story",
       "desc": "废弃的通信中继站，偶有微弱信号",
+      "bg": "image/bg_generic_tech_facility_20260409080009.png",
       "x": 450,
       "y": 280
     },
@@ -165,6 +176,7 @@
       "name": "扬尘站台",
       "type": "transit",
       "desc": "沙暴频发的旧公交站台，勉强能遮风歇脚",
+      "bg": "image/bg_generic_road_20260409075956.png",
       "x": 500,
       "y": 400
     },
@@ -173,6 +185,7 @@
       "name": "废铁场",
       "type": "resource",
       "desc": "堆积如山的锈铁和废钢，偶有可回收的工业零件",
+      "bg": "image/bg_generic_ruins_industrial_20260409080003.png",
       "x": 420,
       "y": 380
     },
@@ -181,6 +194,7 @@
       "name": "藤蔓桥",
       "type": "transit",
       "desc": "被藤蔓完全覆盖的旧天桥，勉强可以通行",
+      "bg": "image/bg_generic_wilderness_20260409080002.png",
       "x": 250,
       "y": 460
     },
@@ -189,6 +203,7 @@
       "name": "塌陷高架",
       "type": "hazard",
       "desc": "断裂的高架桥段，通行风险极高",
+      "bg": "image/bg_generic_road_20260409075956.png",
       "x": 180,
       "y": 120
     },
@@ -197,6 +212,7 @@
       "name": "干涸河床",
       "type": "transit",
       "desc": "早已干涸的河道，沙尘中偶见旧桥墩残骸",
+      "bg": "image/bg_generic_wilderness_20260409080002.png",
       "x": 650,
       "y": 400
     },
@@ -205,6 +221,7 @@
       "name": "雷达山丘",
       "type": "resource",
       "desc": "山顶有座废弃军用雷达站，零件散落一地",
+      "bg": "image/bg_generic_tech_facility_20260409080009.png",
       "x": 650,
       "y": 120
     },
@@ -213,6 +230,7 @@
       "name": "沉降广场",
       "type": "hazard",
       "desc": "地面塌陷形成的凹地，有变异生物出没",
+      "bg": "image/bg_generic_road_20260409075956.png",
       "x": 400,
       "y": 500
     },
@@ -221,6 +239,7 @@
       "name": "隐士洞窟",
       "type": "story",
       "desc": "深藏山壁中的隐居者洞穴，据说住着一位知晓旧时代秘密的老人",
+      "bg": "image/bg_generic_cultural_20260409075953.png",
       "x": 150,
       "y": 520
     },
@@ -229,6 +248,7 @@
       "name": "风口隘道",
       "type": "hazard",
       "desc": "两山之间的狭窄风口，强风裹挟沙砾，通行需格外小心",
+      "bg": "image/bg_generic_wilderness_20260409080002.png",
       "x": 580,
       "y": 160
     },
@@ -237,6 +257,7 @@
       "name": "关卡哨岗",
       "type": "story",
       "desc": "路边废弃的收费站，有人曾试图在此设卡收过路费",
+      "bg": "image/bg_generic_cultural_20260409075953.png",
       "x": 350,
       "y": 310
     },
@@ -245,6 +266,7 @@
       "name": "旧物流中心",
       "type": "resource",
       "desc": "灾前的物流配送中心，货架倒塌但仓库结构完好",
+      "bg": "image/bg_generic_ruins_industrial_20260409080003.png",
       "x": 700,
       "y": 450
     },
@@ -254,6 +276,7 @@
       "type": "hazard",
       "desc": "终年笼罩浓雾的山谷，能见度极低，传闻深处有人定居",
       "explore_flag": "mist_valley_accessible",
+      "bg": "image/bg_generic_wilderness_20260409080002.png",
       "x": 850,
       "y": 120
     },
@@ -262,6 +285,7 @@
       "name": "枯木林",
       "type": "hazard",
       "desc": "大片枯死的树木矗立如骨，辐射残留偏高，但林中藏有灾前物资缓存点",
+      "bg": "image/bg_generic_wilderness_20260409080002.png",
       "x": 100,
       "y": 80
     },
@@ -270,6 +294,7 @@
       "name": "毒沼泽",
       "type": "hazard",
       "desc": "化工厂泄漏形成的有毒湿地，空气刺鼻，但沼底沉积着稀有化学原料",
+      "bg": "image/bg_generic_underground_20260409080000.png",
       "x": 30,
       "y": 500
     },
@@ -278,6 +303,7 @@
       "name": "废弃军事掩体",
       "type": "hazard",
       "desc": "半埋在土中的旧军事设施，门锁已被撬开，内部可能有军用物资",
+      "bg": "image/bg_generic_underground_20260409080000.png",
       "x": 300,
       "y": 580
     },
@@ -286,6 +312,7 @@
       "name": "弹坑边缘",
       "type": "hazard",
       "desc": "巨大弹坑的边缘地带，坑底有奇异矿石结晶，但辐射值极高",
+      "bg": "image/bg_generic_underground_20260409080000.png",
       "x": 700,
       "y": 570
     },
@@ -294,6 +321,7 @@
       "name": "废弃广播塔",
       "type": "story",
       "desc": "孤零零的高塔，夜间偶尔自动播放灾前的紧急广播录音",
+      "bg": "image/bg_generic_cultural_20260409075953.png",
       "x": 900,
       "y": 430
     },
@@ -302,6 +330,7 @@
       "name": "锈桥渡口",
       "type": "transit",
       "desc": "横跨干涸峡谷的铁桥，锈迹斑斑但仍能承重，通向未知的东北方",
+      "bg": "image/bg_generic_road_20260409075956.png",
       "x": 900,
       "y": 130
     },
@@ -310,6 +339,7 @@
       "name": "地下黑市",
       "type": "settlement",
       "desc": "隐藏在废弃地下停车场内的非法交易市场，只有熟人引荐才能找到入口",
+      "bg": "image/bg_generic_underground_20260409080000.png",
       "x": 480,
       "y": 500,
       "hidden": true
@@ -319,6 +349,7 @@
       "name": "信号地堡",
       "type": "story",
       "desc": "深埋地下的旧时代通信枢纽，设备大部分完好，似乎还能接收远方信号",
+      "bg": "image/bg_generic_tech_facility_20260409080009.png",
       "x": 400,
       "y": 180,
       "hidden": true
@@ -328,6 +359,7 @@
       "name": "旧档案馆",
       "type": "story",
       "desc": "灾前市政档案馆，地下室保存着大量未被销毁的政府文件和户籍记录",
+      "bg": "image/bg_generic_cultural_20260409075953.png",
       "x": 800,
       "y": 280,
       "hidden": true
