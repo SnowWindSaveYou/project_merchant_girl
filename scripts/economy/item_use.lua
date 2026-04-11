@@ -5,6 +5,10 @@ local Goods = require("economy/goods")
 
 local M = {}
 
+--- 物品变化回调（由外部设置，如 FloatingText）
+--- 签名: function(goods_id, delta)  delta>0=获得, <0=消耗
+M._on_item_change = nil
+
 -- ============================================================
 -- 角色负面状态定义与辅助
 -- ============================================================
@@ -182,6 +186,7 @@ function M.use(state, goods_id)
         state.truck.cargo[goods_id] = nil
     end
 
+    if M._on_item_change then M._on_item_change(goods_id, -1) end
     return true, msg
 end
 
@@ -199,6 +204,7 @@ function M.consume(state, goods_id, count)
     if state.truck.cargo[goods_id] <= 0 then
         state.truck.cargo[goods_id] = nil
     end
+    if M._on_item_change then M._on_item_change(goods_id, -count) end
     return true
 end
 
@@ -211,7 +217,10 @@ function M.add(state, goods_id, count)
     local g = Goods.get(goods_id)
     if not g then return false end
     local held = state.truck.cargo[goods_id] or 0
-    state.truck.cargo[goods_id] = math.min(held + count, g.stack_limit)
+    local newVal = math.min(held + count, g.stack_limit)
+    state.truck.cargo[goods_id] = newVal
+    local actual = newVal - held
+    if actual > 0 and M._on_item_change then M._on_item_change(goods_id, actual) end
     return true
 end
 

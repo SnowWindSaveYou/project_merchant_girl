@@ -6,6 +6,10 @@ local F            = require("ui/ui_factory")
 local Ambush       = require("combat/ambush")
 local CombatResult = require("combat/combat_result")
 local Config       = require("combat/combat_config")
+local DrivingScene  = require("travel/driving_scene")
+local DrivingCombat = require("travel/driving_combat")
+local Environment   = require("travel/environment")
+local AudioMgr      = require("ui/audio_manager")
 
 --- 地形 → 路途背景映射（战斗发生在行驶中）
 local REGION_BG = {
@@ -15,21 +19,6 @@ local REGION_BG = {
     forest = "image/bg_generic_wilderness_20260409080002.png",
 }
 
---- 威胁等级 → 战况场景图
-local THREAT_SCENE = {
-    low  = "image/battle_scene_low_20260411061159.png",
-    mid  = "image/battle_scene_mid_20260411061210.png",
-    high = "image/battle_scene_high_20260411061202.png",
-}
-
---- 战术 → 动作画面图
-local TACTIC_SCENE = {
-    accelerate = "image/battle_act_accelerate_20260411061410.png",
-    steady     = "image/battle_act_fire_20260411061400.png",
-    evade      = "image/battle_act_evade_20260411061331.png",
-    smoke      = "image/battle_act_smoke_20260411061340.png",
-}
-
 local M = {}
 ---@type table
 local router = nil
@@ -37,6 +26,8 @@ local router = nil
 local combat = nil
 ---@type string|nil
 local bgImage_ = nil
+---@type string|nil
+local prevAudioScene_ = nil
 
 -- ============================================================
 -- 页面创建
@@ -51,6 +42,22 @@ function M.create(state, params, r)
     bgImage_ = REGION_BG[region] or REGION_BG.wild
 
     combat = Ambush.create(state, enemy_id)
+
+    -- 初始化纸娃娃行车场景（战斗发生在行驶途中）
+    DrivingScene.setState(state)
+    DrivingScene.setDriving(true)
+    if state.flow and state.flow.environment then
+        DrivingScene.setEnvironment(Environment.get_current(state.flow.environment))
+    end
+
+    -- 注入战斗渲染模块：显示敌方载具和纸娃娃
+    DrivingCombat.activate(enemy_id)
+    DrivingCombat.setTruckDamage(state.truck.durability / state.truck.durability_max)
+    DrivingScene.setCombatRenderer(DrivingCombat)
+
+    -- 切换战斗 BGM（极短淡入，战斗节奏快不能等）
+    prevAudioScene_ = AudioMgr.getScene()
+    AudioMgr.setScene("combat", { fadeTime = 0.15 })
 
     return M._build_intro_view(state)
 end
@@ -136,58 +143,48 @@ function M._build_combat_view(state)
 
     local children = {}
 
-    -- 战斗画面：优先显示上一回合战术动作图，否则按威胁等级显示
-    local sceneImg
-    if combat.last_round and combat.last_round.tactic_id then
-        sceneImg = TACTIC_SCENE[combat.last_round.tactic_id]
-    end
-    if not sceneImg then
-        local level = combat.threat >= 60 and "high" or (combat.threat >= 30 and "mid" or "low")
-        sceneImg = THREAT_SCENE[level]
-    end
-    if sceneImg then
-        table.insert(children, UI.Panel {
-            width = "100%", height = 140,
-            borderRadius = Theme.sizes.radius_small,
-            overflow = "hidden",
-            children = {
-                UI.Panel {
-                    width = "100%", height = "100%",
-                    backgroundImage = sceneImg,
-                    backgroundFit = "cover",
+    -- 纸娃娃行车场景（替代静态战斗画面）
+    local sceneWidget = DrivingScene.createWidget({
+        height = 260,
+        borderRadius = Theme.sizes.radius_small,
+    })
+    table.insert(children, UI.Panel {
+        width = "100%", height = 260,
+        borderRadius = Theme.sizes.radius_small,
+        overflow = "hidden",
+        children = {
+            sceneWidget,
+            -- 底部渐变遮罩，让场景与下方内容自然过渡
+            UI.Panel {
+                width = "100%", height = 40,
+                position = "absolute", left = 0, bottom = 0,
+                backgroundGradient = {
+                    direction = "to-bottom",
+                    stops = { { 0, 0, 0, 0 }, { 0, 0, 0, 180 } },
                 },
-                -- 底部渐变遮罩，让图片与下方内容自然过渡
-                UI.Panel {
-                    width = "100%", height = 40,
-                    position = "absolute", left = 0, bottom = 0,
-                    backgroundGradient = {
-                        direction = "to-bottom",
-                        stops = { { 0, 0, 0, 0 }, { 0, 0, 0, 180 } },
+            },
+            -- 标题栏叠加在场景上
+            UI.Panel {
+                width = "100%",
+                position = "absolute", left = 0, bottom = 0,
+                paddingLeft = 10, paddingRight = 10, paddingBottom = 6,
+                flexDirection = "row",
+                justifyContent = "space-between", alignItems = "center",
+                children = {
+                    UI.Label {
+                        text = "⚔️ " .. enemy.name,
+                        fontSize = Theme.sizes.font_large,
+                        fontColor = Theme.colors.text_primary,
                     },
-                },
-                -- 标题栏叠加在画面上
-                UI.Panel {
-                    width = "100%",
-                    position = "absolute", left = 0, bottom = 0,
-                    paddingLeft = 10, paddingRight = 10, paddingBottom = 6,
-                    flexDirection = "row",
-                    justifyContent = "space-between", alignItems = "center",
-                    children = {
-                        UI.Label {
-                            text = "⚔️ " .. enemy.name,
-                            fontSize = Theme.sizes.font_large,
-                            fontColor = Theme.colors.text_primary,
-                        },
-                        UI.Label {
-                            text = "回合 " .. combat.round_current .. "/" .. combat.rounds_total,
-                            fontSize = Theme.sizes.font_small,
-                            fontColor = Theme.colors.text_secondary,
-                        },
+                    UI.Label {
+                        text = "回合 " .. combat.round_current .. "/" .. combat.rounds_total,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = Theme.colors.text_secondary,
                     },
                 },
             },
-        })
-    end
+        },
+    })
 
     -- 威胁条
     table.insert(children, M._status_bar("敌方威胁", threatPct,
@@ -246,6 +243,13 @@ function M._build_combat_view(state)
 
                 local result = Ambush.execute_round(state, combat, tacticId)
 
+                -- 触发战术视觉特效（加速/射击/闪避/烟雾）
+                DrivingCombat.triggerEffect(tacticId, result)
+
+                -- 同步卡车受损贴图
+                DrivingCombat.setTruckDamage(
+                    state.truck.durability / state.truck.durability_max)
+
                 if result.finished then
                     M._show_result_view(state)
                 else
@@ -302,6 +306,12 @@ end
 -- ============================================================
 
 function M._show_result_view(state)
+    -- 战斗结束，移除战斗渲染 + 恢复 BGM 和强度参数
+    DrivingCombat.deactivate()
+    DrivingScene.clearCombatRenderer()
+    AudioMgr.setCombatIntensity(0)   -- 重置音量/音高/环境音
+    AudioMgr.setScene(prevAudioScene_ or "travel")
+
     local summary = CombatResult.finalize_ambush(state, combat)
 
     local resultColor = summary.outcome == "repelled" and Theme.colors.success
@@ -454,6 +464,17 @@ function M._status_bar(label, pct, color, valueText)
     }
 end
 
-function M.update(state, dt, r) end
+function M.update(state, dt, r)
+    DrivingScene.update(dt)
+
+    -- 动态 BGM 强度：根据威胁和血量调整紧张度
+    if combat and combat.phase == Ambush.Phase.ACTIVE then
+        local threatPct = math.min(1.0, (combat.threat or 0) / 100)
+        local durPct = (state.truck.durability or 100) / (state.truck.durability_max or 100)
+        -- 高威胁 + 低血量 → 高紧张度
+        local intensity = math.max(threatPct, 1.0 - durPct)
+        AudioMgr.setCombatIntensity(intensity)
+    end
+end
 
 return M

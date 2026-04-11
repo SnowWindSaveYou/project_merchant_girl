@@ -31,6 +31,10 @@ local SCENES = {
         bgm     = "bgm_campfire",
         ambient = { campfire = 0.40, wind = 0.12 },
     },
+    combat = {
+        bgm     = "bgm_combat",
+        ambient = { engine = 0.50, wind = 0.30 },
+    },
     silent = {
         bgm     = nil,
         ambient = {},
@@ -114,10 +118,11 @@ end
 
 -- ── 公共 API ─────────────────────────────────────────
 
---- 切换到指定场景（travel / settlement / campfire / silent）
+--- 切换到指定场景（travel / settlement / campfire / combat / silent）
 --- 如果场景名与当前相同，不做任何事
 ---@param sceneName string
-function M.setScene(sceneName)
+---@param opts? { fadeTime?: number }  可选：覆盖淡入淡出时长
+function M.setScene(sceneName, opts)
     if _currentScene == sceneName then return end
     local def = SCENES[sceneName]
     if not def then
@@ -126,6 +131,10 @@ function M.setScene(sceneName)
     end
     ensureInit()
     _currentScene = sceneName
+
+    -- 当前过渡使用的淡入淡出时长
+    local ft = (opts and opts.fadeTime) or FADE_TIME
+    _currentFadeTime = ft
 
     -- ── BGM 交叉淡入淡出 ──
     local newKey = def.bgm
@@ -138,7 +147,9 @@ function M.setScene(sceneName)
             if path then
                 local snd = getSound(path)
                 if snd then
-                    _bgmA:Play(snd, snd.frequency, 0)
+                    -- 极短淡入时直接以目标音量启动
+                    local startGain = (ft < 0.3) and _bgmVolume or 0
+                    _bgmA:Play(snd, snd.frequency, startGain)
                 end
             end
         else
@@ -146,7 +157,7 @@ function M.setScene(sceneName)
         end
 
         _bgmCurrentKey = newKey
-        _bgmFadeTimer  = FADE_TIME
+        _bgmFadeTimer  = ft
     end
 
     -- ── 环境音层目标 ──
@@ -178,8 +189,9 @@ function M.update(dt)
 
     -- ── BGM 淡入淡出 ──
     if _bgmFadeTimer > 0 then
+        local ft = _currentFadeTime or FADE_TIME
         _bgmFadeTimer = math.max(0, _bgmFadeTimer - dt)
-        local t = 1.0 - (_bgmFadeTimer / FADE_TIME)  -- 0→1
+        local t = 1.0 - (_bgmFadeTimer / ft)  -- 0→1
 
         -- A 淡入
         if _bgmA:IsPlaying() then
@@ -234,6 +246,30 @@ end
 ---@return string|nil
 function M.getScene()
     return _currentScene
+end
+
+--- 设置 BGM 音高/播放速率（1.0 = 正常，1.05 = 加速5%更紧张）
+---@param pitch number  0.5~2.0
+function M.setBgmPitch(pitch)
+    if not _initialized then return end
+    pitch = math.max(0.5, math.min(2.0, pitch))
+    if _bgmA and _bgmA:IsPlaying() then
+        _bgmA.frequency = _bgmA.frequency / (_bgmPitch or 1.0) * pitch
+    end
+    _bgmPitch = pitch
+end
+
+--- 根据紧张度 (0~1) 一次性调整 BGM 音量和音高
+--- intensity=0 正常，intensity=1 最大紧张
+---@param intensity number 0~1
+function M.setCombatIntensity(intensity)
+    intensity = math.max(0, math.min(1, intensity))
+    -- 音量：0.45 → 0.65（紧张时更响）
+    M.setBgmVolume(0.45 + intensity * 0.20)
+    -- 音高：1.00 → 1.06（紧张时微微加速）
+    M.setBgmPitch(1.0 + intensity * 0.06)
+    -- 引擎环境音也随紧张度加强
+    M.setAmbientVolume(0.55 + intensity * 0.15)
 end
 
 -- ── 收音机音频（独立于场景，由收音机开关 + 播报状态控制）────

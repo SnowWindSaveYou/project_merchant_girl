@@ -209,4 +209,36 @@ function M.apply_one(state, op)
     return action .. ":" .. value
 end
 
+-- ============================================================
+-- 前置检查：选项的 ops 是否满足执行条件
+-- ============================================================
+local Goods = require("economy/goods")
+
+--- 检查一组 ops 中的消耗操作是否全部满足
+--- 返回 (ok, reason)
+---   ok=true  表示所有消耗均可满足
+---   ok=false 时 reason 是第一条不满足的提示文本
+---@param state table
+---@param ops string[]
+---@return boolean, string|nil
+function M.check_requirements(state, ops)
+    if not ops then return true, nil end
+    for _, op in ipairs(ops) do
+        local action, value = op:match("^([^:]+):(.+)$")
+        if action == "consume_goods" or action == "lose_goods" then
+            local gid, cnt = value:match("^(.+):(%d+)$")
+            if gid then
+                local need = tonumber(cnt) or 1
+                local held = state.truck.cargo[gid] or 0
+                if held < need then
+                    local g = Goods.get(gid)
+                    local name = g and g.name or gid
+                    return false, name .. " 不足（需要" .. need .. "，持有" .. held .. "）"
+                end
+            end
+        end
+    end
+    return true, nil
+end
+
 return M

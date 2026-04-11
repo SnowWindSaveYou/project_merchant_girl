@@ -16,6 +16,7 @@ local Modules      = require("truck/modules")
 local Campfire     = require("narrative/campfire")
 local NpcManager          = require("narrative/npc_manager")
 local SettlementEventPool = require("events/settlement_event_pool")
+local WaypointEventPool   = require("events/waypoint_event_pool")
 local WanderingNpc        = require("narrative/wandering_npc")
 local QuestLog            = require("narrative/quest_log")
 local Chatter             = require("travel/chatter")
@@ -45,10 +46,22 @@ local _prevChatterId   = nil
 local _prevSceneryId   = nil
 local _prevSegmentIndex = nil
 
--- 地图节点 → 资源点探索房间 ID（Phase 06 连接）
+-- 地图节点 → 探索房间 ID（Phase 06 连接）
 local NODE_EXPLORE_ROOM = {
-    old_warehouse = "abandoned_warehouse",
-    radar_hill    = "radar_station",
+    -- 资源节点
+    old_warehouse   = "abandoned_warehouse",
+    radar_hill      = "radar_station",
+    irrigation_canal = "irrigation_tunnels",
+    mushroom_cave   = "mushroom_grotto",
+    solar_field     = "solar_panels",
+    junkyard        = "junk_heap",
+    printing_ruins  = "print_shop",
+    scrap_yard      = "scrap_pit",
+    old_logistics   = "logistics_depot",
+    -- 危险节点（高危高回报）
+    sewer_maze      = "sewer_depths",
+    military_bunker = "bunker_interior",
+    crater_rim      = "crater_salvage",
 }
 
 -- 据点主题色（插画背景渐变底色）
@@ -303,6 +316,68 @@ end
 -- ============================================================
 -- 成长目标弹窗状态
 local _showProgressPopup = false
+
+-- ── 短暂休整：气泡对话变体 ──────────────────────────────────
+local _transitRestDialogues = {
+    function(repair)
+        local rl = repair > 0
+            and string.format("……补了%d点耐久，还行。", repair)
+            or  "……车况还行，不用大修。"
+        return {
+            { speaker = "陶夏", portrait = Theme.avatars.taoxia, text = "歇会儿吧，正好把罐头热一热。" },
+            { speaker = "林砾", portrait = Theme.avatars.linli,  text = "……我先看看车。" },
+            { speaker = "林砾", portrait = Theme.avatars.linli,  text = rl },
+            { speaker = "陶夏", portrait = Theme.avatars.taoxia, text = "吃饱喝足，继续赶路！" },
+        }
+    end,
+    function(repair)
+        local rl = repair > 0
+            and string.format("……修复了%d点，暂时没问题。", repair)
+            or  "……底盘没什么问题，不用修。"
+        return {
+            { speaker = "陶夏", portrait = Theme.avatars.taoxia, text = "肚子饿了……开个罐头？" },
+            { speaker = "林砾", portrait = Theme.avatars.linli,  text = "……水也喝一口。我去检查下底盘。" },
+            { speaker = "林砾", portrait = Theme.avatars.linli,  text = rl },
+            { speaker = "陶夏", portrait = Theme.avatars.taoxia, text = "林砾你真厉害，每次都修得好好的。" },
+            { speaker = "林砾", portrait = Theme.avatars.linli,  text = "……正常维护而已。" },
+        }
+    end,
+    function(repair)
+        local rl = repair > 0
+            and string.format("……好了，耐久恢复了%d点。", repair)
+            or  "……检查了一圈，暂时不用修。"
+        return {
+            { speaker = "陶夏", portrait = Theme.avatars.taoxia, text = "终于能喘口气了，来吃东西！" },
+            { speaker = "林砾", portrait = Theme.avatars.linli,  text = "……嗯，趁这会儿我把松动的地方紧一下。" },
+            { speaker = "林砾", portrait = Theme.avatars.linli,  text = rl },
+            { speaker = "陶夏", portrait = Theme.avatars.taoxia, text = "效率真高，那我们继续？" },
+            { speaker = "林砾", portrait = Theme.avatars.linli,  text = "……走吧。" },
+        }
+    end,
+}
+
+local function showTransitRestBubbles(steps, index)
+    index = index or 1
+    if index > #steps then
+        router.navigate("home")
+        return
+    end
+    local uiRoot = UI.GetRoot()
+    if not uiRoot then
+        router.navigate("home")
+        return
+    end
+    local step = steps[index]
+    SpeechBubble.show(uiRoot, {
+        portrait  = step.portrait,
+        speaker   = step.speaker,
+        text      = step.text,
+        autoHide  = 0,
+        onDismiss = function()
+            showTransitRestBubbles(steps, index + 1)
+        end,
+    })
+end
 
 function createSettlementView(state, curNode)
     local nodeId = curNode and curNode.id or ""
@@ -639,14 +714,20 @@ function createSettlementView(state, curNode)
         else
             campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
         end
+        local campHighlight = hasStoryTopic or isFirstStoryVisit
         table.insert(lowerChildren, F.actionBtn {
             text = campLabel,
-            variant = hasStoryTopic and "primary" or "secondary",
+            variant = campHighlight and "primary" or "secondary",
             fontSize = Theme.sizes.font_normal,
             disabled = not canCamp,
-            highlight = hasStoryTopic or nil,
+            highlight = campHighlight or nil,
             onClick = function(self)
                 if not canCamp then return end
+                -- 标记故事节点已访问
+                if isFirstStoryVisit then
+                    if not state._visited_story_nodes then state._visited_story_nodes = {} end
+                    state._visited_story_nodes[nodeId] = true
+                end
                 local dialogue, consumed = Campfire.start(state)
                 if dialogue then
                     router.navigate("campfire", { dialogue = dialogue, consumed = consumed })
@@ -693,6 +774,26 @@ function createSettlementView(state, curNode)
             end
         end
 
+        -- 路点事件（到达非聚落节点时触发的随机事件）
+        local pendingWP = state.flow and state.flow.pending_waypoint_event or nil
+        if pendingWP then
+            table.insert(lowerChildren, F.actionBtn {
+                text = "⚡ " .. (pendingWP.title or "路点事件"),
+                variant = "primary",
+                fontSize = Theme.sizes.font_normal,
+                sound = "event",
+                onClick = function(self)
+                    local evt = state.flow.pending_waypoint_event
+                    state.flow.pending_waypoint_event = nil
+                    WaypointEventPool.set_cooldown(state, evt.id)
+                    router.navigate("event", {
+                        event = evt,
+                        source = "waypoint",
+                    })
+                end,
+            })
+        end
+
         -- 非聚落节点：出发按钮（如有订单）
         if #activeOrders > 0 then
             table.insert(lowerChildren, F.actionBtn {
@@ -706,14 +807,62 @@ function createSettlementView(state, curNode)
             })
         end
 
+        -- 中转站快速休整（transit 节点专属）
+        if curNode and curNode.type == "transit" then
+            local restUsed = state._visit_used and state._visit_used.transit_rest
+            local hasFood  = (state.truck.cargo["food_can"] or 0) >= 1
+            local hasWater = (state.truck.cargo["water"] or 0) >= 1
+            local canRest  = not restUsed and hasFood and hasWater
+            local restReason = restUsed and "已休整过"
+                or (not hasFood and "缺少食物")
+                or (not hasWater and "缺少饮水")
+                or nil
+            table.insert(lowerChildren, F.actionBtn {
+                text = canRest and "⛺ 短暂休整"
+                    or ("⛺ 休整（" .. (restReason or "不可用") .. "）"),
+                variant = "secondary",
+                fontSize = Theme.sizes.font_normal,
+                disabled = not canRest,
+                onClick = function(self)
+                    if not canRest then return end
+                    local ItemUse = require("economy/item_use")
+                    ItemUse.consume(state, "food_can", 1)
+                    ItemUse.consume(state, "water", 1)
+                    local repair = math.min(5, state.truck.durability_max - state.truck.durability)
+                    state.truck.durability = state.truck.durability + repair
+                    if not state._visit_used then state._visit_used = {} end
+                    state._visit_used.transit_rest = true
+                    -- 随机选一组对话，用气泡链式播放
+                    local variant = _transitRestDialogues[math.random(#_transitRestDialogues)]
+                    local steps = variant(repair)
+                    -- 末尾追加数值汇总气泡
+                    table.insert(steps, {
+                        speaker = "林砾", portrait = Theme.avatars.linli,
+                        text = string.format(
+                            "罐头 -1　饮水 -1\n耐久 %d → %d（+%d）",
+                            state.truck.durability - repair,
+                            state.truck.durability, repair),
+                    })
+                    showTransitRestBubbles(steps, 1)
+                end,
+            })
+        end
+
         -- 篝火（非聚落节点，有主线话题且可用时高亮）
         local canCamp, campReason, isCampFree = Campfire.can_start(state)
         local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
+        -- 故事节点首次到达时，额外提示有故事可发现
+        local isFirstStoryVisit = curNode and curNode.type == "story"
+            and not (state._visited_story_nodes and state._visited_story_nodes[nodeId])
         local campLabel
         if canCamp then
-            campLabel = hasStoryTopic
-                and "🔥 篝火休憩 · 有话题要谈"
-                or  "🔥 篝火休憩"
+            if isFirstStoryVisit then
+                campLabel = "🔥 篝火休憩 · 此地似有故事"
+            elseif hasStoryTopic then
+                campLabel = "🔥 篝火休憩 · 有话题要谈"
+            else
+                campLabel = "🔥 篝火休憩"
+            end
         else
             campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
         end

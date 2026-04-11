@@ -1,0 +1,347 @@
+{
+  "meta": {
+    "description": "路点事件配置 — 到达非聚落节点时按概率触发的事件"
+  },
+  "events": [
+    {
+      "id": "WPT_R01",
+      "title": "拾荒者交易",
+      "node_types": ["resource"],
+      "description": "一个背着大包的拾荒者从废墟里钻出来，见到你们并不害怕，反而主动搭话。",
+      "weight": 60,
+      "cooldown": 4,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "用金属零件换些食物",
+          "ops": ["consume_goods:metal_scrap:1", "add_goods:food_can:2"],
+          "result_text": "拾荒者掂了掂零件，满意地掏出两罐肉罐头。划算的交易。"
+        },
+        {
+          "text": "交换情报",
+          "ops": ["add_credits:5"],
+          "result_text": "拾荒者告诉你附近的路况和一处未被搜刮过的地方，有价值的信息。"
+        },
+        {
+          "text": "不理会，继续搜索",
+          "ops": [],
+          "result_text": "拾荒者耸耸肩，背起包袋消失在废墟中。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_R02",
+      "title": "设备故障",
+      "node_types": ["resource"],
+      "description": "这里有一台还能运转的旧设备，但卡住了。修好它也许能榨出点好东西。",
+      "weight": 50,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "花时间修理",
+          "ops": ["add_fatigue:10", "add_goods:circuit:1"],
+          "result_text": "陶夏捣鼓了半天，终于让设备吐出了一块完好的电路板。"
+        },
+        {
+          "text": "拆零件带走",
+          "ops": ["add_goods:metal_scrap:2"],
+          "result_text": "虽然没能修好，但拆下来的零件还算有用。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_R03",
+      "title": "隐藏物资",
+      "node_types": ["resource"],
+      "description": "林砾注意到墙角有块砖的颜色不太对。撬开一看——有人藏了东西在这里。",
+      "weight": 40,
+      "cooldown": 6,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "全部带走",
+          "ops": ["add_goods:medicine:1", "add_goods:food_can:1"],
+          "result_text": "一小包药品和一罐食物。不知道是谁藏的，但现在是你的了。"
+        },
+        {
+          "text": "只拿急需的，留下标记",
+          "ops": ["add_goods:medicine:1", "add_relation_linli:1"],
+          "result_text": "林砾赞许地点点头：'留点给后来人也好。'她似乎更欣赏你了。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_R04",
+      "title": "竞争者",
+      "node_types": ["resource"],
+      "description": "另一辆货车也停在这里，车主正在搜刮物资。他警惕地看着你们。",
+      "weight": 45,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "各搜各的，井水不犯河水",
+          "ops": [],
+          "result_text": "双方默契地分开区域搜索，互不干扰。世道艰难，能少一个敌人就少一个。"
+        },
+        {
+          "text": "提议合作搜索，平分收获",
+          "ops": ["add_goods:fuel_cell:1", "add_fatigue:5"],
+          "result_text": "两人联手清理了一片原本不敢进的区域，各自分到了一些燃料。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_R05",
+      "title": "旧地图碎片",
+      "node_types": ["resource"],
+      "description": "废纸堆里发现了一张标注了几个地点的手绘地图碎片。",
+      "weight": 35,
+      "cooldown": 7,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "仔细研究地图",
+          "ops": ["add_credits:10"],
+          "result_text": "地图上标注了一条少有人知的捷径。这个情报值点钱。"
+        },
+        {
+          "text": "收藏起来",
+          "ops": ["add_goods:old_book:1"],
+          "result_text": "也许将来能拼出完整的地图。先保管好。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_H01",
+      "title": "求救信号",
+      "node_types": ["hazard"],
+      "description": "远处传来微弱的呼救声。听起来像是有人被困住了……或者是陷阱。",
+      "weight": 55,
+      "cooldown": 4,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "前去救援",
+          "ops": ["add_fatigue:15", "add_credits:20", "add_relation_linli:1"],
+          "result_text": "是一个受伤的旅行者，你们帮他包扎后，他坚持要给些报酬。林砾觉得你做得对。"
+        },
+        {
+          "text": "太危险了，不去",
+          "ops": [],
+          "result_text": "陶夏沉默了一会儿。你知道这可能是对的选择，但心里不太好受。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_H02",
+      "title": "恶劣天气",
+      "node_types": ["hazard"],
+      "description": "天色突然暗了下来，狂风卷起沙尘。得赶紧找地方躲避。",
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "就地躲在车里等过去",
+          "ops": ["add_fatigue:10"],
+          "result_text": "风沙打在车身上砰砰作响。等了好一会儿，总算过去了。"
+        },
+        {
+          "text": "冲进附近的废墟躲避",
+          "ops": ["add_damage:5", "add_goods:metal_scrap:1"],
+          "result_text": "车被沙石刮花了些，但你们在废墟里找到了些有用的碎片。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_H03",
+      "title": "变异巢穴",
+      "node_types": ["hazard"],
+      "description": "地面上有大量奇怪的痕迹，空气中弥漫着腥臭。这里是某种变异生物的领地。",
+      "weight": 40,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "绕路避开",
+          "ops": ["add_fatigue:5"],
+          "result_text": "多走了些路，但至少安全。有些风险不值得冒。"
+        },
+        {
+          "text": "小心穿过，搜刮巢穴",
+          "ops": ["add_damage:8", "add_goods:medicine:2"],
+          "result_text": "被那东西的爪子划了一道！但巢穴里居然有之前猎物留下的药品。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_H04",
+      "title": "断路抉择",
+      "node_types": ["hazard"],
+      "description": "前方的路被巨石和残骸封死了。要么花力气清理，要么走一条看起来更危险的小路。",
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "花时间清理路障",
+          "ops": ["add_fatigue:15"],
+          "result_text": "累是真的累，但总算把路清出来了。"
+        },
+        {
+          "text": "走小路碰碰运气",
+          "ops": ["add_damage:3"],
+          "result_text": "车底盘被刮了几下，但比预想的顺利。运气不错。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_H05",
+      "title": "迷雾中的声音",
+      "node_types": ["hazard"],
+      "description": "浓雾中隐约传来机器运转的声音。这里不该有运转的机器才对……",
+      "weight": 35,
+      "cooldown": 6,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "循声查看",
+          "ops": ["add_fatigue:10", "add_goods:circuit:1", "add_goods:fuel_cell:1"],
+          "result_text": "是一台废弃的自动采集机还在运转。你关掉它，拆了些零件。"
+        },
+        {
+          "text": "别管了，迷雾中什么都可能发生",
+          "ops": [],
+          "result_text": "谨慎总没错。声音渐渐远去，也许只是风声的把戏。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_T01",
+      "title": "过路商人",
+      "node_types": ["transit"],
+      "description": "路边停着一辆小型三轮车，车主正在整理货物。看到你们，他挥了挥手。",
+      "weight": 60,
+      "cooldown": 4,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "看看他卖什么",
+          "ops": ["add_credits:-8", "add_goods:food_can:1", "add_goods:water:1"],
+          "result_text": "价格不算便宜，但在这荒郊野外能买到东西已经不错了。"
+        },
+        {
+          "text": "打听一下消息",
+          "ops": ["add_credits:3"],
+          "result_text": "商人告诉你几条实用的路线建议。这种人脉网络是行商的命脉。"
+        },
+        {
+          "text": "挥手示意不需要",
+          "ops": [],
+          "result_text": "商人笑着目送你们离去。路上的人大多不是坏人，只是各忙各的。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_T02",
+      "title": "路标留言",
+      "node_types": ["transit"],
+      "description": "路边的指示牌上被人用涂料写了几行字。看起来是某个旅行者留下的提示。",
+      "weight": 45,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "仔细阅读",
+          "ops": ["add_credits:5"],
+          "result_text": "'前方三岔口走左边，右边有塌方。'——简短但有用的忠告。"
+        },
+        {
+          "text": "也留下一条给后来人",
+          "ops": ["add_relation_linli:1"],
+          "result_text": "林砾帮你找了块石头写下标记。'互相帮助，这才是人该做的事。'她说。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_T03",
+      "title": "废弃营地遗迹",
+      "node_types": ["transit"],
+      "description": "路边有一处被匆忙放弃的临时营地。篝火灰烬还温热，像是刚走不久。",
+      "weight": 40,
+      "cooldown": 5,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "翻找一下留下的东西",
+          "ops": ["add_goods:water:1", "add_goods:food_can:1"],
+          "result_text": "他们走得太急，留下了些食物和水。你也不确定他们遇到了什么。"
+        },
+        {
+          "text": "用他们的篝火暖暖身子就走",
+          "ops": ["add_fatigue:-5"],
+          "result_text": "火堆还有余温。短暂的休息让你恢复了一些精力。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_S01",
+      "title": "旧日信件",
+      "node_types": ["story"],
+      "description": "角落里发现了一封保存完好的信件。墨水已经褪色，但还能辨认。",
+      "weight": 50,
+      "cooldown": 6,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "读给同伴听",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
+          "result_text": "信里是一个父亲写给女儿的话。林砾沉默了很久，陶夏擦了擦眼睛。那个世界已经回不去了。"
+        },
+        {
+          "text": "收起来保管",
+          "ops": ["add_goods:old_book:1"],
+          "result_text": "也许有一天能把它交给收件人的后人。也许永远不会。"
+        }
+      ]
+    },
+    {
+      "id": "WPT_S02",
+      "title": "广播残响",
+      "node_types": ["story"],
+      "description": "车载收音机忽然接收到一段奇怪的广播。断断续续的，像是很久以前的录音在循环播放。",
+      "weight": 45,
+      "cooldown": 6,
+      "required_flags": [],
+      "forbidden_flags": [],
+      "choices": [
+        {
+          "text": "尝试追溯信号源",
+          "ops": ["add_fatigue:10", "add_credits:8"],
+          "result_text": "信号来自一个已经废弃的中继站。虽然没找到人，但在那里发现了些旧世界的情报。"
+        },
+        {
+          "text": "记录频率，以后再查",
+          "ops": [],
+          "result_text": "陶夏把频率记在了本子上。也许这条信号会引向某个重要的发现。"
+        }
+      ]
+    }
+  ]
+}

@@ -269,3 +269,81 @@
 - 同类事件去重：同一 `pool` 在连续 2 次跑商内尽量不重复
 - 战斗挂接：`start_combat:ambush_light` 进入车载迎击；`start_combat:resource_small` 进入探索战
 - 文本层和数值层分离：表内 `summary` 只给策划/程序，前端实际文本建议单独本地化
+
+---
+
+## 九、路点事件池系统（2026-04-11 新增）
+
+### 9.1 背景
+
+上方 §四 的 50 条设计事件主要面向行驶中/聚落场景。实际代码中，聚落事件由 `settlement_event_pool.lua` + `settlement_events.json` 承载，但**非聚落节点**（resource / hazard / transit / story）此前没有对应的事件系统——到达后只有篝火可用。
+
+### 9.2 路点事件池（Waypoint Event Pool）
+
+新增独立事件池，专门服务非聚落节点的到达事件。
+
+| 属性 | 聚落事件池 | 路点事件池 |
+|------|----------|----------|
+| 代码 | `settlement_event_pool.lua` | `waypoint_event_pool.lua` |
+| 配置 | `settlement_events.json` | `waypoint_events.json` |
+| 触发概率 | 30% | 25% |
+| 筛选维度 | `settlement` (string) | `node_types` (string[]) + 可选 `node_ids` (string[]) |
+| 冷却存储 | `state._settlement_event_cooldowns` | `state._waypoint_event_cooldowns` |
+| 触发结果 | `state.flow.pending_settlement_event` | `state.flow.pending_waypoint_event` |
+| 冷却推进 | `finish_trip()` 中调用 | `finish_trip()` 中调用 |
+
+### 9.3 当前事件清单（15 条）
+
+| ID | 名称 | node_types | weight | cooldown | 核心选项 |
+|----|------|-----------|--------|----------|---------|
+| WPT_R01 | 拾荒者交易 | resource | 60 | 4 | 交换物资 / 交换情报 / 无视 |
+| WPT_R02 | 设备故障 | resource | 50 | 5 | 花时间修理 / 拆零件带走 |
+| WPT_R03 | 隐藏物资 | resource | 40 | 6 | 全部带走 / 留给后人（+林砾关系） |
+| WPT_R04 | 竞争者 | resource | 45 | 5 | 各搜各的 / 合作平分 |
+| WPT_R05 | 旧地图碎片 | resource | 35 | 7 | 研究地图 / 收藏 |
+| WPT_H01 | 求救信号 | hazard | 55 | 4 | 前去救援（+20信用/+林砾关系） / 不去 |
+| WPT_H02 | 恶劣天气 | hazard | 50 | 4 | 车里等 / 废墟躲避（+伤害+金属） |
+| WPT_H03 | 变异巢穴 | hazard | 40 | 5 | 绕路 / 穿过搜刮（+伤害+药品） |
+| WPT_H04 | 断路抉择 | hazard | 50 | 4 | 清理路障 / 走小路（+伤害） |
+| WPT_H05 | 迷雾中的声音 | hazard | 35 | 6 | 循声查看（+电路/燃料） / 别管 |
+| WPT_T01 | 过路商人 | transit | 60 | 4 | 买物资（-8信用） / 打听消息 / 无视 |
+| WPT_T02 | 路标留言 | transit | 45 | 5 | 阅读（+5信用） / 也留一条（+林砾关系） |
+| WPT_T03 | 废弃营地遗迹 | transit | 40 | 5 | 翻找物资 / 用篝火休息（-5疲劳） |
+| WPT_S01 | 旧日信件 | story | 50 | 6 | 读给同伴（+双关系） / 收藏 |
+| WPT_S02 | 广播残响 | story | 45 | 6 | 追溯信号源（+8信用） / 记录频率 |
+
+### 9.4 ops 规范
+
+路点事件使用与 `event_executor.lua` 一致的操作码：
+
+```
+add_goods:item_id:count     -- 获得物品（替代设计文档中的 add_cargo）
+consume_goods:item_id:count -- 消耗物品（替代设计文档中的 remove_cargo）
+add_damage:value            -- 货车受损（替代设计文档中的 add_truck_damage）
+add_credits:value           -- 增减信用点
+add_fatigue:value           -- 增减疲劳（注：executor 暂未实现，打印 Unknown 但不崩溃）
+add_relation_linli:value    -- 林砾关系
+add_relation_taoxia:value   -- 陶夏关系
+```
+
+### 9.5 与设计文档的对应关系
+
+上方 §四 的 50 条 EVT 事件中，部分与路点事件池有功能重叠：
+
+| 设计事件 | 路点替代 | 说明 |
+|---------|---------|------|
+| EVT_001 路边罐头箱 | WPT_R03 隐藏物资 | 类似的搜刮判断 |
+| EVT_005 路标被挪动了 | WPT_T02 路标留言 | 路标交互 |
+| EVT_007 旧收音机杂音 | WPT_S02 广播残响 | 广播碎片 |
+| EVT_018 失踪的送信员 | WPT_H01 求救信号 | 救援抉择 |
+
+后续可将设计事件逐步迁移到路点配置中，实现完整覆盖。
+
+### 9.6 代码文件索引
+
+| 文件 | 路径 | 说明 |
+|------|------|------|
+| 路点事件池逻辑 | `scripts/events/waypoint_event_pool.lua` | filter → pick → check_on_arrival → tick_cooldowns |
+| 路点事件配置 | `assets/configs/waypoint_events.json` | 15 条事件定义 |
+| 接入 - 流程控制 | `scripts/core/flow.lua` | handle_node_arrival + finish_trip |
+| 接入 - 首页 UI | `scripts/ui/screen_home.lua` | 非聚落节点按钮区域 |

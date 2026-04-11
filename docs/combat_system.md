@@ -155,6 +155,16 @@ dmg = floor(base_dmg × threat_factor × tactic.dmg_mult + 0.5)
 | `old_clinic` | 旧诊所 | 药柜、急救箱 | 流浪者(15HP/3ATK) | 20% | 3 | EVT_057 |
 | `military_outpost` | 军事哨站 | 弹药箱、储物柜 | 残兵(30HP/8ATK), 巡逻机器人(25HP/6ATK) | 45% | 8 | EVT_058 |
 | `radar_station` | 废弃雷达站 | 信号柜、工具箱 | 野狗群(18HP/5ATK) | 35% | 6 | EVT_059 (需雷达) |
+| `irrigation_tunnels` | 灌溉水渠 | 水阀间、渠壁暗格 | 水蛭群(14HP/3ATK) | 25% | 4 | — |
+| `mushroom_grotto` | 蘑菇洞穴 | 菌床、旧急救包 | 洞穴蜘蛛(16HP/4ATK) | 20% | 3 | — |
+| `solar_panels` | 太阳能田 | 控制箱、储电柜 | 日灼蜥蜴(20HP/5ATK) | 30% | 5 | — |
+| `junk_heap` | 废品堆场 | 废铁堆、旧电器 | 拾荒犬(15HP/4ATK) | 30% | 4 | — |
+| `print_shop` | 印刷厂遗址 | 档案柜、维修间 | 纸巢虫(12HP/3ATK) | 20% | 3 | — |
+| `scrap_pit` | 废铁场 | 车壳残骸、工具房 | 铁锈蝎(22HP/6ATK) | 35% | 6 | — |
+| `logistics_depot` | 旧物流中心 | 货架A、货架B | 流浪者团伙(18HP/5ATK) | 30% | 5 | — |
+| `sewer_depths` | 下水道深处 | 被冲来的箱子、密封桶 | 污水巨蛙(28HP/7ATK), 管道鼠王(20HP/5ATK) | 50% | 8 | — |
+| `bunker_interior` | 军事掩体内部 | 弹药库、军官储物柜 | 自动防御炮台(35HP/10ATK), 巡逻机器人(25HP/7ATK) | 55% | 10 | — |
+| `crater_salvage` | 弹坑残骸 | 半埋载具、散落碎片 | 辐射獾(24HP/8ATK) | 45% | 7 | — |
 
 ### 3.3 玩家体力
 
@@ -297,4 +307,28 @@ scripts/ui/
 
 ---
 
-*最后更新：2026-04-05*
+---
+
+## 十、节点 → 探索房间映射
+
+`screen_home.lua` 中的 `NODE_EXPLORE_ROOM` 表将地图节点映射到探索房间模板：
+
+| 节点 ID | 节点名称 | 节点类型 | 房间模板 |
+|---------|---------|---------|---------|
+| `irrigation_canal` | 灌溉水渠 | resource | `irrigation_tunnels` |
+| `mushroom_cave` | 蘑菇洞窟 | resource | `mushroom_grotto` |
+| `solar_field` | 太阳能田 | resource | `solar_panels` |
+| `junkyard` | 废车场 | resource | `junk_heap` |
+| `printing_ruins` | 印刷厂遗址 | resource | `print_shop` |
+| `radar_hill` | 雷达山丘 | resource | `radar_station` |
+| `old_warehouse` | 废弃仓库 | resource | `abandoned_warehouse` |
+| `old_archives` | 旧档案馆 | resource | `logistics_depot` |
+| `military_bunker` | 军事碉堡 | resource | `bunker_interior` |
+| `sewer_maze` | 下水道迷宫 | hazard | `sewer_depths` |
+| `sunken_plaza` | 沉降广场 | hazard | `crater_salvage` |
+| `weather_station` | 气象站废墟 | hazard | `old_clinic` |
+
+---
+
+*最后更新：2026-04-11*
+*变更：4→14 探索房间模板扩展（7 资源型 + 3 危险型），新增节点→房间映射表*

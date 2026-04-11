@@ -385,6 +385,10 @@ M.sounds = {
     event      = "audio/sfx_ui_event.ogg",
     bubble_pop = "audio/sfx/sfx_ui_bubble_pop.ogg",
     pickup     = "audio/sfx/sfx_pickup_item.ogg",
+    combat_accelerate = "audio/sfx/sfx_combat_accelerate.ogg",
+    combat_gunfire    = "audio/sfx/sfx_combat_gunfire.ogg",
+    combat_evade      = "audio/sfx/sfx_combat_evade.ogg",
+    combat_smoke      = "audio/sfx/sfx_combat_smoke.ogg",
 }
 
 -- ============================================================
@@ -394,6 +398,7 @@ M.bgm = {
     bgm_travel     = "audio/bgm_travel.ogg",
     bgm_settlement = "audio/bgm_settlement.ogg",
     bgm_campfire   = "audio/bgm_campfire.ogg",
+    bgm_combat     = "audio/bgm_combat.ogg",
 }
 
 -- ============================================================

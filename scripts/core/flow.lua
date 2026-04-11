@@ -8,6 +8,7 @@ local Ticker              = require("core/ticker")
 local Pricing             = require("economy/pricing")
 local Goodwill            = require("settlement/goodwill")
 local SettlementEventPool = require("events/settlement_event_pool")
+local WaypointEventPool   = require("events/waypoint_event_pool")
 local WanderingNpc        = require("narrative/wandering_npc")
 local Chatter             = require("travel/chatter")
 local Radio               = require("travel/radio")
@@ -187,6 +188,9 @@ function M.handle_node_arrival(state, arrival_info)
 
         -- 聚落内事件检查（30% 概率触发）
         SettlementEventPool.check_on_arrival(state, node_id)
+    else
+        -- 非聚落路点事件检查（25% 概率触发）
+        WaypointEventPool.check_on_arrival(state, node_id, node and node.type or "resource")
     end
 
     -- 埋点：检查全聚落访问里程碑
@@ -345,8 +349,9 @@ function M.finish_trip(state)
     -- 技能解锁检查
     Skills.check_unlocks(state)
 
-    -- 聚落事件冷却递减
+    -- 事件冷却递减
     SettlementEventPool.tick_cooldowns(state)
+    WaypointEventPool.tick_cooldowns(state)
 
     -- 流浪 NPC 迁移（50% 概率移动到新位置）
     WanderingNpc.migrate_all(state)

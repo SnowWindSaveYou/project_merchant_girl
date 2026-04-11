@@ -902,18 +902,36 @@ local function drawActiveRoute(nvg, plan, time)
             fc(nvg, Theme.colors.map_truck, math.floor(60 * pulse))
             nvgFill(nvg)
 
-            -- 卡车实心点
-            nvgBeginPath(nvg)
-            nvgCircle(nvg, tx, ty, 7)
-            fc(nvg, Theme.colors.map_truck)
-            nvgFill(nvg)
-
-            -- 卡车图标
-            nvgFontFaceId(nvg, cam.font)
-            nvgFontSize(nvg, 16)
-            nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
-            fc(nvg, { 40, 30, 10, 255 })
-            nvgText(nvg, tx, ty, "🚚", nil)
+            -- Q版麻薯号图标（根据行进方向旋转，原图朝左）
+            if not cam.truckIcon then
+                cam.truckIcon = nvgCreateImage(nvg, "image/chibi_truck_q.png", 0)
+            end
+            if cam.truckIcon and cam.truckIcon > 0 then
+                local iconSize = 40
+                local halfIcon = iconSize * 0.5
+                -- 计算行进方向角度
+                local dirX = toNode.x - fromNode.x
+                local dirY = toNode.y - fromNode.y
+                local angle = math.atan(dirY, dirX)  -- 弧度，0=右，pi=左
+                nvgSave(nvg)
+                nvgTranslate(nvg, tx, ty)
+                -- 原图朝左(pi方向)，旋转到实际方向
+                nvgRotate(nvg, angle - math.pi)
+                -- 如果朝右半边（-90°~90°），Y轴镜像避免车头朝下翻转
+                local normAngle = angle % (2 * math.pi)
+                if normAngle > math.pi * 0.5 and normAngle < math.pi * 1.5 then
+                    -- 朝左半边，正常绘制
+                else
+                    -- 朝右半边，Y轴镜像翻转
+                    nvgScale(nvg, 1, -1)
+                end
+                local paint = nvgImagePattern(nvg, -halfIcon, -halfIcon, iconSize, iconSize, 0, cam.truckIcon, 1.0)
+                nvgBeginPath(nvg)
+                nvgRect(nvg, -halfIcon, -halfIcon, iconSize, iconSize)
+                nvgFillPaint(nvg, paint)
+                nvgFill(nvg)
+                nvgRestore(nvg)
+            end
         end
     end
 end
@@ -1032,9 +1050,45 @@ local function drawMap(nvg, layout)
     nvgSave(nvg)
     nvgIntersectScissor(nvg, cam.cx, cam.cy, cam.cw, cam.ch)
 
+    -- 2.0) 桌子背景 & 覆盖层共用的世界坐标（以地图中心为锚点缩放）
+    local TABLE_SHRINK = 0.85  -- 桌子缩放系数，1.0=原始对齐，<1 缩小
+    local mapCX, mapCY = 460, 300  -- 地图世界中心 (-40+960)/2, (-40+640)/2
+    do
+        local scaleX = 1000 / 539 * TABLE_SHRINK
+        local scaleY = 680  / 393 * TABLE_SHRINK
+        -- 原图中地图区域中心像素 (709+539/2, 351+393/2) = (978.5, 547.5)
+        -- 桌子图左上角 = 地图中心 - 图中地图中心偏移 * 缩放
+        cam._tableWX = mapCX - 978.5 * scaleX
+        cam._tableWY = mapCY - 547.5 * scaleY
+        cam._tableWW = 1935 * scaleX
+        cam._tableWH = 1080 * scaleY
+    end
+
+    -- 桌子背景图
+    if not cam.tableBgImage then
+        cam.tableBgImage = nvgCreateImage(nvg, "image/edited_map_table_bg_v7_20260411080504.png", 0)
+    end
+    if cam.tableBgImage and cam.tableBgImage > 0 then
+        local tbX, tbY   = w2s(cam._tableWX, cam._tableWY)
+        local tbX2, tbY2 = w2s(cam._tableWX + cam._tableWW, cam._tableWY + cam._tableWH)
+        local tbW = tbX2 - tbX
+        local tbH = tbY2 - tbY
+        local drawX = math.max(tbX, cam.cx)
+        local drawY = math.max(tbY, cam.cy)
+        local drawR = math.min(tbX + tbW, cam.cx + cam.cw)
+        local drawB = math.min(tbY + tbH, cam.cy + cam.ch)
+        if drawR > drawX and drawB > drawY then
+            local paint = nvgImagePattern(nvg, tbX, tbY, tbW, tbH, 0, cam.tableBgImage, 1.0)
+            nvgBeginPath(nvg)
+            nvgRect(nvg, drawX, drawY, drawR - drawX, drawB - drawY)
+            nvgFillPaint(nvg, paint)
+            nvgFill(nvg)
+        end
+    end
+
     -- 2.1) 背景图（随地图缩放和平移）
     if not cam.bgImage then
-        cam.bgImage = nvgCreateImage(nvg, "image/map_bg_light_20260408103138.png", 0)
+        cam.bgImage = nvgCreateImage(nvg, "image/edited_map_bg_mashu_v2_20260411070244.png", 0)
     end
     if cam.bgImage and cam.bgImage > 0 then
         -- 世界坐标范围约 0~930 x 0~600，留一些边距
@@ -1127,6 +1181,28 @@ local function drawMap(nvg, layout)
     elseif mapMode.state == MapState.MANUAL_PLAN and mapMode.manualPlan then
         drawRoutePath(nvg, mapMode.manualPlan, "map_route_manual")
         drawWaypoints(nvg, mapMode.waypoints)
+    end
+
+    -- 桌面物件覆盖层（在路线之上、节点之下，制造物件与地图交叉的层次感）
+    if not cam.tableOverlay then
+        cam.tableOverlay = nvgCreateImage(nvg, "image/edited_map_table_bg_v7_overlay_20260411080504.png", 0)
+    end
+    if cam.tableOverlay and cam.tableOverlay > 0 then
+        local olX, olY   = w2s(cam._tableWX, cam._tableWY)
+        local olX2, olY2 = w2s(cam._tableWX + cam._tableWW, cam._tableWY + cam._tableWH)
+        local olW = olX2 - olX
+        local olH = olY2 - olY
+        local drawX = math.max(olX, cam.cx)
+        local drawY = math.max(olY, cam.cy)
+        local drawR = math.min(olX + olW, cam.cx + cam.cw)
+        local drawB = math.min(olY + olH, cam.cy + cam.ch)
+        if drawR > drawX and drawB > drawY then
+            local paint = nvgImagePattern(nvg, olX, olY, olW, olH, 0, cam.tableOverlay, 1.0)
+            nvgBeginPath(nvg)
+            nvgRect(nvg, drawX, drawY, drawR - drawX, drawB - drawY)
+            nvgFillPaint(nvg, paint)
+            nvgFill(nvg)
+        end
     end
 
     drawNodes(nvg, known, current, destSet, time, adjacentUnknowns)

@@ -5,7 +5,7 @@
       "name": "温室社区",
       "type": "settlement",
       "desc": "以旧生态穹顶为核心的农业聚落",
-      "bg": "image/edited_bg_greenhouse_20260408155144.png",
+      "bg": "image/edited_bg_greenhouse_mashu_20260411063945.png",
       "x": 80,
       "y": 400
     },
@@ -14,7 +14,7 @@
       "name": "外围农场",
       "type": "settlement",
       "desc": "温室社区南侧的露天耕地，种植抗辐射作物",
-      "bg": "image/edited_bg_greenhouse_farm_20260408155657.png",
+      "bg": "image/edited_bg_greenhouse_farm_mashu_v4_20260411063338.png",
       "x": 120,
       "y": 530
     },
@@ -50,7 +50,7 @@
       "name": "穹顶哨站",
       "type": "settlement",
       "desc": "塔台技术派在西南方向设立的前沿观测站",
-      "bg": "image/edited_bg_dome_outpost_20260408155750.png",
+      "bg": "image/edited_bg_dome_outpost_mashu_20260411063817.png",
       "x": 380,
       "y": 140
     },
@@ -113,7 +113,7 @@
       "name": "钟楼书院",
       "type": "settlement",
       "desc": "围绕旧钟楼建立的学者聚落，收藏大量末世前书籍",
-      "bg": "image/edited_bg_bell_tower_20260408155441.png",
+      "bg": "image/edited_bg_bell_tower_mashu_20260411063907.png",
       "x": 750,
       "y": 250
     },

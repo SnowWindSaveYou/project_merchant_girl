@@ -285,6 +285,7 @@ local SNOW_COUNT = 18
 -- 模块状态
 -- ============================================================
 local scrollOffset_ = 0
+local combatRenderer_ = nil   -- 战斗渲染模块（由 screen_ambush 注入）
 
 --- 当前环境状态
 local currentEnv_ = {
@@ -634,6 +635,14 @@ function DrivingSceneWidget:Render(nvg)
     nvgSave(nvg)
     nvgIntersectScissor(nvg, l.x, l.y, l.w, l.h)
 
+    -- 战斗抖动：整体 translate 偏移
+    if combatRenderer_ then
+        local sx, sy = combatRenderer_.getScreenShake()
+        if sx ~= 0 or sy ~= 0 then
+            nvgTranslate(nvg, sx, sy)
+        end
+    end
+
     -- 聚落静态场景模式：停泊时用完整场景图替代所有视差层
     if settlementSceneImage_ then
         self:drawSettlementScene(nvg, l)
@@ -668,6 +677,11 @@ function DrivingSceneWidget:Render(nvg)
 
     -- 10) 装备（炮塔/雷达，在车身之上）
     self:drawEquipment(nvg)
+
+    -- 10.5) 战斗渲染层（敌方载具/纸娃娃/效果）
+    if combatRenderer_ then
+        combatRenderer_.render(nvg, l, truckBounds_)
+    end
 
     -- 11) 货厢纸娃娃（在卡车上面）
     self:drawContainerChibis(nvg)
@@ -862,7 +876,12 @@ function DrivingSceneWidget:computeTruckBounds(l)
     local truckH = l.h * 0.70
     local truckScale = truckH / imgH
     local truckW = imgW * truckScale
-    local truckX = l.x + (l.w - truckW) / 2
+    -- 战斗模块可提供水平偏移（归一化 0~1，正值=向右）
+    local xOffset = 0
+    if combatRenderer_ then
+        xOffset = combatRenderer_.getTruckOffset()
+    end
+    local truckX = l.x + (l.w - truckW) / 2 + xOffset * l.w
     local roadSurface = l.y + l.h * 0.88
     local wheelR = truckH * WHEEL_SIZE_RATIO * 0.5
     local wheelCenterY = truckH * 0.85
@@ -880,7 +899,12 @@ end
 function DrivingSceneWidget:drawTruck(nvg)
     local tb = truckBounds_
     if tb.w <= 0 then return end
-    local imgHandle = ImageCache.Get(TRUCK_IMAGE)
+    -- 战斗时用外观贴图，非战斗用日常贴图
+    local truckImg = TRUCK_IMAGE
+    if combatRenderer_ and combatRenderer_.getTruckImage then
+        truckImg = combatRenderer_.getTruckImage() or TRUCK_IMAGE
+    end
+    local imgHandle = ImageCache.Get(truckImg)
     if imgHandle == 0 then return end
 
     local paint = nvgImagePattern(nvg,
@@ -890,6 +914,23 @@ function DrivingSceneWidget:drawTruck(nvg)
     nvgRect(nvg, tb.x, tb.y, tb.w, tb.h)
     nvgFillPaint(nvg, paint)
     nvgFill(nvg)
+
+    -- ── 受击闪白：用 additive blend 再画一遍卡车图片 ──
+    if combatRenderer_ and combatRenderer_.getTruckFlash then
+        local flashA = combatRenderer_.getTruckFlash()
+        if flashA > 0 then
+            nvgSave(nvg)
+            nvgGlobalCompositeBlendFunc(nvg, NVG_ONE, NVG_ONE)
+            local fp = nvgImagePattern(nvg,
+                tb.x, tb.y, tb.w, tb.h,
+                0, imgHandle, flashA)
+            nvgBeginPath(nvg)
+            nvgRect(nvg, tb.x, tb.y, tb.w, tb.h)
+            nvgFillPaint(nvg, fp)
+            nvgFill(nvg)
+            nvgRestore(nvg)
+        end
+    end
 
     self:drawWheels(nvg, tb.x, tb.y, tb.w, tb.h)
 end
@@ -1054,6 +1095,11 @@ end
 -- ── 纸娃娃 AI 更新 ─────────────────────────────────────────
 local function updateChibis(dt)
     for ci, c in ipairs(chibis_) do
+        -- ── 战斗中陶夏锁定在 gun 区域，跳过 AI ──
+        if combatRenderer_ and c.zone == "gun" then
+            goto continue
+        end
+
         -- ── 翻转动画 ──
         if c.state == "turning" then
             c.flipTimer = c.flipTimer + dt
@@ -1420,16 +1466,17 @@ function DrivingSceneWidget:drawCabinChibis(nvg)
     end
 end
 
--- ── 绘制货厢纸娃娃（在卡车上面：table/stove/bed/container）──
+-- ── 绘制货厢纸娃娃（在卡车上面：table/stove/bed/container/gun）──
 function DrivingSceneWidget:drawContainerChibis(nvg)
     local tb = truckBounds_
     if tb.w <= 0 then return end
 
     for _, c in ipairs(chibis_) do
-        -- 车厢内的子区域都在这里绘制
+        -- 车厢内的子区域都在这里绘制（含战斗时的 gun 区域）
         local zone = ZONES[c.zone]
         if zone and (c.zone == "container" or c.zone == "table"
-                  or c.zone == "stove" or c.zone == "bed") then
+                  or c.zone == "stove" or c.zone == "bed"
+                  or c.zone == "gun") then
             -- 固定姿势区域（table/stove/bed）角色稍小一点更自然
             local sizeRatio = CHIBI_H_RATIO
             if c.zone == "bed" then sizeRatio = CHIBI_H_RATIO * 0.75 end
@@ -1693,9 +1740,17 @@ end
 --- 每帧更新滚动 + 天气粒子 + 输入检测 + 拾取反馈（由 screen_home.update 调用）
 ---@param dt number 帧间隔
 function M.update(dt)
-    -- 行驶中才滚动背景
+    -- 战斗渲染模块更新（粒子、特效等）
+    if combatRenderer_ then
+        combatRenderer_.update(dt)
+    end
+    -- 行驶中才滚动背景（战斗模块可加速滚动）
     if isDriving_ then
-        scrollOffset_ = scrollOffset_ + dt * SCROLL_SPEED
+        local speedMult = 1.0
+        if combatRenderer_ then
+            speedMult = combatRenderer_.getSpeedMultiplier()
+        end
+        scrollOffset_ = scrollOffset_ + dt * SCROLL_SPEED * speedMult
     end
     -- 更新纸娃娃 AI（行驶/停泊都运行）
     updateChibis(dt)
@@ -1882,6 +1937,35 @@ function M.reset()
     end
     resetChibi(chibis_[1], "cabin",     0.5,  1, 0,   25)
     resetChibi(chibis_[2], "container", 0.3, -1, 1.5, 20)
+end
+
+--- 注入战斗渲染模块（由 screen_ambush 在战斗开始时调用）
+---@param renderer table  driving_combat 模块
+function M.setCombatRenderer(renderer)
+    combatRenderer_ = renderer
+    -- 陶夏上机枪位
+    local taoxia = chibis_[2]
+    taoxia._savedZone = taoxia.zone   -- 记住战前区域
+    taoxia.zone = "gun"
+    taoxia.x = 0.5; taoxia.targetX = 0.5
+    taoxia.facing = -1; taoxia.scaleX = -1  -- 面朝左方（面向敌人）
+    taoxia.state = "idle"; taoxia.stateTimer = 999
+    taoxia.switchTimer = 9999  -- 防止 AI 切换区域
+    taoxia.walkTime = 0
+end
+
+--- 移除战斗渲染模块（战斗结束时调用）
+function M.clearCombatRenderer()
+    combatRenderer_ = nil
+    -- 陶夏回到战前区域
+    local taoxia = chibis_[2]
+    local restoreZone = taoxia._savedZone or "container"
+    taoxia._savedZone = nil
+    taoxia.zone = restoreZone
+    taoxia.x = 0.5; taoxia.targetX = 0.5
+    taoxia.facing = -1; taoxia.scaleX = -1
+    taoxia.state = "idle"; taoxia.stateTimer = 2
+    taoxia.switchTimer = 10 + math.random() * 10
 end
 
 return M

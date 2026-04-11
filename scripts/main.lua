@@ -16,6 +16,8 @@ local RoutePlanner   = require("map/route_planner")
 local OrderBook      = require("economy/order_book")
 local Graph          = require("map/world_graph")
 
+local FloatingText      = require("ui/floating_text")
+
 -- 页面模块
 local ScreenHome        = require("ui/screen_home")
 local ScreenPrepare     = require("ui/screen_prepare")
@@ -111,6 +113,13 @@ function Start()
     -- 1b. 初始化手绘边框 NanoVG overlay
     SketchBorder.init()
     SketchBorder.patchProgressBar()
+
+    -- 1c. 初始化全局飘字系统
+    FloatingText.init()
+    local ItemUse = require("economy/item_use")
+    ItemUse._on_item_change = function(goods_id, delta)
+        FloatingText.notify_item(goods_id, delta)
+    end
 
     -- 2. 加载或创建状态
     local saved = SaveLocal.load()
@@ -595,6 +604,9 @@ function HandleUpdate(eventType, eventData)
 
     -- 3. 更新当前页面
     Router.update(dt)
+
+    -- 3b. 更新全局飘字
+    FloatingText.update(dt)
 
     -- 4. 自动保存
     saveTimer = saveTimer + dt

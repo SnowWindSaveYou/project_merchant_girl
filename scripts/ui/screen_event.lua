@@ -27,10 +27,18 @@ function M.create(state, params, r)
     -- 构建选项按钮列表
     local choiceChildren = {}
     for i, choice in ipairs(visible_choices) do
+        -- 前置检查：资源是否够用
+        local canDo, lackReason = EventExecutor.check_requirements(state, choice.ops)
+        local label = choice.text
+        if not canDo then
+            label = choice.text .. "（" .. lackReason .. "）"
+        end
         table.insert(choiceChildren, F.actionBtn {
-            text = choice.text,
-            variant = i == 1 and "primary" or "secondary",
+            text = label,
+            variant = canDo and (i == 1 and "primary" or "secondary") or "secondary",
+            disabled = not canDo,
             onClick = function(self)
+                if not canDo then return end
                 EventExecutor.apply(state, choice.ops)
                 -- 处理选项附带的旗标变更
                 if choice.set_flags then

@@ -382,7 +382,82 @@ military_bunker ─── dead_forest ─── crater_rim ─── broadcast_t
 
 ---
 
-*文档版本: v2.0*
-*更新日期: 2026-04-08*
-*变更: 16→40 节点扩展，隐藏节点机制，explore_flag 机制，边境探索链，位置情报*
-*数据来源: world_graph.lua, factions.lua, state.lua, intel.lua, npc_dialogues.json, settlement_events.json*
+---
+
+## 十三、非聚落节点交互系统（2026-04-11 新增）
+
+此前非聚落节点（resource/hazard/transit/story/frontier）到达后仅有篝火可用，体验单一。现已扩展为完整的交互系统。
+
+### 13.1 探索房间映射
+
+所有 resource 和部分 hazard 节点现已映射到独立的探索房间模板，到达时可点击"搜索附近"进入资源点探索：
+
+| 节点 ID | 节点名称 | 类型 | 房间模板 | 主要产出 |
+|---------|---------|------|---------|---------|
+| irrigation_canal | 灌溉水渠 | resource | irrigation_tunnels | 水、食物 |
+| mushroom_cave | 蘑菇洞窟 | resource | mushroom_grotto | 食物、药品 |
+| solar_field | 太阳能田 | resource | solar_panels | 电路板、燃料 |
+| junkyard | 废车场 | resource | junk_heap | 金属、电路板 |
+| printing_ruins | 印刷厂遗址 | resource | print_shop | 旧书、电路板 |
+| radar_hill | 雷达山丘 | resource | radar_station | 电路板、弹药 |
+| old_warehouse | 废弃仓库 | resource | abandoned_warehouse | 食物、金属 |
+| old_archives | 旧档案馆 | resource | logistics_depot | 混合物资 |
+| military_bunker | 军事碉堡 | resource | bunker_interior | 弹药、烟雾弹（高危） |
+| sewer_maze | 下水道迷宫 | hazard | sewer_depths | 药品、烟雾弹（高危） |
+| sunken_plaza | 沉降广场 | hazard | crater_salvage | 燃料、金属（高危） |
+| weather_station | 气象站废墟 | hazard | old_clinic | 药品（低危） |
+
+详细房间模板参数见 `docs/combat_system.md` § 三 和 § 十。
+
+### 13.2 路点事件池（Waypoint Event Pool）
+
+类似聚落事件池，非聚落节点到达时有 **25%** 概率触发路点事件。
+
+- **配置文件**：`assets/configs/waypoint_events.json`（15 个事件）
+- **代码实现**：`scripts/events/waypoint_event_pool.lua`
+- **接入点**：`flow.lua` → `handle_node_arrival()`、`screen_home.lua` → 非聚落 UI 按钮
+
+**事件分类**：
+
+| 类型 | 数量 | ID 前缀 | 示例 |
+|------|------|---------|------|
+| 资源型 | 5 | WPT_R | 拾荒者交易、设备故障、隐藏物资、竞争者、旧地图碎片 |
+| 危险型 | 5 | WPT_H | 求救信号、恶劣天气、变异巢穴、断路抉择、迷雾中的声音 |
+| 中转型 | 3 | WPT_T | 过路商人、路标留言、废弃营地遗迹 |
+| 故事型 | 2 | WPT_S | 旧日信件、广播残响 |
+
+**筛选机制**：每个事件配有 `node_types` 数组（可选 `node_ids`），到达时按当前节点类型过滤 → 权重抽取 → 独立冷却（`state._waypoint_event_cooldowns`）。
+
+### 13.3 中转站快速休整
+
+**仅 transit 节点**额外提供"短暂休整"按钮：
+
+| 属性 | 值 |
+|------|-----|
+| 消耗 | 罐头 ×1 + 饮水 ×1 |
+| 效果 | 修复货车耐久 5 点（不超上限） |
+| 限制 | 每次到达限用一次（`state._visit_used.transit_rest`） |
+| 不可用提示 | "已休整过" / "缺少食物" / "缺少饮水" |
+
+### 13.4 故事节点首次到访提示
+
+**story 节点**首次到达时，篝火按钮会高亮显示"此地似有故事"提示，引导玩家与同伴交谈。到访记录存储在 `state._visited_story_nodes[nodeId]`。
+
+### 13.5 非聚落节点到达后交互总览
+
+到达非聚落节点时，按顺序可能出现以下按钮：
+
+| 按钮 | 条件 | 说明 |
+|------|------|------|
+| 搜索附近 | 节点在 NODE_EXPLORE_ROOM 映射中 | 进入探索房间 |
+| 查看地图 | 始终可用 | 进入路线规划 |
+| 路点事件 | `state.flow.pending_waypoint_event` 存在 | 触发随机事件 |
+| 短暂休整 | transit 节点 + 有食物和水 + 未使用 | 消耗补给修复耐久 |
+| 篝火 | 始终可用 | 与同伴互动（story 首访高亮） |
+
+---
+
+*文档版本: v3.0*
+*更新日期: 2026-04-11*
+*变更: v2→v3 新增 §十三 非聚落节点交互系统（探索房间映射、路点事件池、中转休整、故事首访提示）*
+*数据来源: world_graph.lua, factions.lua, state.lua, intel.lua, npc_dialogues.json, settlement_events.json, waypoint_events.json, waypoint_event_pool.lua, combat_config.lua, screen_home.lua*

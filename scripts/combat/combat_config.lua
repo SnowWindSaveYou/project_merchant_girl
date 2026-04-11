@@ -188,10 +188,215 @@ M.EXPLORE_ROOMS = {
         hazard_chance = 0.35,
         hazard_dmg    = 6,
     },
+
+    -- ── 资源节点探索房间 ──
+
+    irrigation_tunnels = {
+        name = "灌溉水渠",
+        desc = "半淹没的混凝土渠道，苔藓覆盖的阀门还在滴水",
+        crates = {
+            { name = "水阀间", loot = {
+                { id = "water",    count = 3, chance = 0.8 },
+                { id = "water",    count = 2, chance = 0.4 },
+            }},
+            { name = "渠壁暗格", loot = {
+                { id = "food_can", count = 2, chance = 0.6 },
+                { id = "medicine", count = 1, chance = 0.25 },
+            }},
+        },
+        enemies = {
+            { name = "水蛭群", hp = 14, atk = 3, desc = "暗水中蠕动的变异水蛭" },
+        },
+        hazard_chance = 0.25,
+        hazard_dmg    = 4,
+    },
+    mushroom_grotto = {
+        name = "蘑菇洞穴",
+        desc = "潮湿的岩洞中发着微光，菌丝覆满墙壁",
+        crates = {
+            { name = "菌床", loot = {
+                { id = "food_can", count = 3, chance = 0.85 },
+                { id = "food_can", count = 2, chance = 0.4 },
+            }},
+            { name = "旧急救包", loot = {
+                { id = "medicine", count = 1, chance = 0.5 },
+                { id = "water",    count = 1, chance = 0.35 },
+            }},
+        },
+        enemies = {
+            { name = "洞穴蜘蛛", hp = 16, atk = 4, desc = "在黑暗中结网的大型蜘蛛" },
+        },
+        hazard_chance = 0.2,
+        hazard_dmg    = 3,
+    },
+    solar_panels = {
+        name = "太阳能田",
+        desc = "成排的光伏板在烈日下闪烁，控制箱散落田间",
+        crates = {
+            { name = "控制箱", loot = {
+                { id = "circuit",   count = 2, chance = 0.75 },
+                { id = "circuit",   count = 1, chance = 0.35 },
+            }},
+            { name = "储电柜", loot = {
+                { id = "fuel_cell", count = 1, chance = 0.6 },
+                { id = "metal_scrap", count = 1, chance = 0.4 },
+            }},
+        },
+        enemies = {
+            { name = "日灼蜥蜴", hp = 20, atk = 5, desc = "长期暴晒变异的巨型蜥蜴" },
+        },
+        hazard_chance = 0.3,
+        hazard_dmg    = 5,
+    },
+    junk_heap = {
+        name = "废品堆场",
+        desc = "金属垃圾堆成小山，锈味刺鼻，偶有可用零件",
+        crates = {
+            { name = "废铁堆", loot = {
+                { id = "metal_scrap", count = 3, chance = 0.85 },
+                { id = "metal_scrap", count = 2, chance = 0.5 },
+            }},
+            { name = "旧电器", loot = {
+                { id = "circuit",     count = 1, chance = 0.45 },
+                { id = "fuel_cell",   count = 1, chance = 0.25 },
+            }},
+        },
+        enemies = {
+            { name = "拾荒犬", hp = 15, atk = 4, desc = "领地意识极强的流浪犬群" },
+        },
+        hazard_chance = 0.3,
+        hazard_dmg    = 4,
+    },
+    print_shop = {
+        name = "印刷厂遗址",
+        desc = "油墨味弥漫的厂房，残破的印刷机积满灰尘",
+        crates = {
+            { name = "档案柜", loot = {
+                { id = "old_book",  count = 2, chance = 0.7 },
+                { id = "old_book",  count = 1, chance = 0.4 },
+            }},
+            { name = "维修间", loot = {
+                { id = "circuit",     count = 1, chance = 0.5 },
+                { id = "metal_scrap", count = 1, chance = 0.35 },
+            }},
+        },
+        enemies = {
+            { name = "纸巢虫", hp = 12, atk = 3, desc = "在纸堆中筑巢的变异虫群" },
+        },
+        hazard_chance = 0.2,
+        hazard_dmg    = 3,
+    },
+    scrap_pit = {
+        name = "废铁场",
+        desc = "巨型液压机旁散落着被压扁的车壳，深处有未拆解的残骸",
+        crates = {
+            { name = "车壳残骸", loot = {
+                { id = "metal_scrap", count = 2, chance = 0.8 },
+                { id = "ammo",        count = 1, chance = 0.35 },
+            }},
+            { name = "工具房", loot = {
+                { id = "metal_scrap", count = 2, chance = 0.6 },
+                { id = "fuel_cell",   count = 1, chance = 0.3 },
+            }},
+        },
+        enemies = {
+            { name = "铁锈蝎", hp = 22, atk = 6, desc = "金属碎片中进化的甲壳生物" },
+        },
+        hazard_chance = 0.35,
+        hazard_dmg    = 6,
+    },
+    logistics_depot = {
+        name = "旧物流中心",
+        desc = "传送带锈死在原地，货架上残留着各类物资",
+        crates = {
+            { name = "货架A", loot = {
+                { id = "food_can",    count = 1, chance = 0.5 },
+                { id = "water",       count = 1, chance = 0.5 },
+                { id = "medicine",    count = 1, chance = 0.3 },
+            }},
+            { name = "货架B", loot = {
+                { id = "metal_scrap", count = 1, chance = 0.5 },
+                { id = "circuit",     count = 1, chance = 0.4 },
+                { id = "ammo",        count = 1, chance = 0.25 },
+            }},
+        },
+        enemies = {
+            { name = "流浪者团伙", hp = 18, atk = 5, desc = "占据仓库的小股流民" },
+        },
+        hazard_chance = 0.3,
+        hazard_dmg    = 5,
+    },
+
+    -- ── 危险节点探索房间（高危高回报） ──
+
+    sewer_depths = {
+        name = "下水道深处",
+        desc = "恶臭的地下通道，积水没过脚踝，墙壁渗着不明液体",
+        crates = {
+            { name = "被冲来的箱子", loot = {
+                { id = "medicine",    count = 2, chance = 0.6 },
+                { id = "medicine",    count = 1, chance = 0.35 },
+            }},
+            { name = "密封桶", loot = {
+                { id = "water",       count = 2, chance = 0.5 },
+                { id = "smoke_bomb",  count = 1, chance = 0.3 },
+            }},
+        },
+        enemies = {
+            { name = "污水巨蛙", hp = 28, atk = 7, desc = "在污水中变异的巨型蛙类" },
+            { name = "管道鼠王", hp = 20, atk = 5, desc = "统领下水道的变异巨鼠" },
+        },
+        hazard_chance = 0.5,
+        hazard_dmg    = 8,
+    },
+    bunker_interior = {
+        name = "军事掩体内部",
+        desc = "厚重的防爆门半开着，里面的武器架还没被完全搬空",
+        crates = {
+            { name = "弹药库", loot = {
+                { id = "ammo",       count = 3, chance = 0.7 },
+                { id = "smoke_bomb", count = 1, chance = 0.5 },
+            }},
+            { name = "军官储物柜", loot = {
+                { id = "circuit",     count = 2, chance = 0.55 },
+                { id = "medicine",    count = 1, chance = 0.4 },
+            }},
+        },
+        enemies = {
+            { name = "自动防御炮台", hp = 35, atk = 10, desc = "还在运转的自动火力系统" },
+            { name = "巡逻机器人", hp = 25, atk = 7, desc = "电量将尽的自动哨兵" },
+        },
+        hazard_chance = 0.55,
+        hazard_dmg    = 10,
+    },
+    crater_salvage = {
+        name = "弹坑残骸",
+        desc = "巨大的弹坑边缘，半埋的车辆和设备等待被拆解",
+        crates = {
+            { name = "半埋载具", loot = {
+                { id = "fuel_cell",   count = 2, chance = 0.65 },
+                { id = "metal_scrap", count = 2, chance = 0.7 },
+            }},
+            { name = "散落碎片", loot = {
+                { id = "metal_scrap", count = 2, chance = 0.6 },
+                { id = "circuit",     count = 1, chance = 0.3 },
+            }},
+        },
+        enemies = {
+            { name = "辐射獾", hp = 24, atk = 8, desc = "被辐射扭曲的凶猛獾类" },
+        },
+        hazard_chance = 0.45,
+        hazard_dmg    = 7,
+    },
 }
 
 -- 可探索房间列表（随机选择用）
-M.EXPLORE_ROOM_IDS = { "abandoned_warehouse", "old_clinic", "military_outpost", "radar_station" }
+M.EXPLORE_ROOM_IDS = {
+    "abandoned_warehouse", "old_clinic", "military_outpost", "radar_station",
+    "irrigation_tunnels", "mushroom_grotto", "solar_panels", "junk_heap",
+    "print_shop", "scrap_pit", "logistics_depot",
+    "sewer_depths", "bunker_interior", "crater_salvage",
+}
 
 -- ============================================================
 -- 探索战 —— 战斗参数
