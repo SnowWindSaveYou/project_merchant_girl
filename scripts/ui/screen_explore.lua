@@ -9,6 +9,14 @@ local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local Flags        = require("core/flags")
 
+--- 地形 → 路途背景映射（探索发生在行驶途中）
+local REGION_BG = {
+    urban  = "image/bg_generic_ruins_industrial_20260409080003.png",
+    wild   = "image/bg_generic_road_20260409075956.png",
+    canyon = "image/bg_generic_wilderness_20260409080002.png",
+    forest = "image/bg_generic_wilderness_20260409080002.png",
+}
+
 local M = {}
 ---@type table
 local router = nil
@@ -18,6 +26,8 @@ local explore = nil
 local lastNarration = ""
 ---@type table|nil
 local state_ = nil
+---@type string|nil
+local bgImage_ = nil
 
 -- ============================================================
 -- 气泡教程辅助
@@ -50,6 +60,10 @@ function M.create(state, params, r)
     state_ = state
     local room_id = params and params.room_id or nil
 
+    -- 解析路途背景
+    local region = state.flow and state.flow.environment and state.flow.environment.region or "wild"
+    bgImage_ = REGION_BG[region] or REGION_BG.wild
+
     explore = Explore.create(state, room_id)
     lastNarration = ""
 
@@ -63,19 +77,17 @@ end
 function M._build_intro_view(state)
     local room = explore.room
 
-    return UI.Panel {
+    return F.overlay {
         id = "exploreScreen",
-        width = "100%", height = "100%",
-        backgroundColor = { 18, 20, 15, 255 },
-        justifyContent = "center", alignItems = "center",
+        backgroundImage = bgImage_,
+        contentWidth = "90%",
         children = {
-            UI.Panel {
-                width = "90%", maxWidth = 420,
+            F.card {
+                maxWidth = 420,
                 padding = Theme.sizes.padding_large,
-                backgroundColor = { 35, 40, 30, 240 },
-                borderRadius = Theme.sizes.radius_large,
                 borderWidth = 2, borderColor = Theme.colors.warning,
                 gap = 16, alignItems = "center",
+                enterAnim = true,
                 children = {
                     UI.Label {
                         text = "🔍 发现资源点",
@@ -286,14 +298,34 @@ function M._build_explore_view(state)
         },
     })
 
-    return UI.Panel {
-        id = "exploreScreen",
+    -- 背景图 + 遮罩 + 内容的三层结构
+    local layers = {}
+    if bgImage_ then
+        table.insert(layers, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundImage = bgImage_,
+            backgroundFit = "cover",
+        })
+        table.insert(layers, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundColor = { 0, 0, 0, 160 },
+        })
+    end
+    table.insert(layers, UI.Panel {
         width = "100%", height = "100%",
-        backgroundColor = { 18, 20, 15, 255 },
         padding = Theme.sizes.padding,
         gap = 8,
         overflow = "scroll",
         children = children,
+    })
+
+    return UI.Panel {
+        id = "exploreScreen",
+        width = "100%", height = "100%",
+        backgroundColor = bgImage_ and { 0, 0, 0, 255 } or { 18, 20, 15, 255 },
+        children = layers,
     }
 end
 
@@ -318,14 +350,13 @@ function M._show_result_view(state)
         })
     end
 
-    local root = UI.Panel {
+    local root = F.overlay {
         id = "exploreScreen",
-        width = "100%", height = "100%",
-        backgroundColor = { 18, 20, 15, 255 },
-        justifyContent = "center", alignItems = "center",
+        backgroundImage = bgImage_,
+        contentWidth = "90%",
         children = {
             F.card {
-                width = "90%", maxWidth = 420,
+                maxWidth = 420,
                 padding = Theme.sizes.padding_large,
                 borderWidth = 2, borderColor = resultColor,
                 gap = 12, alignItems = "center",

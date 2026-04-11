@@ -5,6 +5,7 @@ local Theme       = require("ui/theme")
 local F           = require("ui/ui_factory")
 local BlackMarket = require("settlement/black_market")
 local Goods       = require("economy/goods")
+local SoundMgr    = require("ui/sound_manager")
 
 local M = {}
 ---@type table
@@ -253,10 +254,12 @@ function createHaggleView(state, hs)
         height = 36,
         fontSize = Theme.sizes.font_normal,
         disabled = state.economy.credits < currentAsk,
+        sound = false,
         onClick = function(self)
             local ok, result = BlackMarket.buy(state, hs.item_index, currentAsk)
             _haggleState = nil
             if ok then
+                SoundMgr.play("coins")
                 print("[BlackMarket] Bought: " .. result.label .. " for $" .. result.price)
             end
             router.navigate("black_market")
@@ -274,6 +277,7 @@ function createHaggleView(state, hs)
                 variant = "secondary",
                 height = 32, flexGrow = 1,
                 fontSize = Theme.sizes.font_small,
+                sound = false,
                 onClick = function(self)
                     local result, counterP, gwDelta =
                         BlackMarket.haggle(state, hs.item_index, offerPrice)
@@ -283,10 +287,12 @@ function createHaggleView(state, hs)
                         local ok, bResult = BlackMarket.buy(state, hs.item_index, offerPrice)
                         _haggleState = nil
                         if ok then
+                            SoundMgr.play("coins")
                             print("[BlackMarket] Deal at $" .. bResult.price)
                         end
                         router.navigate("black_market")
                     elseif result == "angry" then
+                        SoundMgr.play("click")
                         -- 好感下降，回合推进
                         if gwDelta then
                             local sett = state.settlements.ruins_camp
@@ -301,6 +307,7 @@ function createHaggleView(state, hs)
                             router.navigate("black_market", { _haggle = hs })
                         end
                     elseif result == "counter" then
+                        SoundMgr.play("click")
                         hs.round = hs.round + 1
                         hs.last_result = "counter"
                         hs.counter_price = counterP

@@ -7,6 +7,7 @@ local Flow = require("core/flow")
 local Graph = require("map/world_graph")
 local OrderBook = require("economy/order_book")
 local SaveLocal = require("save/save_local")
+local SoundMgr  = require("ui/sound_manager")
 
 local M = {}
 ---@type table
@@ -30,6 +31,11 @@ function M.create(state, params, r)
 
     -- 剩余活跃订单
     local remaining = OrderBook.get_active(state)
+
+    -- 有交付奖励时播放金币音效
+    if totalReward > 0 then
+        SoundMgr.play("coins")
+    end
 
     -- 清理已完结订单
     OrderBook.cleanup(state)
@@ -108,21 +114,27 @@ function M.create(state, params, r)
         fastest = "最快", safest = "最安全", balanced = "平衡", manual = "手动",
     }
 
-    return UI.Panel {
+    -- 解析当前聚落背景图
+    local bgImage = nil
+    local loc = state.map and state.map.current_location
+    if loc then
+        local nodeInfo = Graph.get_node(loc)
+        bgImage = nodeInfo and nodeInfo.bg or nil
+    end
+
+    return F.overlay {
         id = "summaryScreen",
-        width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
+        backgroundImage = bgImage,
         children = {
-            UI.SafeAreaView {
-                width = "100%", height = "100%",
-                justifyContent = "center", alignItems = "center",
+            UI.ScrollView {
+                width = "90%", maxWidth = 420,
+                maxHeight = "85%",
                 children = {
                     F.card {
                         id = "summaryScroll",
-                        width = "90%", maxWidth = 420,
+                        width = "100%",
                         padding = Theme.sizes.padding_large,
                         gap = 10, alignItems = "center",
-                        overflow = "scroll",
                         enterAnim = true,
                         children = {
                             UI.Label {

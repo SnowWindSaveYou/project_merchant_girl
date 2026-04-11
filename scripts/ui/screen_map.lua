@@ -13,6 +13,8 @@ local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local Flags        = require("core/flags")
 local SketchBorder = require("ui/sketch_border")
+local SoundMgr     = require("ui/sound_manager")
+local DialoguePool = require("narrative/dialogue_pool")
 
 local M = {}
 
@@ -40,6 +42,26 @@ local mapMode = {
     manualPlan = nil,           -- 手动模式路线
     destList   = nil,           -- 多目的地列表（从订单页进入时使用）
 }
+
+--- 教程首次出发拦截：检查是否需要播放出发对话
+--- 如果触发，先启动行程再跳转对话页面，返回 true；否则返回 false
+local function tryTutorialDeparture(plan)
+    local tutPhase = Tutorial.get_phase(state_)
+    if tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE
+        and not Flags.has(state_, "tutorial_first_departure_done") then
+        local departure = DialoguePool.get("SD_TUTORIAL_FIRST_DEPARTURE")
+        if departure then
+            Flow.start_travel(state_, plan)
+            router_.navigate("campfire", {
+                dialogue = departure,
+                consumed = false,
+                returnTo = "home",
+            })
+            return true
+        end
+    end
+    return false
+end
 
 -- 底部面板引用
 ---@type table|nil
@@ -1292,12 +1314,16 @@ local function openNodeModal(nodeId)
                         text = canDepart and "直接出发" or "燃料不足",
                         variant = "primary", flexGrow = 1, height = 40,
                         disabled = not canDepart,
+                        sound = false,
                         onClick = function(self)
                             modal_:Close()
                             local plan = RoutePlanner.auto_plan(state_, nodeId, "fastest")
                             if plan then
-                                Flow.start_travel(state_, plan)
-                                router_.navigate("home")
+                                SoundMgr.play("depart")
+                                if not tryTutorialDeparture(plan) then
+                                    Flow.start_travel(state_, plan)
+                                    router_.navigate("home")
+                                end
                             end
                         end,
                     },
@@ -1826,10 +1852,14 @@ rebuildPanel = function()
                             text = canDepart and "确认出发" or "燃料不足",
                             variant = "primary", flexGrow = 2, height = 40,
                             disabled = not canDepart,
+                            sound = false,
                             onClick = function(self)
                                 if canDepart and plan then
-                                    Flow.start_travel(state_, plan)
-                                    router_.navigate("home")
+                                    SoundMgr.play("depart")
+                                    if not tryTutorialDeparture(plan) then
+                                        Flow.start_travel(state_, plan)
+                                        router_.navigate("home")
+                                    end
                                 end
                             end,
                         },
@@ -1940,8 +1970,10 @@ rebuildPanel = function()
                                 local ok = Flow.reroute(state_, plan)
                                 if ok then exitToBase() end
                             else
-                                Flow.start_travel(state_, plan)
-                                router_.navigate("home")
+                                if not tryTutorialDeparture(plan) then
+                                    Flow.start_travel(state_, plan)
+                                    router_.navigate("home")
+                                end
                             end
                         end
                     end,

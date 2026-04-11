@@ -23,6 +23,20 @@ local soundSource = nil
 --- UI 音效音量 (0~1)
 local masterVolume = 0.7
 
+--- 需要随机化的音效及其 pitch 抖动范围（半音比例）
+--- pitch 1.0 = 原始音调；范围 ±0.08 约 ±1.3 半音，听感自然不突兀
+local RANDOMIZE = {
+    click      = { pitchRange = 0.08, gainRange = 0.06 },
+    click_soft = { pitchRange = 0.05, gainRange = 0.04 },
+    coins      = { pitchRange = 0.06, gainRange = 0.05 },
+    open       = { pitchRange = 0.03, gainRange = 0.03 },
+    close      = { pitchRange = 0.03, gainRange = 0.03 },
+    depart     = { pitchRange = 0.04, gainRange = 0.05 },
+    event      = { pitchRange = 0.05, gainRange = 0.04 },
+    bubble_pop = { pitchRange = 0.10, gainRange = 0.05 },
+    pickup     = { pitchRange = 0.10, gainRange = 0.06 },
+}
+
 --- 确保播放组件已初始化
 local function ensureInit()
     if soundNode then return end
@@ -56,14 +70,28 @@ local function getSound(name)
 end
 
 --- 播放指定名称的 UI 音效
+--- 对配置了 RANDOMIZE 的音效自动施加 pitch/gain 微抖动，避免重复感
 ---@param name string 音效名称（click / click_soft / open / close / error / success / coins / warning）
 ---@param gain? number 可选音量覆盖 (0~1)
 function M.play(name, gain)
     ensureInit()
     local snd = getSound(name)
     if not snd then return end
-    soundSource.gain = gain or masterVolume
-    soundSource:Play(snd)
+
+    local baseGain = gain or masterVolume
+    local rand = RANDOMIZE[name]
+    if rand then
+        -- 随机 pitch：以原始采样频率为基准上下浮动
+        local baseFreq = snd.frequency  -- 原始采样率（如 44100）
+        local pitchMul = 1.0 + (math.random() * 2 - 1) * rand.pitchRange
+        local freq = baseFreq * pitchMul
+        -- 随机 gain 微调
+        local gAdj = 1.0 + (math.random() * 2 - 1) * rand.gainRange
+        local g = math.max(0.05, math.min(1.0, baseGain * gAdj))
+        soundSource:Play(snd, freq, g)
+    else
+        soundSource:Play(snd, snd.frequency, baseGain)
+    end
 end
 
 --- 设置 UI 音效总音量

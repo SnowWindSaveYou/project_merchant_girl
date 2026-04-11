@@ -3,6 +3,7 @@ local Gal          = require("ui/gal_dialogue")
 local Campfire     = require("narrative/campfire")
 local Goods        = require("economy/goods")
 local Graph        = require("map/world_graph")
+local AudioMgr     = require("ui/audio_manager")
 
 local M = {}
 ---@type table
@@ -47,6 +48,11 @@ function M.create(state, params, r)
         session.result      = nil
         session.showHistory = false
         session.returnTo    = params.returnTo or nil
+
+        -- 对话数据可指定 audioScene（campfire / settlement / travel / silent）
+        -- 默认为 "campfire"（篝火对话页的自然氛围）
+        local scene = params.dialogue.audioScene or "campfire"
+        AudioMgr.setScene(scene)
     end
 
     if params._continue then
@@ -118,6 +124,10 @@ function M.create(state, params, r)
             router.navigate("campfire", { _toggle_history = true })
         end,
         onClose = function()
+            -- 跳过对话：设置所有选项共有的进度 flag，避免教程/主线卡住
+            if session.dialogue and not session.result then
+                Campfire.apply_skip(state, session.dialogue)
+            end
             local dest = session.returnTo or "home"
             session.dialogue = nil
             session.returnTo = nil
@@ -126,6 +136,8 @@ function M.create(state, params, r)
     })
 end
 
-function M.update(state, dt, r) end
+function M.update(state, dt, r)
+    Gal.update(dt)
+end
 
 return M

@@ -7,7 +7,7 @@
 | 项目 | 设定 |
 |------|------|
 | 性别 | 女 |
-| 年龄 | 约 20 岁 |
+| 年龄 | 约 16 岁 |
 | 身份 | 行商搭档（谈判/社交/采购） |
 | 立绘 ID | `taoxia` |
 | 表情差分 | normal / happy / sad / surprised / angry / thinking |
@@ -72,7 +72,7 @@
 | 项目 | 设定 |
 |------|------|
 | 性别 | 女 |
-| 年龄 | 约 22 岁 |
+| 年龄 | 约 17 岁 |
 | 身份 | 行商搭档（驾驶/机修/安全） |
 | 立绘 ID | `linli` |
 | 表情差分 | normal / happy / sad / surprised / angry / thinking |

@@ -116,8 +116,8 @@ function M.create(state)
             width = "100%", height = 28,
             flexDirection = "row", alignItems = "center",
             paddingLeft = 12, paddingRight = 12,
-            backgroundColor = { 22, 36, 48, 240 },
-            borderBottomWidth = 1, borderColor = { 50, 80, 100, 120 },
+            backgroundColor = Theme.colors.travel_strip_bg,
+            borderBottomWidth = 1, borderColor = Theme.colors.travel_strip_border,
             gap = 8,
             children = {
                 UI.Label {
@@ -310,9 +310,9 @@ function M.createRadioStrip(state)
         width = "100%", height = 28,
         flexDirection = "row", alignItems = "center",
         paddingLeft = 8, paddingRight = 8,
-        backgroundColor = isOn and { 28, 36, 28, 230 } or { 36, 36, 36, 180 },
+        backgroundColor = isOn and Theme.colors.radio_on_bg or Theme.colors.radio_off_bg,
         borderBottomWidth = 1,
-        borderColor = isOn and { 60, 100, 60, 120 } or { 50, 50, 50, 100 },
+        borderColor = isOn and Theme.colors.radio_on_border or Theme.colors.radio_off_border,
         gap = 4,
         children = stripChildren,
     }

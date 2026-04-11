@@ -30,8 +30,8 @@ local LOOT_TABLE = {
         name        = "信用芯片",
         icon        = "image/loot_credit_chip_20260409034646.png",
         reward_type = "credits",
-        reward_min  = 5,
-        reward_max  = 15,
+        reward_min  = 2,
+        reward_max  = 6,
         weight      = 35,
     },
     {
@@ -41,7 +41,7 @@ local LOOT_TABLE = {
         reward_type = "cargo",
         reward_id   = "food_can",
         reward_min  = 1,
-        reward_max  = 2,
+        reward_max  = 1,
         weight      = 15,
     },
     {
@@ -51,7 +51,7 @@ local LOOT_TABLE = {
         reward_type = "cargo",
         reward_id   = "metal_scrap",
         reward_min  = 1,
-        reward_max  = 3,
+        reward_max  = 1,
         weight      = 20,
     },
     {
@@ -62,7 +62,7 @@ local LOOT_TABLE = {
         reward_id   = "circuit",
         reward_min  = 1,
         reward_max  = 1,
-        weight      = 8,
+        weight      = 6,
     },
     {
         id          = "old_book",
@@ -72,7 +72,7 @@ local LOOT_TABLE = {
         reward_id   = "old_book",
         reward_min  = 1,
         reward_max  = 1,
-        weight      = 10,
+        weight      = 8,
     },
     {
         id          = "medicine",
@@ -82,16 +82,16 @@ local LOOT_TABLE = {
         reward_id   = "medicine",
         reward_min  = 1,
         reward_max  = 1,
-        weight      = 6,
+        weight      = 4,
     },
     {
         id          = "supply_crate",
         name        = "补给箱",
         icon        = "image/loot_supply_crate_20260409034705.png",
         reward_type = "credits",
-        reward_min  = 20,
-        reward_max  = 40,
-        weight      = 4,
+        reward_min  = 8,
+        reward_max  = 15,
+        weight      = 3,
     },
     {
         id          = "ammo",
@@ -101,7 +101,7 @@ local LOOT_TABLE = {
         reward_id   = "ammo",
         reward_min  = 1,
         reward_max  = 1,
-        weight      = 5,
+        weight      = 4,
         danger_only = true,
     },
 }
@@ -109,16 +109,16 @@ local LOOT_TABLE = {
 -- ============================================================
 -- 配置常量
 -- ============================================================
-local SPAWN_DELAY_MIN    = 3    -- 掉落物出现最短延迟（秒）
-local SPAWN_DELAY_MAX    = 12   -- 最长延迟
+local SPAWN_DELAY_MIN    = 6    -- 掉落物出现最短延迟（秒）
+local SPAWN_DELAY_MAX    = 18   -- 最长延迟
 local LIFETIME           = 60   -- 安全兜底（实际由 driving_scene 按屏幕位置过期）
-local MAX_VISIBLE        = 2    -- 同时可见最大数量
+local MAX_VISIBLE        = 1    -- 同时可见最大数量
 
 -- 危险等级 → 每段掉落物数量
 local DENSITY = {
     safe   = { 1, 2 },
-    normal = { 2, 3 },
-    danger = { 3, 5 },
+    normal = { 1, 2 },
+    danger = { 2, 3 },
 }
 
 -- 掉落物在路面 y 范围 (widget 比例)

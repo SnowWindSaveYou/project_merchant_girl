@@ -66,6 +66,16 @@ M.styles = {
     danger_card = {
         ink_color = Theme.sketch.ink_danger,
     },
+    --- 高亮按钮：金色墨水 + 呼吸动画 + 双层强调
+    accent_button = {
+        layers      = 2,
+        baseWidth   = 1.6,
+        breathAmp   = 1.4,
+        breakChance = 0.10,
+        ink_color   = Theme.sketch.ink_accent,
+        glow        = true,
+        glow_color  = { 240, 220, 170 },  -- 偏白暖光
+    },
 }
 
 -- ============================================================
@@ -259,19 +269,54 @@ function M.register(widget, styleName, styleOverrides)
     elseif styleName == "vdivider" then drawMode = "vdivider"
     end
 
+    local hasGlow = merged.glow == true
+
     -- 捕获原始 Render（可能来自 metatable / 父类）
     local originalRender = widget.Render
 
     -- 实例级覆盖：仅影响此 widget，不影响同类其它实例
     widget.Render = function(self, nvg)
+        -- 获取尺寸（Render 时 NVG 已 translate 到 widget 局部坐标）
+        local layout = self:GetAbsoluteLayout()
+        if not layout or layout.w <= 0 or layout.h <= 0 then
+            if originalRender then originalRender(self, nvg) end
+            return
+        end
+
+        -- ★ 微光层（在原始渲染之前，作为底层光晕）
+        if hasGlow then
+            local gc = merged.glow_color or merged.ink_color or Theme.sketch.ink_accent
+            local pulse = 0.5 + 0.5 * math.sin(_time * 1.8 + seed * 0.3)
+
+            nvgSave(nvg)
+
+            -- 外层扩散光晕（柔和大范围）
+            local outerAlpha = math.floor(30 + pulse * 40)   -- 30~70
+            local outerSpread = 6 + pulse * 4                -- 6~10px
+            nvgBeginPath(nvg)
+            nvgRect(nvg,
+                layout.x - outerSpread, layout.y - outerSpread,
+                layout.w + outerSpread * 2, layout.h + outerSpread * 2)
+            nvgFillColor(nvg, nvgRGBA(gc[1], gc[2], gc[3], outerAlpha))
+            nvgFill(nvg)
+
+            -- 内层贴边光晕（聚焦明亮）
+            local innerAlpha = math.floor(45 + pulse * 35)   -- 45~80
+            local innerSpread = 2 + pulse * 1                -- 2~3px
+            nvgBeginPath(nvg)
+            nvgRect(nvg,
+                layout.x - innerSpread, layout.y - innerSpread,
+                layout.w + innerSpread * 2, layout.h + innerSpread * 2)
+            nvgFillColor(nvg, nvgRGBA(gc[1], gc[2], gc[3], innerAlpha))
+            nvgFill(nvg)
+
+            nvgRestore(nvg)
+        end
+
         -- 先执行原始渲染（背景、边框等）
         if originalRender then
             originalRender(self, nvg)
         end
-
-        -- 获取尺寸（Render 时 NVG 已 translate 到 widget 局部坐标）
-        local layout = self:GetAbsoluteLayout()
-        if not layout or layout.w <= 0 or layout.h <= 0 then return end
 
         nvgSave(nvg)
         if drawMode == "hdivider" then
@@ -293,6 +338,119 @@ end
 --- 推进呼吸动画时间
 function M.update(dt)
     _time = _time + dt
+end
+
+-- ============================================================
+-- ProgressBar 素描化 monkey-patch（全局原型级别）
+-- ============================================================
+
+--- 全局替换 ProgressBar 的 Render 方法，使其使用素描手绘风格
+--- 只需在初始化时调用一次，之后所有 ProgressBar 实例自动生效
+function M.patchProgressBar()
+    local UI = require("urhox-libs/UI")
+    local PB = require("urhox-libs/UI/Widgets/ProgressBar")
+    local UiTheme = require("urhox-libs/UI/Core/Theme")
+
+    -- 进度条素描样式：单层、细线、无呼吸、低断裂
+    local pbStyle = {
+        layers      = 1,
+        baseWidth   = 1.0,
+        breathAmp   = 0,
+        breakChance = 0.15,
+        breakMaxGaps = 2,
+    }
+
+    -- 保存原始 Render 以备份
+    local origRender = PB.Render
+
+    -- 全局 seed 分配器：每个实例首次渲染时分配固定 seed
+    local instanceSeeds = setmetatable({}, { __mode = "k" })
+
+    PB.Render = function(self, nvg)
+        local l = self:GetAbsoluteLayout()
+        if not l or l.w <= 0 or l.h <= 0 then return end
+
+        local props = self.props
+        local value = props.value or 0
+        local max = props.max or 1
+        local variant = props.variant or "primary"
+        local progress = math.max(0, math.min(1, value / max))
+
+        -- 分配稳定 seed
+        if not instanceSeeds[self] then
+            _seedCounter = _seedCounter + 1
+            instanceSeeds[self] = _seedCounter * 31
+        end
+        local seed = instanceSeeds[self]
+
+        -- 获取颜色
+        local trackColor = Theme.colors.bg_card
+        local fillColor
+        if variant == "success" then
+            fillColor = UiTheme.Color("success")
+        elseif variant == "warning" then
+            fillColor = UiTheme.Color("warning")
+        elseif variant == "error" or variant == "danger" then
+            fillColor = UiTheme.Color("error")
+        elseif variant == "info" then
+            fillColor = Theme.colors.info or UiTheme.Color("primary")
+        else
+            fillColor = UiTheme.Color("primary")
+        end
+
+        -- 1. 画轨道背景（直角矩形，无圆角）
+        nvgBeginPath(nvg)
+        nvgRect(nvg, l.x, l.y, l.w, l.h)
+        nvgFillColor(nvg, nvgRGBA(trackColor[1], trackColor[2], trackColor[3], trackColor[4] or 255))
+        nvgFill(nvg)
+
+        -- 2. 画填充条（直角矩形）
+        local fillW = l.w * progress
+        if fillW > 0.5 then
+            nvgBeginPath(nvg)
+            nvgRect(nvg, l.x, l.y, fillW, l.h)
+            nvgFillColor(nvg, nvgRGBA(fillColor[1], fillColor[2], fillColor[3], fillColor[4] or 255))
+            nvgFill(nvg)
+        end
+
+        -- 3. 素描描边（外框 + 填充分界线）
+        nvgSave(nvg)
+
+        -- 外框手绘线
+        drawSketchLine(nvg, pbStyle, l.x, l.y, l.x + l.w, l.y, seed + 10, _time)
+        drawSketchLine(nvg, pbStyle, l.x + l.w, l.y, l.x + l.w, l.y + l.h, seed + 11, _time)
+        drawSketchLine(nvg, pbStyle, l.x + l.w, l.y + l.h, l.x, l.y + l.h, seed + 12, _time)
+        drawSketchLine(nvg, pbStyle, l.x, l.y + l.h, l.x, l.y, seed + 13, _time)
+
+        -- 填充分界竖线（仅当进度在 5%~95% 之间显示）
+        if progress > 0.05 and progress < 0.95 then
+            local divX = l.x + fillW
+            local inkDim = Theme.sketch.ink_color_dim
+            nvgBeginPath(nvg)
+            nvgMoveTo(nvg, divX, l.y)
+            nvgLineTo(nvg, divX, l.y + l.h)
+            nvgStrokeColor(nvg, nvgRGBA(inkDim[1], inkDim[2], inkDim[3], inkDim[4]))
+            nvgStrokeWidth(nvg, 0.8)
+            nvgStroke(nvg)
+        end
+
+        nvgRestore(nvg)
+
+        -- 4. 标签（百分比文本）
+        if props.showLabel and not props.indeterminate then
+            local percent = math.floor(progress * 100)
+            local labelText = string.format("%d%%", percent)
+            local fontFamily = UiTheme.FontFamily()
+            local textColor = UiTheme.Color("text")
+            nvgFontFace(nvg, fontFamily)
+            nvgFontSize(nvg, UiTheme.FontSizeOf("small"))
+            nvgFillColor(nvg, nvgRGBA(textColor[1], textColor[2], textColor[3], textColor[4] or 255))
+            nvgTextAlign(nvg, NVG_ALIGN_CENTER_VISUAL + NVG_ALIGN_MIDDLE)
+            nvgText(nvg, l.x + l.w / 2, l.y + l.h / 2, labelText, nil)
+        end
+    end
+
+    print("[SketchBorder] ProgressBar patched to sketch style")
 end
 
 return M

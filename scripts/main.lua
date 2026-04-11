@@ -57,6 +57,34 @@ local SAVE_INTERVAL = 30
 -- 行程中累计交付记录（用于最终结算展示）
 local tripDeliveries = {}
 
+-- ============================================================
+-- 到达拦截器（通用机制）
+-- 注册函数签名: function(state, node_id) -> action|nil
+-- action = { type = "dialogue", dialogue = DialogueData }
+-- 先注册的优先级高；命中即停止后续检查
+-- ============================================================
+local arrivalInterceptors = {}
+
+--- 注册一个到达拦截器
+--- @param handler fun(state: table, node_id: string): table|nil
+local function registerArrivalInterceptor(handler)
+    table.insert(arrivalInterceptors, handler)
+end
+
+--- 遍历所有拦截器，返回第一个命中的 action 或 nil
+local function checkArrivalIntercepts(state, node_id)
+    for _, handler in ipairs(arrivalInterceptors) do
+        local action = handler(state, node_id)
+        if action then return action end
+    end
+    return nil
+end
+
+-- 注册：教程到达拦截
+registerArrivalInterceptor(function(state, node_id)
+    return Tutorial.on_arrival(state, node_id)
+end)
+
 -- 调试面板：快速连点 3 次打开（右上角触屏 或 键盘 P）
 local debugTapCount = 0
 local debugTapTimer = 0
@@ -82,6 +110,7 @@ function Start()
 
     -- 1b. 初始化手绘边框 NanoVG overlay
     SketchBorder.init()
+    SketchBorder.patchProgressBar()
 
     -- 2. 加载或创建状态
     local saved = SaveLocal.load()
@@ -365,6 +394,26 @@ end
 -- 到达节点处理（中间节点或终点）
 -- ============================================================
 function handleNodeArrival(arrivalInfo)
+    -- 到达剧情拦截（必须在 Flow.handle_node_arrival 之前检查）
+    -- 命中时先播放到达叙事，对话结束后再处理订单交付 / 行程结算，
+    -- 避免"还没到就已经交货结算"的时序错乱
+    -- 注册新拦截器：见上方 registerArrivalInterceptor()
+    local intercept = checkArrivalIntercepts(gameState, arrivalInfo.arrived_node)
+    if intercept and intercept.type == "dialogue" and intercept.dialogue then
+        print("[Main] Arrival intercept at " .. arrivalInfo.arrived_node
+            .. " — deferring arrival processing until dialogue ends")
+        -- 先更新当前位置，确保对话背景图能正确解析到目标聚落
+        gameState.map.current_location = arrivalInfo.arrived_node
+        -- 将原始到达信息存入延迟队列，对话结束回到常规页面后再处理
+        gameState.flow._deferred_arrival = arrivalInfo
+        Router.navigate("campfire", {
+            dialogue = intercept.dialogue,
+            consumed = false,
+        })
+        return
+    end
+
+    -- 无拦截：正常处理到达
     local arrResult = Flow.handle_node_arrival(gameState, arrivalInfo)
 
     -- 记录交付的订单
@@ -374,22 +423,6 @@ function handleNodeArrival(arrivalInfo)
         end
         print("[Main] 自动交付 " .. #arrResult.delivered .. " 个订单于 "
             .. Graph.get_node_name(arrResult.node_id))
-    end
-
-    -- 教程到达拦截：温室社区首次到达触发强制介绍对话
-    local tutAction = Tutorial.on_arrival(gameState, arrResult.node_id)
-    if tutAction and tutAction.type == "dialogue" and tutAction.dialogue then
-        print("[Main] Tutorial intercept at " .. arrResult.node_id)
-        -- 先完成行程结算（如果是最终节点）
-        if arrResult.is_final then
-            handleTripFinish()
-        end
-        -- 然后跳转到篝火对话（强制触发，免费）
-        Router.navigate("campfire", {
-            dialogue = tutAction.dialogue,
-            consumed = false,
-        })
-        return
     end
 
     -- 如果是最终节点，进入结算
@@ -505,8 +538,12 @@ function HandleUpdate(eventType, eventData)
             end
         end
 
-        -- 2a2. 处理延迟到达（事件结束后回到任何常规页面即处理）
-        if on_regular_page and gameState.flow._deferred_arrival then
+        -- 2a2. 处理延迟到达（事件/对话结束后回到非对话常规页面即处理）
+        -- 排除 campfire/npc：教程拦截将到达延迟到对话结束后，
+        -- 若在对话页面就处理会因 flag 未设置导致无限循环
+        if on_regular_page
+            and curPage ~= "campfire" and curPage ~= "npc"
+            and gameState.flow._deferred_arrival then
             local arrival = gameState.flow._deferred_arrival
             gameState.flow._deferred_arrival = nil
             print("[Main] Processing deferred arrival: " .. arrival.arrived_node)

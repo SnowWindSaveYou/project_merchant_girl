@@ -163,13 +163,66 @@ local EMOTES_STOVE   = { "🔥", "🍳", "好香", "👨‍🍳", "♨️" }
 local EMOTES_BED     = { "💤", "😴", "zzZ", "😌", "..." }
 local EMOTES_OUTSIDE = { "🌿", "☁️", "😌", "🔍" }
 
---- 区域 → 中景图片路径（按地形景观分类）
+--- ── 点击互动配置 ────────────────────────────────────────────
+local CLICK_CD            = 2.0   -- 点击冷却（秒）
+local CLICK_BOUNCE_DUR    = 0.35  -- 弹跳持续时间（秒）
+local CLICK_BOUNCE_PX     = 10    -- 弹跳高度（像素）
+local CLICK_COMBO_WINDOW  = 4.0   -- 连击判定窗口（秒）
+
+--- 主角点击台词（连击等级 1/2/3）
+local CLICK_LINES = {
+    linli = {
+        { "嗯？怎么了～", "在看路呢", "嘿嘿", "有什么事吗？", "你好呀～" },
+        { "别戳啦～", "好啦好啦", "干嘛一直戳我" },
+        { "再戳不理你了！", "哼！", "讨厌啦！" },
+    },
+    taoxia = {
+        { "嗯", "干嘛", "…有事？", "看路", "别闹" },
+        { "够了", "别碰", "烦" },
+        { "再碰试试", "…（怒）", "走开" },
+    },
+}
+
+--- NPC 点击台词（按势力）
+local NPC_CLICK_LINES = {
+    farm    = { "你好～", "今年收成还行", "要买点粮食吗", "路上注意安全" },
+    tech    = { "有何指教", "别碰设备", "系统运转正常", "嗯…有意思" },
+    scav    = { "想交易？", "有好货", "别挡道", "识相的" },
+    scholar = { "你好", "这很有趣", "记录一下…", "请指教" },
+}
+local NPC_CLICK_LINES_DEFAULT = { "你好", "路上小心", "嗯？", "…", "有缘再见" }
+
+--- 点击回调（由 screen_home 设置，用于播放音效）
+local onChibiClick_ = nil
+--- 点击消费标记（同一帧内 drop 和 chibi 互斥）
+local clickConsumed_ = false
+local framePressed_  = false   -- 本帧是否有鼠标按下（缓存，避免多次 GetMouseButtonPress）
+local frameMX_       = 0       -- 本帧鼠标 base 坐标 X
+local frameMY_       = 0       -- 本帧鼠标 base 坐标 Y
+
+--- 区域 → 中景图片路径（按地形景观分类，行驶中使用）
 local MID_IMAGES = {
     urban   = "image/parallax_mid_20260408172203.png",          -- 城郊废墟（原有）
     wild    = "image/parallax_mid_wild_20260409030220.png",     -- 荒野
     canyon  = "image/parallax_mid_canyon_20260409030302.png",    -- 峡谷
     forest  = "image/parallax_mid_forest_20260409030347.png",   -- 枯木林
 }
+
+--- 聚落 → 停泊场景完整背景图（停车时替代所有视差层）
+local SETTLEMENT_SCENE_IMAGES = {
+    greenhouse         = "image/scene_greenhouse_20260411034417.png",
+    greenhouse_farm    = "image/scene_greenhouse_farm_20260411034418.png",
+    tower              = "image/scene_tower_20260411034419.png",
+    dome_outpost       = "image/scene_dome_outpost_20260411034417.png",
+    ruins_camp         = "image/scene_ruins_camp_20260411034423.png",
+    metro_camp         = "image/scene_metro_camp_20260411034536.png",
+    bell_tower         = "image/scene_bell_tower_20260411034537.png",
+    old_church         = "image/scene_old_church_20260411034542.png",
+    underground_market = "image/scene_underground_market_20260411034530.png",
+}
+
+--- 当前聚落静态场景图（停泊时由 screen_home 设置，非 nil 时跳过视差层）
+local settlementSceneImage_ = nil
 
 --- 视差层定义
 --- speed: 相对滚动速度系数 (0~1, 1=最快/最近)
@@ -300,6 +353,10 @@ local chibis_ = {
         emote = nil,              -- 当前表情文字 (nil=无)
         emoteTimer = 0,           -- 表情显示计时
         emoteCD = 5 + math.random() * 10, -- 下次表情倒计时
+        clickCD = 0,              -- 点击冷却
+        clickBounce = 0,          -- 弹跳动画计时
+        clickCombo = 0,           -- 连击次数
+        clickComboTimer = 0,      -- 连击窗口计时
     },
     {
         id = "taoxia",
@@ -317,6 +374,10 @@ local chibis_ = {
         emote = nil,
         emoteTimer = 0,
         emoteCD = 8 + math.random() * 12,
+        clickCD = 0,
+        clickBounce = 0,
+        clickCombo = 0,
+        clickComboTimer = 0,
     },
 }
 
@@ -349,10 +410,11 @@ local function spawnNPCs()
     for _, w in ipairs(wanderers) do
         if NPC_CHIBI_MAP[w.id] and not usedImages[NPC_CHIBI_MAP[w.id]] then
             table.insert(candidates, {
-                id     = w.id,
-                image  = NPC_CHIBI_MAP[w.id],
+                id      = w.id,
+                image   = NPC_CHIBI_MAP[w.id],
                 priority = 8,
-                emotes = DEFAULT_EMOTES,
+                emotes  = DEFAULT_EMOTES,
+                faction = nil,  -- 流浪 NPC 无势力
             })
             usedImages[NPC_CHIBI_MAP[w.id]] = true
         end
@@ -365,10 +427,11 @@ local function spawnNPCs()
         for _, npc in ipairs(residents) do
             if NPC_CHIBI_MAP[npc.id] and not usedImages[NPC_CHIBI_MAP[npc.id]] then
                 table.insert(candidates, {
-                    id     = npc.id,
-                    image  = NPC_CHIBI_MAP[npc.id],
+                    id      = npc.id,
+                    image   = NPC_CHIBI_MAP[npc.id],
                     priority = 10,
-                    emotes = factionEmotes,
+                    emotes  = factionEmotes,
+                    faction = factionId,
                 })
                 usedImages[NPC_CHIBI_MAP[npc.id]] = true
             end
@@ -379,10 +442,11 @@ local function spawnNPCs()
             local genImg = FACTION_GENERIC_CHIBI[factionId]
             if not usedImages[genImg] then
                 table.insert(candidates, {
-                    id     = "generic_" .. factionId,
-                    image  = genImg,
+                    id      = "generic_" .. factionId,
+                    image   = genImg,
                     priority = 3,
-                    emotes = factionEmotes,
+                    emotes  = factionEmotes,
+                    faction = factionId,
                 })
                 usedImages[genImg] = true
             end
@@ -399,10 +463,11 @@ local function spawnNPCs()
             for _, img in ipairs(shuffled) do
                 if not usedImages[img] then
                     table.insert(candidates, {
-                        id     = "extra_passerby",
-                        image  = img,
+                        id      = "extra_passerby",
+                        image   = img,
                         priority = 1,
-                        emotes = factionEmotes,
+                        emotes  = factionEmotes,
+                        faction = factionId,
                     })
                     usedImages[img] = true
                     break
@@ -424,6 +489,7 @@ local function spawnNPCs()
             id = c.id,
             npcImage = c.image,
             npcEmotes = c.emotes,
+            npcFaction = c.faction,
             zone = "outside",
             x = 0.15 + math.random() * 0.7,
             targetX = 0.5,
@@ -439,6 +505,10 @@ local function spawnNPCs()
             emote = nil,
             emoteTimer = 0,
             emoteCD = 6 + math.random() * 15,
+            clickCD = 0,
+            clickBounce = 0,
+            clickCombo = 0,
+            clickComboTimer = 0,
         }
         npc.scaleX = npc.facing
         npc.flipFrom = npc.facing
@@ -564,20 +634,25 @@ function DrivingSceneWidget:Render(nvg)
     nvgSave(nvg)
     nvgIntersectScissor(nvg, l.x, l.y, l.w, l.h)
 
-    -- 1) 天空（LAYER_DEFS[1]）
-    self:drawLayer(nvg, l, LAYER_DEFS[1])
+    -- 聚落静态场景模式：停泊时用完整场景图替代所有视差层
+    if settlementSceneImage_ then
+        self:drawSettlementScene(nvg, l)
+    else
+        -- 1) 天空（LAYER_DEFS[1]）
+        self:drawLayer(nvg, l, LAYER_DEFS[1])
 
-    -- 2) 时段色调叠加（天空之上、景物之下）
-    self:drawTimeTint(nvg, l)
+        -- 2) 时段色调叠加（天空之上、景物之下）
+        self:drawTimeTint(nvg, l)
 
-    -- 3) 远景（LAYER_DEFS[2]）
-    self:drawLayer(nvg, l, LAYER_DEFS[2])
+        -- 3) 远景（LAYER_DEFS[2]）
+        self:drawLayer(nvg, l, LAYER_DEFS[2])
 
-    -- 4) 中景（LAYER_DEFS[3]）
-    self:drawLayer(nvg, l, LAYER_DEFS[3])
+        -- 4) 中景（LAYER_DEFS[3]）
+        self:drawLayer(nvg, l, LAYER_DEFS[3])
 
-    -- 5) 地面（LAYER_DEFS[4]）
-    self:drawLayer(nvg, l, LAYER_DEFS[4])
+        -- 5) 地面（LAYER_DEFS[4]）
+        self:drawLayer(nvg, l, LAYER_DEFS[4])
+    end
 
     -- 6) 路面掉落物
     self:drawDrops(nvg, l)
@@ -607,6 +682,23 @@ function DrivingSceneWidget:Render(nvg)
     self:drawPickupFeedback(nvg, l)
 
     nvgRestore(nvg)
+end
+
+-- ── 聚落静态场景（停泊时替代所有视差层） ────────────────────
+function DrivingSceneWidget:drawSettlementScene(nvg, l)
+    local imgHandle = ImageCache.Get(settlementSceneImage_)
+    if imgHandle == 0 then return end
+    -- 场景图铺满整个 widget
+    local paint = nvgImagePattern(nvg,
+        l.x, l.y,
+        l.w, l.h,
+        0, imgHandle, 1.0)
+    nvgBeginPath(nvg)
+    nvgRect(nvg, l.x, l.y, l.w, l.h)
+    nvgFillPaint(nvg, paint)
+    nvgFill(nvg)
+    -- 叠加时段色调
+    self:drawTimeTint(nvg, l)
 end
 
 -- ── 单个视差层 ──────────────────────────────────────────────
@@ -1100,6 +1192,17 @@ local function updateChibis(dt)
             end
         end
 
+        -- ── 点击互动计时 ──
+        if c.clickCD > 0 then c.clickCD = c.clickCD - dt end
+        if c.clickBounce > 0 then
+            c.clickBounce = c.clickBounce - dt
+            if c.clickBounce < 0 then c.clickBounce = 0 end
+        end
+        if c.clickComboTimer > 0 then
+            c.clickComboTimer = c.clickComboTimer - dt
+            if c.clickComboTimer <= 0 then c.clickCombo = 0 end
+        end
+
         ::continue::
     end
 
@@ -1163,6 +1266,16 @@ local function updateChibis(dt)
                 c.emoteTimer = 0
             end
         end
+        -- 点击互动计时
+        if c.clickCD > 0 then c.clickCD = c.clickCD - dt end
+        if c.clickBounce > 0 then
+            c.clickBounce = c.clickBounce - dt
+            if c.clickBounce < 0 then c.clickBounce = 0 end
+        end
+        if c.clickComboTimer > 0 then
+            c.clickComboTimer = c.clickComboTimer - dt
+            if c.clickComboTimer <= 0 then c.clickCombo = 0 end
+        end
     end
 end
 
@@ -1174,6 +1287,12 @@ end
 ---@param chibiW number
 ---@param chibiH number
 local function drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
+    -- 记录渲染位置供点击检测使用
+    c._hitX = drawX
+    c._hitY = drawY
+    c._hitW = chibiW
+    c._hitH = chibiH
+
     local imgPath = getChibiImage(c)
     local imgHandle = ImageCache.Get(imgPath)
     if imgHandle == 0 then return end
@@ -1189,6 +1308,11 @@ local function drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
     elseif c.state == "idle" and c.idleTime > 0 then
         -- idle 轻微浮动（缓慢，柔和）
         bobY = -math.abs(math.sin(c.idleTime * IDLE_BOB_FREQ * math.pi)) * IDLE_BOB_PX
+    end
+    -- 点击弹跳（叠加在其他动画之上）
+    if c.clickBounce and c.clickBounce > 0 then
+        local t = c.clickBounce / CLICK_BOUNCE_DUR
+        bobY = bobY - math.sin(t * math.pi) * CLICK_BOUNCE_PX
     end
 
     -- 身体形变动画
@@ -1243,10 +1367,17 @@ local function drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
         local bubbleX = drawX + chibiW / 2
         local bubbleY = drawY + bobY - 6 + floatUp
 
-        -- 气泡背景（圆角矩形）
-        local bw, bh = 22, 18
+        -- 测量文字宽度以动态计算气泡尺寸
         nvgSave(nvg)
         nvgGlobalAlpha(nvg, alpha)
+        nvgFontFace(nvg, "sans")
+        nvgFontSize(nvg, 11)
+        nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+        local tw = nvgTextBounds(nvg, 0, 0, c.emote)
+        local padX, padH = 8, 6
+        local bw = math.max(22, tw + padX * 2)
+        local bh = 18
+        -- 气泡背景（圆角矩形）
         nvgBeginPath(nvg)
         nvgRoundedRect(nvg, bubbleX - bw / 2, bubbleY - bh, bw, bh, 5)
         nvgFillColor(nvg, nvgRGBA(255, 255, 255, 200))
@@ -1260,9 +1391,6 @@ local function drawSingleChibi(nvg, c, drawX, drawY, chibiW, chibiH)
         nvgFillColor(nvg, nvgRGBA(255, 255, 255, 200))
         nvgFill(nvg)
         -- 表情文字
-        nvgFontFace(nvg, "sans")
-        nvgFontSize(nvg, 11)
-        nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
         nvgFillColor(nvg, nvgRGBA(40, 40, 40, 255))
         nvgText(nvg, bubbleX, bubbleY - bh / 2, c.emote)
         nvgRestore(nvg)
@@ -1332,9 +1460,9 @@ function DrivingSceneWidget:drawOutsideChibis(nvg, l)
     local outsideW = outsideH
     local groundY = l.y + l.h * 0.88
 
-    -- 主角在卡车前方地面活动（卡车左侧区域）
-    local areaX = tb.x - tb.w * 0.3
-    local areaW = tb.w * 0.35
+    -- 主角在卡车前方地面活动（卡车左侧 + 右侧各留空间）
+    local areaX = tb.x - tb.w * 0.15
+    local areaW = tb.w * 0.5
 
     for _, c in ipairs(chibis_) do
         if c.zone == "outside" then
@@ -1344,9 +1472,9 @@ function DrivingSceneWidget:drawOutsideChibis(nvg, l)
         end
     end
 
-    -- NPC 路人（卡车两侧更宽范围，同等大小）
-    local npcAreaX = tb.x - tb.w * 0.45
-    local npcAreaW = tb.w * 0.9
+    -- NPC 路人（以卡车为中心向两侧扩展，覆盖更宽范围）
+    local npcAreaX = tb.x - tb.w * 0.25
+    local npcAreaW = tb.w * 1.5
 
     for _, c in ipairs(npcs_) do
         local drawX = npcAreaX + c.x * npcAreaW - outsideW / 2
@@ -1439,22 +1567,23 @@ end
 --- 每帧检测触摸/鼠标点击是否命中掉落物
 --- 不依赖 Widget onClick（滚动容器会在手机上拦截触摸事件）
 local function checkDropInput()
+    -- 查询本帧点击状态并缓存（供 checkChibiInput 复用）
+    local pressed = input:GetMouseButtonPress(MOUSEB_LEFT)
+    if pressed then
+        framePressed_ = true
+        local mousePos = input:GetMousePosition()
+        local scale = getUIScale()
+        frameMX_ = mousePos.x / scale
+        frameMY_ = mousePos.y / scale
+    end
+
     if not onDropClick_ then return end
     if #activeDrops_ == 0 then return end
     if not lastLayout_ then return end
+    if not framePressed_ then return end
 
-    -- 检测本帧是否有点击/触摸
-    local pressed = input:GetMouseButtonPress(MOUSEB_LEFT)
-    if not pressed then return end
-
-    -- 获取物理像素位置
-    local mousePos = input:GetMousePosition()
-    local physX, physY = mousePos.x, mousePos.y
-
-    -- 物理像素 → base pixels（与 Widget 布局同一坐标系）
-    local scale = getUIScale()
-    local baseX = physX / scale
-    local baseY = physY / scale
+    local baseX = frameMX_
+    local baseY = frameMY_
 
     -- 检查是否在 widget 区域内
     local l = lastLayout_
@@ -1477,6 +1606,80 @@ local function checkDropInput()
             if math.abs(ddxPx) < hitPx and math.abs(ddyPx) < hitPx then
                 drop._renderXNorm = renderXNorm
                 onDropClick_(drop)
+                clickConsumed_ = true
+                return
+            end
+        end
+    end
+end
+
+-- ============================================================
+-- 纸娃娃点击检测
+-- ============================================================
+
+--- 检测本帧点击是否命中纸娃娃（主角 + NPC）
+local function checkChibiInput()
+    if clickConsumed_ then return end
+    if not lastLayout_ then return end
+    if not framePressed_ then return end
+
+    local baseX = frameMX_
+    local baseY = frameMY_
+    -- 合并主角和 NPC 到统一列表
+    local targets = {}
+    for _, c in ipairs(chibis_) do
+        table.insert(targets, { chibi = c, isNpc = false })
+    end
+    for _, c in ipairs(npcs_) do
+        table.insert(targets, { chibi = c, isNpc = true })
+    end
+
+    for _, entry in ipairs(targets) do
+        local c = entry.chibi
+        if c._hitW and c._hitW > 0 and c.clickCD <= 0 then
+            local pad = 4
+            if baseX >= c._hitX - pad and baseX <= c._hitX + c._hitW + pad
+               and baseY >= c._hitY - pad and baseY <= c._hitY + c._hitH + pad then
+                -- 命中！
+                clickConsumed_ = true
+                c.clickCD = CLICK_CD
+                c.clickBounce = CLICK_BOUNCE_DUR
+
+                -- 连击判定
+                if c.clickComboTimer > 0 then
+                    c.clickCombo = math.min(c.clickCombo + 1, 3)
+                else
+                    c.clickCombo = 1
+                end
+                c.clickComboTimer = CLICK_COMBO_WINDOW
+
+                -- 选取台词
+                local line
+                if entry.isNpc then
+                    local pool = (c.npcFaction and NPC_CLICK_LINES[c.npcFaction])
+                                 or NPC_CLICK_LINES_DEFAULT
+                    line = pool[math.random(#pool)]
+                else
+                    local charLines = CLICK_LINES[c.id]
+                    if charLines then
+                        local level = math.min(c.clickCombo, #charLines)
+                        local pool = charLines[level]
+                        line = pool[math.random(#pool)]
+                    end
+                end
+
+                -- 覆盖当前表情气泡
+                if line then
+                    c.emote = line
+                    c.emoteTimer = 0
+                    c.emoteCD = EMOTE_INTERVAL_MAX
+                end
+
+                -- 回调（用于播放音效）
+                if onChibiClick_ then
+                    onChibiClick_(c, entry.isNpc)
+                end
+
                 return
             end
         end
@@ -1500,8 +1703,13 @@ function M.update(dt)
     if weatherParticlesInited_ and #weatherParticles_ > 0 then
         updateWeatherParticles(dt, 400, 220)  -- 近似尺寸
     end
-    -- 检测掉落物点击（绕过 UI 框架，直接读取原始输入）
+    -- 重置点击消费标记和帧级按键缓存
+    clickConsumed_ = false
+    framePressed_ = false
+    -- 检测掉落物点击（内部查询 GetMouseButtonPress 并缓存结果）
     checkDropInput()
+    -- 检测纸娃娃点击（掉落物优先，未消费才检测纸娃娃）
+    checkChibiInput()
     -- 更新拾取反馈浮字（1.2s 后淡出消失）
     local FEEDBACK_DURATION = 1.2
     local expired = {}
@@ -1524,15 +1732,14 @@ function M.setEnvironment(env)
 
     local changed = false
 
-    -- 更新区域 → 替换中景图片
+    -- 更新区域 → 替换中景图片（聚落覆盖优先）
     if env.region and env.region ~= currentEnv_.region then
         currentEnv_.region = env.region
-        local newMid = MID_IMAGES[env.region]
-        if newMid then
-            -- 替换 LAYER_DEFS[3] 的图片路径
-            LAYER_DEFS[3].image = newMid
-            -- 清除该路径的 tiled image 缓存，让下帧重新加载
-            -- （不需要删除旧缓存，imageCache_ 保留多份无害）
+        if not settlementSceneImage_ then
+            local newMid = MID_IMAGES[env.region]
+            if newMid then
+                LAYER_DEFS[3].image = newMid
+            end
         end
         changed = true
     end
@@ -1572,6 +1779,29 @@ end
 ---@param callback function(drop) 点击掉落物时调用
 function M.setDropCallback(callback)
     onDropClick_ = callback
+end
+
+--- 设置纸娃娃点击回调
+---@param callback function(chibi, isNpc) 点击纸娃娃时调用
+function M.setChibiClickCallback(callback)
+    onChibiClick_ = callback
+end
+
+--- 设置当前停泊聚落（切换为静态场景图，替代所有视差层）
+---@param settlementId string 聚落 id（如 "greenhouse"、"bell_tower"）
+function M.setSettlement(settlementId)
+    local img = settlementId and SETTLEMENT_SCENE_IMAGES[settlementId] or nil
+    if img then
+        settlementSceneImage_ = img
+        print("[DrivingScene] settlement scene → " .. settlementId)
+    end
+end
+
+--- 清除聚落场景覆盖，恢复正常视差层渲染
+function M.clearSettlement()
+    if not settlementSceneImage_ then return end
+    settlementSceneImage_ = nil
+    print("[DrivingScene] settlement scene cleared → region=" .. tostring(currentEnv_.region))
 end
 
 --- 添加拾取反馈浮字

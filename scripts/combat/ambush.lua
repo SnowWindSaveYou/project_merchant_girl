@@ -148,6 +148,7 @@ function M.execute_round(state, combat, tactic_id)
         table.insert(narration, "货车在烟幕掩护下急速驶离。")
 
         local result = {
+            tactic_id   = tactic_id,
             tactic_name = tactic.name,
             dmg_taken   = 0,
             escape_add  = tactic.escape_add,
@@ -260,6 +261,7 @@ function M.execute_round(state, combat, tactic_id)
     end
 
     local result = {
+        tactic_id    = tactic_id,
         tactic_name  = tactic.name,
         dmg_taken    = dmg,
         escape_add   = escape_add,

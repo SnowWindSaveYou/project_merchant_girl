@@ -7,11 +7,36 @@ local Ambush       = require("combat/ambush")
 local CombatResult = require("combat/combat_result")
 local Config       = require("combat/combat_config")
 
+--- 地形 → 路途背景映射（战斗发生在行驶中）
+local REGION_BG = {
+    urban  = "image/bg_generic_ruins_industrial_20260409080003.png",
+    wild   = "image/bg_generic_road_20260409075956.png",
+    canyon = "image/bg_generic_wilderness_20260409080002.png",
+    forest = "image/bg_generic_wilderness_20260409080002.png",
+}
+
+--- 威胁等级 → 战况场景图
+local THREAT_SCENE = {
+    low  = "image/battle_scene_low_20260411061159.png",
+    mid  = "image/battle_scene_mid_20260411061210.png",
+    high = "image/battle_scene_high_20260411061202.png",
+}
+
+--- 战术 → 动作画面图
+local TACTIC_SCENE = {
+    accelerate = "image/battle_act_accelerate_20260411061410.png",
+    steady     = "image/battle_act_fire_20260411061400.png",
+    evade      = "image/battle_act_evade_20260411061331.png",
+    smoke      = "image/battle_act_smoke_20260411061340.png",
+}
+
 local M = {}
 ---@type table
 local router = nil
 ---@type table
 local combat = nil
+---@type string|nil
+local bgImage_ = nil
 
 -- ============================================================
 -- 页面创建
@@ -20,6 +45,10 @@ local combat = nil
 function M.create(state, params, r)
     router = r
     local enemy_id = params and params.enemy_id or "ambush_light"
+
+    -- 解析路途背景
+    local region = state.flow and state.flow.environment and state.flow.environment.region or "wild"
+    bgImage_ = REGION_BG[region] or REGION_BG.wild
 
     combat = Ambush.create(state, enemy_id)
 
@@ -33,19 +62,17 @@ end
 function M._build_intro_view(state)
     local enemy = combat.enemy
 
-    return UI.Panel {
+    return F.overlay {
         id = "ambushScreen",
-        width = "100%", height = "100%",
-        backgroundColor = { 20, 15, 12, 255 },
-        justifyContent = "center", alignItems = "center",
+        backgroundImage = bgImage_,
+        contentWidth = "90%",
         children = {
-            UI.Panel {
-                width = "90%", maxWidth = 420,
+            F.card {
+                maxWidth = 420,
                 padding = Theme.sizes.padding_large,
-                backgroundColor = { 45, 25, 20, 240 },
-                borderRadius = Theme.sizes.radius_large,
                 borderWidth = 2, borderColor = Theme.colors.danger,
                 gap = 16, alignItems = "center",
+                enterAnim = true,
                 children = {
                     UI.Label {
                         text = "⚠️ 遭遇袭击",
@@ -109,23 +136,58 @@ function M._build_combat_view(state)
 
     local children = {}
 
-    -- 标题栏
-    table.insert(children, UI.Panel {
-        width = "100%", flexDirection = "row",
-        justifyContent = "space-between", alignItems = "center",
-        children = {
-            UI.Label {
-                text = "⚔️ " .. enemy.name,
-                fontSize = Theme.sizes.font_large,
-                fontColor = Theme.colors.danger,
+    -- 战斗画面：优先显示上一回合战术动作图，否则按威胁等级显示
+    local sceneImg
+    if combat.last_round and combat.last_round.tactic_id then
+        sceneImg = TACTIC_SCENE[combat.last_round.tactic_id]
+    end
+    if not sceneImg then
+        local level = combat.threat >= 60 and "high" or (combat.threat >= 30 and "mid" or "low")
+        sceneImg = THREAT_SCENE[level]
+    end
+    if sceneImg then
+        table.insert(children, UI.Panel {
+            width = "100%", height = 140,
+            borderRadius = Theme.sizes.radius_small,
+            overflow = "hidden",
+            children = {
+                UI.Panel {
+                    width = "100%", height = "100%",
+                    backgroundImage = sceneImg,
+                    backgroundFit = "cover",
+                },
+                -- 底部渐变遮罩，让图片与下方内容自然过渡
+                UI.Panel {
+                    width = "100%", height = 40,
+                    position = "absolute", left = 0, bottom = 0,
+                    backgroundGradient = {
+                        direction = "to-bottom",
+                        stops = { { 0, 0, 0, 0 }, { 0, 0, 0, 180 } },
+                    },
+                },
+                -- 标题栏叠加在画面上
+                UI.Panel {
+                    width = "100%",
+                    position = "absolute", left = 0, bottom = 0,
+                    paddingLeft = 10, paddingRight = 10, paddingBottom = 6,
+                    flexDirection = "row",
+                    justifyContent = "space-between", alignItems = "center",
+                    children = {
+                        UI.Label {
+                            text = "⚔️ " .. enemy.name,
+                            fontSize = Theme.sizes.font_large,
+                            fontColor = Theme.colors.text_primary,
+                        },
+                        UI.Label {
+                            text = "回合 " .. combat.round_current .. "/" .. combat.rounds_total,
+                            fontSize = Theme.sizes.font_small,
+                            fontColor = Theme.colors.text_secondary,
+                        },
+                    },
+                },
             },
-            UI.Label {
-                text = "回合 " .. combat.round_current .. "/" .. combat.rounds_total,
-                fontSize = Theme.sizes.font_small,
-                fontColor = Theme.colors.text_dim,
-            },
-        },
-    })
+        })
+    end
 
     -- 威胁条
     table.insert(children, M._status_bar("敌方威胁", threatPct,
@@ -166,14 +228,12 @@ function M._build_combat_view(state)
     -- 战术按钮
     local tactics = Ambush.get_available_tactics(combat)
     for _, t in ipairs(tactics) do
-        local btnColor = t.available and Theme.colors.btn_primary or { 60, 55, 50, 180 }
-        local textColor = t.available and Theme.colors.text_primary or Theme.colors.text_dim
-
         local label = t.tactic.icon .. " " .. t.tactic.name
         if t.reason then
             label = label .. "（" .. t.reason .. "）"
         end
 
+        local tacticId = t.id
         table.insert(children, F.actionBtn {
             text = label,
             variant = t.available and "secondary" or "outline",
@@ -184,7 +244,7 @@ function M._build_combat_view(state)
                 if not t.available then return end
                 if combat.phase ~= Ambush.Phase.ACTIVE then return end
 
-                local result = Ambush.execute_round(state, combat, t.id)
+                local result = Ambush.execute_round(state, combat, tacticId)
 
                 if result.finished then
                     M._show_result_view(state)
@@ -206,14 +266,34 @@ function M._build_combat_view(state)
         },
     })
 
-    return UI.Panel {
-        id = "ambushScreen",
+    -- 背景图 + 遮罩 + 内容的三层结构
+    local layers = {}
+    if bgImage_ then
+        table.insert(layers, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundImage = bgImage_,
+            backgroundFit = "cover",
+        })
+        table.insert(layers, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundColor = { 0, 0, 0, 160 },
+        })
+    end
+    table.insert(layers, UI.Panel {
         width = "100%", height = "100%",
-        backgroundColor = { 20, 15, 12, 255 },
         padding = Theme.sizes.padding,
         gap = 10,
         overflow = "scroll",
         children = children,
+    })
+
+    return UI.Panel {
+        id = "ambushScreen",
+        width = "100%", height = "100%",
+        backgroundColor = bgImage_ and { 0, 0, 0, 255 } or { 20, 15, 12, 255 },
+        children = layers,
     }
 end
 
@@ -296,15 +376,13 @@ function M._show_result_view(state)
         end,
     })
 
-    local root = UI.Panel {
+    local root = F.overlay {
         id = "ambushScreen",
-        width = "100%", height = "100%",
-        backgroundColor = { 20, 15, 12, 255 },
-        justifyContent = "center", alignItems = "center",
-        overflow = "scroll",
+        backgroundImage = bgImage_,
+        contentWidth = "90%",
         children = {
             F.card {
-                width = "90%", maxWidth = 420,
+                maxWidth = 420,
                 padding = Theme.sizes.padding_large,
                 borderWidth = 2, borderColor = resultColor,
                 gap = 12, alignItems = "center",

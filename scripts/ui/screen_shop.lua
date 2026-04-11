@@ -258,11 +258,13 @@ function M.create(state, params, r)
                             text = cargoFull and "仓位已满" or "买入",
                             variant = "primary", flexGrow = 1, height = 34,
                             disabled = cargoFull or state.economy.credits < buyP,
+                            sound = false,
                             onClick = function(self)
                                 if not cargoFull and state.economy.credits >= buyP then
                                     state.economy.credits = state.economy.credits - buyP
                                     state.truck.cargo[g.id] = (state.truck.cargo[g.id] or 0) + 1
                                     Pricing.update_supply_demand(state, location, g.id, -1)
+                                    SoundMgr.play("coins")
                                     router.refresh()
                                 end
                             end,
@@ -270,12 +272,14 @@ function M.create(state, params, r)
                         F.actionBtn {
                             text = sellText, variant = sellVariant, flexGrow = 1, height = 34,
                             disabled = held <= 0,
+                            sound = false,
                             onClick = function(self)
                                 if (state.truck.cargo[g.id] or 0) > 0 then
                                     state.economy.credits = state.economy.credits + sellP
                                     state.truck.cargo[g.id] = state.truck.cargo[g.id] - 1
                                     if state.truck.cargo[g.id] <= 0 then state.truck.cargo[g.id] = nil end
                                     Pricing.update_supply_demand(state, location, g.id, 1)
+                                    SoundMgr.play("coins")
                                     router.refresh()
                                 end
                             end,
@@ -422,9 +426,13 @@ function M.create(state, params, r)
                             text = "升级",
                             variant = "primary", height = 28, width = 80,
                             disabled = not canUp,
+                            sound = false,
                             onClick = function(self)
                                 local ok, err = Modules.upgrade(state, mid)
-                                if ok then router.refresh() end
+                                if ok then
+                                    SoundMgr.play("success")
+                                    router.refresh()
+                                end
                             end,
                         },
                     },

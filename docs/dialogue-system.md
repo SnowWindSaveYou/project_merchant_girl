@@ -21,41 +21,73 @@ scripts/
 
 ---
 
+## 数据来源
+
+对话数据分布在两个 JSON 文件中，由 `dialogue_pool.lua` 统一加载：
+
+| 文件 | 内容 | 备注 |
+|------|------|------|
+| `assets/configs/campfire_dialogues.json` | 日常篝火对话 | 关系养成、闲聊、随机话题 |
+| `assets/configs/story_dialogues.json` | 主线 / 教程 / 到达剧情 | 加载时自动标记 `is_story = true` |
+
+两个文件格式相同，合并到同一个对话池中筛选。
+
+---
+
 ## 数据结构
 
 ### dialogue（对话数据）
 
-```lua
+完整字段说明：
+
+```jsonc
 {
-    id    = "campfire_song_01",        -- 唯一 ID
-    title = "收音机里的歌",             -- 对话标题（显示在顶栏）
-    stage = "early",                   -- 关系阶段: "early"|"mid"|"late"
-
-    steps = {                          -- 对话步骤（按顺序展示）
-        { speaker = "taoxia", text = "你听，这首歌好好听..." },
-        { speaker = "linli",  text = "嗯，是老歌了。" },
-        { speaker = "taoxia", text = "以前妈妈也常哼这首。" },
-    },
-
-    choices = {                        -- 所有步骤展示完后出现的选项
+    // ── 必填 ──
+    "id": "SD_TUTORIAL_TOWER_ARRIVAL",  // 唯一 ID
+    "title": "北穹塔台",                 // 对话标题（顶栏显示）
+    "steps": [                           // 对话步骤（按顺序展示）
+        { "speaker": "narrator", "text": "描述文字..." },
+        { "speaker": "taoxia",  "text": "台词", "expression": "happy" },
+        { "speaker": "linli",   "text": "台词", "expression": "thinking" }
+    ],
+    "choices": [                         // 所有步骤展示完后出现的选项
         {
-            text        = "陪她一起听",     -- 选项按钮文字
-            result_text = "你们安静地听完了整首歌。",  -- 结果描述
-            ops         = { ... },          -- 结算操作（加关系值等）
-            memory      = {                 -- 可选：获得回忆碎片
-                id    = "song_memory",
-                title = "收音机的旋律",
-                desc  = "那个夜晚的歌声...",
-            },
-        },
-        {
-            text        = "关掉收音机",
-            result_text = "陶夏有些失落地沉默了。",
-            ops         = { ... },
-        },
-    },
+            "text": "选项按钮文字",
+            "result_text": "选择后的结果描述",
+            "ops": ["add_relation_linli:2", "add_goodwill:tower:3"],
+            "set_flags": ["tutorial_arrived_tower"],
+            "memory": {                   // 可选：获得回忆碎片
+                "id": "mem_tower_first",
+                "title": "北穹塔台",
+                "desc": "第一次到达塔台的记忆"
+            }
+        }
+    ],
+
+    // ── 筛选条件（篝火对话池使用）──
+    "node_types": ["settlement"],        // 可触发的节点类型；["any"] = 不限
+    "relation_stage": "early",           // 关系阶段: "early"|"mid"|"late"|"any"
+    "required_flags": ["flag_a"],        // 必须已设置的 flag（全部满足）
+    "forbidden_flags": ["flag_b"],       // 不能已设置的 flag（任一命中则排除）
+    "min_trips": 3,                      // 最少完成行程数
+
+    // ── 权重与冷却 ──
+    "weight": 10,                        // 抽取权重（越高越优先）
+    "cooldown": 5,                       // 抽中后冷却回合数
+
+    // ── 分类标记 ──
+    "type": "tutorial",                  // 对话类型标签（自由字符串）
+    "chapter": 0,                        // 章节号
+    "is_story": true,                    // 主线对话（story_dialogues.json 自动标记）
+    "arrival_only": true,                // 🆕 到达拦截专用：不进入篝火对话池（见下方说明）
+
+    // ── 演出控制 ──
+    "audioScene": "settlement",          // 音频场景: campfire|settlement|travel|silent
+    "background": "image/bg_tower.png"   // 自定义背景图（不设则用当前聚落 bg）
 }
 ```
+
+> **注意**：所有筛选条件字段都是可选的，不设则不做对应检查。
 
 ### speaker（说话人标识）
 
@@ -66,6 +98,69 @@ scripts/
 | `"npc"` | 当前 NPC | 右侧 |
 
 当前说话人的立绘全亮，另一方立绘变暗（`imageTint` 压暗）。
+
+---
+
+## 到达拦截机制
+
+### 问题背景
+
+某些对话需要在「到达聚落的瞬间」触发（例如教程首次到达温室社区），而不是作为篝火闲聊出现。直接放进对话池会导致：
+
+- 在中途经停站的篝火里提前出现（`node_types: ["any"]` + flag 已满足）
+- 到达结算（订单交付、行程结束）先于叙事对话执行，时序错乱
+
+### 架构设计
+
+```
+玩家到达节点
+    ↓
+checkArrivalIntercepts(state, node_id)     ← 遍历所有注册的拦截器
+    ↓ 命中？
+    ├── YES → 跳转篝火播放对话 → 延迟到达处理 → 对话结束后恢复
+    └── NO  → 正常执行 Flow.handle_node_arrival()（交付/结算）
+```
+
+### 关键机制
+
+**1. 拦截器注册**（`main.lua`）
+
+```lua
+-- 注册一个拦截器：接受 (state, node_id)，返回 action 或 nil
+registerArrivalInterceptor(function(state, node_id)
+    return Tutorial.on_arrival(state, node_id)
+end)
+```
+
+拦截器按注册顺序依次检查，第一个返回非 nil 的结果即命中。
+
+返回值格式：
+```lua
+{ type = "dialogue", dialogue = <dialogue_data> }
+```
+
+**2. 延迟到达处理**
+
+命中拦截时，`handleNodeArrival` 会：
+1. 更新 `current_location` 到目标节点（确保背景图正确）
+2. 将原始 `arrivalInfo` 存入 `_deferred_arrival`
+3. 跳转篝火页面播放对话
+
+对话结束后，玩家回到常规页面（home 等），主循环检测到 `_deferred_arrival` 存在，恢复正常的到达处理流程（订单交付、行程结算）。
+
+**3. `arrival_only` 字段**
+
+标记了 `"arrival_only": true` 的对话会被 `DialoguePool.filter` 排除，**不会出现在篝火对话池中**。它们只能通过到达拦截器触发。
+
+这解决了"到达对话在中途篝火提前出现"的问题。
+
+### 筛选链完整顺序
+
+`DialoguePool.filter` 依次检查以下条件（全部通过才入池）：
+
+```
+cooldown → node_type → relation_stage → required_flags → forbidden_flags → arrival_only → min_trips
+```
 
 ---
 
@@ -278,9 +373,60 @@ faction_portraits["farm"]      ← 3. 兜底：农耕派立绘
 
 2. 同步更新 `gal_dialogue.lua` 中的 `FACTION_PORTRAITS` 表
 
-### 添加新对话
+### 添加新的日常对话
 
-在 `scripts/configs/campfire_dialogues.json` 中添加新条目，格式参照上方数据结构。
+在 `assets/configs/campfire_dialogues.json` 中添加新条目，格式参照上方「数据结构」。
+
+主线/教程对话则添加到 `assets/configs/story_dialogues.json`（加载时自动标记 `is_story = true`）。
+
+### 添加到达触发对话
+
+当需要在玩家到达某个节点时自动触发一段剧情（而非出现在篝火对话池中），按以下步骤操作：
+
+**第 1 步：在 JSON 中定义对话**
+
+在 `assets/configs/story_dialogues.json` 中添加对话，设置两个关键字段：
+
+```jsonc
+{
+    "id": "SD_MY_ARRIVAL_DIALOGUE",
+    "title": "到达某地",
+    "arrival_only": true,           // ← 不进入篝火对话池
+    "required_flags": ["my_precondition_flag"],
+    "steps": [ ... ],
+    "choices": [ ... ]
+}
+```
+
+**第 2 步：编写拦截器函数**
+
+在你的模块中编写一个 handler，签名为 `function(state, node_id) -> action|nil`：
+
+```lua
+-- my_module.lua
+function MyModule.on_arrival(state, node_id)
+    -- 检查条件：是否是目标节点、flag 是否满足等
+    if node_id ~= "target_node" then return nil end
+    if state.flags.already_triggered then return nil end
+
+    -- 查找对话数据
+    local dialogue = DialoguePool.find_by_id("SD_MY_ARRIVAL_DIALOGUE")
+    if not dialogue then return nil end
+
+    -- 返回拦截指令
+    return { type = "dialogue", dialogue = dialogue }
+end
+```
+
+**第 3 步：在 main.lua 中注册**
+
+```lua
+registerArrivalInterceptor(function(state, node_id)
+    return MyModule.on_arrival(state, node_id)
+end)
+```
+
+注册后，玩家每次到达节点时会自动检查。命中则先播放对话，对话结束后再执行订单交付和行程结算。
 
 ### 更换主角立绘
 

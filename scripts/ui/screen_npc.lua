@@ -1,7 +1,9 @@
 --- NPC 对话页面（使用通用 Gal 模块）
 local Gal        = require("ui/gal_dialogue")
 local NpcManager = require("narrative/npc_manager")
+local Campfire   = require("narrative/campfire")
 local Graph      = require("map/world_graph")
+local AudioMgr   = require("ui/audio_manager")
 
 
 local M = {}
@@ -51,6 +53,11 @@ function M.create(state, params, r)
         session.result      = nil
         session.showHistory = false
         session.return_to   = params._return_to or nil
+
+        -- 对话数据可指定 audioScene（campfire / settlement / travel / silent）
+        -- NPC 对话发生在聚落，默认为 "settlement"
+        local scene = params.dialogue.audioScene or "settlement"
+        AudioMgr.setScene(scene)
     end
 
     if params._continue then
@@ -125,6 +132,10 @@ function M.create(state, params, r)
             router.navigate("npc", { _toggle_history = true })
         end,
         onClose = function()
+            -- 跳过对话：设置所有选项共有的进度 flag，避免教程/主线卡住
+            if session.dialogue and not session.result then
+                Campfire.apply_skip(state, session.dialogue)
+            end
             session.dialogue  = nil
             session.npc       = nil
             session.npc_id    = nil
@@ -134,6 +145,8 @@ function M.create(state, params, r)
     })
 end
 
-function M.update(state, dt, r) end
+function M.update(state, dt, r)
+    Gal.update(dt)
+end
 
 return M

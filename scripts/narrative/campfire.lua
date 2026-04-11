@@ -242,4 +242,44 @@ function M.apply_choice(state, dialogue, choice_index)
     }
 end
 
+--- 跳过对话（点 X 关闭）时，设置所有选项共有的 set_flags
+--- 确保教程/主线进度 flag 不会因跳过而丢失
+--- 不执行 ops（关系值变化）和 memory（回忆碎片），这是跳过的代价
+---@param state table
+---@param dialogue table
+function M.apply_skip(state, dialogue)
+    local choices = dialogue and dialogue.choices
+    if not choices or #choices == 0 then return end
+
+    local Flags = require("core/flags")
+
+    -- 收集所有选项共有的 flag（交集），确保只设置必要的进度 flag
+    -- 避免设置分支独有的 flag（如 motivation_duty / motivation_curiosity）
+    local common_flags = {}
+    local first = choices[1].set_flags
+    if first then
+        for _, f in ipairs(first) do
+            local shared = true
+            for ci = 2, #choices do
+                local sf = choices[ci].set_flags
+                if not sf then shared = false; break end
+                local found = false
+                for _, f2 in ipairs(sf) do
+                    if f2 == f then found = true; break end
+                end
+                if not found then shared = false; break end
+            end
+            if shared then
+                table.insert(common_flags, f)
+            end
+        end
+    end
+
+    -- 设置共有 flag
+    for _, flag_id in ipairs(common_flags) do
+        Flags.set(state, flag_id)
+        print("[Campfire] Skip-set flag: " .. flag_id)
+    end
+end
+
 return M

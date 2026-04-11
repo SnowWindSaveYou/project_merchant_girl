@@ -108,11 +108,29 @@ function M.create(state, params, r)
             local feedback = RoadLoot.try_pickup(state, drop)
             if feedback then
                 DrivingScene.addFeedback(feedback)
+                if feedback.reward_type == "blocked" then
+                    SoundMgr.play("error")
+                else
+                    SoundMgr.play("pickup")
+                end
             end
         end)
         -- 初始同步掉落物到 DrivingScene
         DrivingScene.setDrops(RoadLoot.get_active_drops(state))
+        -- 行驶中清除聚落中景覆盖
+        DrivingScene.clearSettlement()
+    else
+        -- 停泊：设置 DrivingScene 为停泊模式 + 聚落专属中景
+        DrivingScene.setState(state)
+        DrivingScene.setDriving(false)
+        local nodeId = curNode and curNode.id or ""
+        DrivingScene.setSettlement(nodeId)
     end
+
+    -- 纸娃娃点击回调（行驶/停泊都有效）
+    DrivingScene.setChibiClickCallback(function(chibi, isNpc)
+        SoundMgr.play("bubble_pop")
+    end)
 
     if isTravelling then
         return createTravelView(state)
@@ -152,7 +170,11 @@ end
 -- 每帧更新（行驶中动态刷新进度/时间）
 -- ============================================================
 function M.update(state, dt, r)
-    if Flow.get_phase(state) ~= Flow.Phase.TRAVELLING then return end
+    if Flow.get_phase(state) ~= Flow.Phase.TRAVELLING then
+        -- 停泊时也需要驱动纸娃娃动画和点击检测
+        DrivingScene.update(dt)
+        return
+    end
     local plan = state.flow.route_plan
     if not plan then return end
 
@@ -302,8 +324,7 @@ function createSettlementView(state, curNode)
             variant = "primary",
             height = 48,
             fontSize = Theme.sizes.font_normal,
-            borderWidth = 2,
-            borderColor = Theme.colors.accent,
+            highlight = true,
             onClick = function(self)
                 Flow.enter_prepare(state)
                 router.navigate("orders")
@@ -342,8 +363,7 @@ function createSettlementView(state, curNode)
             variant = "primary",
             height = 48,
             fontSize = Theme.sizes.font_normal,
-            borderWidth = 2,
-            borderColor = Theme.colors.accent,
+            highlight = true,
             onClick = function(self)
                 Flow.enter_prepare(state)
                 router.navigate("orders")
@@ -360,8 +380,7 @@ function createSettlementView(state, curNode)
                 text = campLabel,
                 variant = hasStoryTopic and "primary" or "secondary",
                 fontSize = Theme.sizes.font_normal,
-                borderWidth = hasStoryTopic and 2 or 0,
-                borderColor = hasStoryTopic and Theme.colors.accent or nil,
+                highlight = hasStoryTopic or nil,
                 onClick = function(self)
                     local dialogue, consumed = Campfire.start(state)
                     if dialogue then
@@ -389,6 +408,7 @@ function createSettlementView(state, curNode)
                 text = "⚡ " .. (pendingEvt.title or "聚落事件"),
                 variant = "primary",
                 fontSize = Theme.sizes.font_normal,
+                sound = "event",
                 onClick = function(self)
                     local evt = state.flow.pending_settlement_event
                     state.flow.pending_settlement_event = nil
@@ -624,8 +644,7 @@ function createSettlementView(state, curNode)
             variant = hasStoryTopic and "primary" or "secondary",
             fontSize = Theme.sizes.font_normal,
             disabled = not canCamp,
-            borderWidth = hasStoryTopic and 2 or 0,
-            borderColor = hasStoryTopic and Theme.colors.accent or nil,
+            highlight = hasStoryTopic or nil,
             onClick = function(self)
                 if not canCamp then return end
                 local dialogue, consumed = Campfire.start(state)
@@ -703,8 +722,7 @@ function createSettlementView(state, curNode)
             variant = hasStoryTopic and "primary" or "secondary",
             fontSize = Theme.sizes.font_normal,
             disabled = not canCamp,
-            borderWidth = hasStoryTopic and 2 or 0,
-            borderColor = hasStoryTopic and Theme.colors.accent or nil,
+            highlight = hasStoryTopic or nil,
             onClick = function(self)
                 if not canCamp then return end
                 local dialogue, consumed = Campfire.start(state)
@@ -737,7 +755,7 @@ function createSettlementView(state, curNode)
         padding = Theme.sizes.padding, gap = 10,
         overflow = "scroll",
         enterAnim = true, enterDelay = 0.05,
-        imageTint = { 16, 18, 20, 200 },
+        imageTint = Theme.colors.home_lower_tint,
         children = lowerChildren,
     }
 
@@ -760,10 +778,10 @@ function createSettlementView(state, curNode)
             backgroundGradient = {
                 direction = "to-bottom",
                 colors = {
-                    { 0, 0, 0, 0 },       -- 顶部完全透明
-                    { 0, 0, 0, 0 },       -- 中上段透明
-                    { 0, 0, 0, 60 },      -- 中段微渐变
-                    { 16, 18, 20, 140 },  -- 底部较淡（按钮区自带底色）
+                    { 0, 0, 0, 0 },                    -- 顶部完全透明
+                    { 0, 0, 0, 0 },                    -- 中上段透明
+                    Theme.colors.home_gradient_mid,     -- 中段微渐变
+                    Theme.colors.home_gradient_bot,     -- 底部较淡
                 },
             },
         })
@@ -792,14 +810,14 @@ function createSettlementView(state, curNode)
                                     UI.Label {
                                         text = nodeName,
                                         fontSize = Theme.sizes.font_large,
-                                        fontColor = { 255, 255, 255, 230 },
+                                        fontColor = Theme.colors.home_title,
                                     },
                                 },
                             },
                             UI.Label {
                                 text = isSettlement and "聚落" or (curNode and curNode.type or ""),
                                 fontSize = Theme.sizes.font_small,
-                                fontColor = { 255, 255, 255, 120 },
+                                fontColor = Theme.colors.home_label_dim,
                             },
                         },
                     },
@@ -808,13 +826,13 @@ function createSettlementView(state, curNode)
                     table.insert(infoChildren, UI.Label {
                         text = nodeDesc,
                         fontSize = Theme.sizes.font_small,
-                        fontColor = { 255, 255, 255, 160 },
+                        fontColor = Theme.colors.home_desc,
                     })
                 end
                 local infoPanel = UI.Panel {
                     width = "100%",
                     padding = 10,
-                    backgroundColor = { 0, 0, 0, 140 },
+                    backgroundColor = Theme.colors.home_overlay,
                     borderRadius = Theme.sizes.radius,
                     gap = 4,
                     children = infoChildren,
@@ -825,8 +843,10 @@ function createSettlementView(state, curNode)
         },
     })
 
-    -- 层 3：中间弹性留白（让背景图可见）
-    table.insert(rootChildren, UI.Panel { flexGrow = 1, flexBasis = 0 })
+    -- 层 3：占位弹性区域（停泊首页不显示驾驶场景，仅展示 CG 背景）
+    table.insert(rootChildren, UI.Panel {
+        flexGrow = 1, flexBasis = 0,
+    })
 
     -- 层 4：悬浮按钮行（成长目标 + 活跃订单）
     -- 教程 SPAWN 阶段隐藏悬浮按钮，减少干扰
@@ -841,10 +861,10 @@ function createSettlementView(state, curNode)
         width = "auto",
         height = 32,
         fontSize = Theme.sizes.font_small,
-        backgroundColor = { 30, 34, 40, 200 },
+        backgroundColor = Theme.colors.home_float_btn_bg,
         borderColor = theme.accent,
         borderWidth = 1,
-        borderRadius = 16,
+        borderRadius = Theme.sizes.radius,
         onClick = function(self)
             _showProgressPopup = not _showProgressPopup
             router.navigate("home")
@@ -858,10 +878,10 @@ function createSettlementView(state, curNode)
             width = "auto",
             height = 32,
             fontSize = Theme.sizes.font_small,
-            backgroundColor = { 30, 34, 40, 200 },
+            backgroundColor = Theme.colors.home_float_btn_bg,
             borderColor = Theme.colors.accent,
             borderWidth = 1,
-            borderRadius = 16,
+            borderRadius = Theme.sizes.radius,
             onClick = function(self)
                 Flow.enter_prepare(state)
                 router.navigate("orders")
@@ -885,7 +905,7 @@ function createSettlementView(state, curNode)
         table.insert(rootChildren, UI.Panel {
             width = "100%", height = "100%",
             position = "absolute", left = 0, top = 0,
-            backgroundColor = { 0, 0, 0, 160 },
+            backgroundColor = Theme.colors.home_popup_overlay,
             justifyContent = "center", alignItems = "center",
             padding = 20,
             onClick = function(self)
@@ -931,7 +951,7 @@ function createSettlementView(state, curNode)
     return UI.Panel {
         id = "homeScreen",
         width = "100%", height = "100%",
-        backgroundColor = bgImage and { 16, 18, 20, 255 } or Theme.colors.bg_primary,
+        backgroundColor = bgImage and Theme.colors.home_root_fallback or Theme.colors.bg_primary,
         children = rootChildren,
     }
 end
@@ -959,10 +979,12 @@ function createTravelView(state)
     local contentChildren = {}
 
     -- ── 行驶视差场景 ──
-    table.insert(contentChildren, DrivingScene.createWidget({
+    local drivingWidget = DrivingScene.createWidget({
         height = 260,
         borderRadius = Theme.sizes.radius,
-    }))
+    })
+    SketchBorder.register(drivingWidget, "card")
+    table.insert(contentChildren, drivingWidget)
 
     -- 当前路段描述
     local EDGE_TYPE_LABEL = { main_road = "公路", path = "小径", shortcut = "捷径" }
@@ -984,7 +1006,7 @@ function createTravelView(state)
         id = "travelStrip",
         width = "100%", padding = 14,
         enterAnim = true, enterDelay = 0.1,
-        imageTint = { 28, 42, 58, 240 },
+        imageTint = Theme.colors.home_travel_tint,
         borderWidth = 1, borderColor = Theme.colors.info,
         gap = 10,
         children = {
@@ -1450,7 +1472,7 @@ end
 -- ============================================================
 function createBacklogWarning(info)
     local bg = info.level == "overloaded"
-        and { 72, 28, 28, 220 } or { 64, 54, 20, 220 }
+        and Theme.colors.home_backlog_danger or Theme.colors.home_backlog_warning
 
     return UI.Panel {
         width = "100%", padding = 10,
@@ -1527,8 +1549,10 @@ function createChatterBubble(state)
     }
     local name  = speakerNames[cur.speaker] or cur.speaker
     local color = speakerColors[cur.speaker] or Theme.colors.accent
+    local avatar = Theme.avatars[cur.speaker] or Theme.avatars.linli
 
-    local bubbleChildren = {
+    -- 文字列子元素
+    local textChildren = {
         -- 说话人
         UI.Label {
             text = name,
@@ -1545,7 +1569,7 @@ function createChatterBubble(state)
 
     -- 可回应的对话：显示回应按钮
     if cur.response then
-        table.insert(bubbleChildren, F.actionBtn {
+        table.insert(textChildren, F.actionBtn {
             text = cur.response.label or "回应",
             variant = "secondary",
             height = 30,
@@ -1558,11 +1582,28 @@ function createChatterBubble(state)
 
     return UI.Panel {
         width = "100%", padding = 10,
-        backgroundColor = { 32, 38, 48, 230 },
+        backgroundColor = Theme.colors.chatter_bubble_bg,
         borderRadius = Theme.sizes.radius,
         borderWidth = 1, borderColor = color,
-        gap = 4,
-        children = bubbleChildren,
+        flexDirection = "row",
+        alignItems = "flex-start",
+        gap = 8,
+        children = {
+            -- 头像
+            UI.Panel {
+                width = 36, height = 36,
+                borderRadius = 18,
+                backgroundImage = avatar,
+                backgroundFit = "cover",
+                flexShrink = 0,
+            },
+            -- 文字区域
+            UI.Panel {
+                flex = 1, flexShrink = 1,
+                gap = 4,
+                children = textChildren,
+            },
+        },
     }
 end
 

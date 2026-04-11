@@ -4,6 +4,7 @@
 local UI           = require("urhox-libs/UI")
 local Theme        = require("ui/theme")
 local SketchBorder = require("ui/sketch_border")
+local SoundMgr     = require("ui/sound_manager")
 
 local M = {}
 
@@ -105,6 +106,7 @@ function M.show(parent, config)
 
     M._current = bubbleOverlay
     parent:AddChild(bubbleOverlay)
+    SoundMgr.play("bubble_pop")
 end
 
 --- 隐藏当前气泡

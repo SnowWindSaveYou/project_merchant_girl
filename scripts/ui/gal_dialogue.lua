@@ -17,6 +17,100 @@ local NpcManager = require("narrative/npc_manager")
 local M = {}
 
 -- ============================================================
+-- 打字机效果状态
+-- ============================================================
+local _tw = {
+    fullText   = "",    -- 当前步完整文本
+    charCount  = 0,     -- 已显示的 UTF-8 字符数
+    totalChars = 0,     -- 总 UTF-8 字符数
+    finished   = true,  -- 是否已打完
+    speed      = 30,    -- 字/秒
+    stepId     = 0,     -- 当前 step 标识（step 变化时重置）
+    labelRef   = nil,   -- 对话文本 Label 引用（用于 update 中更新）
+}
+
+--- UTF-8 感知的子串截取（前 n 个字符）
+local function utf8_sub(s, n)
+    local pos = 1
+    local count = 0
+    local len = #s
+    while pos <= len and count < n do
+        local b = string.byte(s, pos)
+        if b < 0x80 then
+            pos = pos + 1
+        elseif b < 0xE0 then
+            pos = pos + 2
+        elseif b < 0xF0 then
+            pos = pos + 3
+        else
+            pos = pos + 4
+        end
+        count = count + 1
+    end
+    return string.sub(s, 1, pos - 1)
+end
+
+--- 计算 UTF-8 字符数
+local function utf8_len(s)
+    local count = 0
+    local pos = 1
+    local len = #s
+    while pos <= len do
+        local b = string.byte(s, pos)
+        if b < 0x80 then
+            pos = pos + 1
+        elseif b < 0xE0 then
+            pos = pos + 2
+        elseif b < 0xF0 then
+            pos = pos + 3
+        else
+            pos = pos + 4
+        end
+        count = count + 1
+    end
+    return count
+end
+
+--- 重置打字机（新 step 进入时调用）
+local function tw_reset(text, stepId)
+    if _tw.stepId == stepId then return end  -- 同一 step 不重复重置
+    _tw.fullText   = text or ""
+    _tw.totalChars = utf8_len(_tw.fullText)
+    _tw.charCount  = 0
+    _tw.finished   = (_tw.totalChars == 0)
+    _tw.stepId     = stepId
+    _tw.labelRef   = nil
+end
+
+--- 立即展完
+local function tw_finish()
+    _tw.charCount = _tw.totalChars
+    _tw.finished  = true
+    if _tw.labelRef then
+        _tw.labelRef:SetText(_tw.fullText)
+    end
+end
+
+--- 每帧更新
+function M.update(dt)
+    if _tw.finished then return end
+    _tw.charCount = _tw.charCount + _tw.speed * dt
+    if _tw.charCount >= _tw.totalChars then
+        _tw.charCount = _tw.totalChars
+        _tw.finished  = true
+    end
+    if _tw.labelRef then
+        local shown = utf8_sub(_tw.fullText, math.floor(_tw.charCount))
+        _tw.labelRef:SetText(shown)
+    end
+end
+
+--- 当前是否已展完
+function M.isTextFinished()
+    return _tw.finished
+end
+
+-- ============================================================
 -- 立绘资源映射
 -- ============================================================
 
@@ -38,7 +132,7 @@ local PROTAGONIST_PORTRAITS = {
     },
     taoxia = {
         name     = "陶夏",
-        color    = { 218, 168, 102, 255 },
+        color    = Theme.colors.accent,
         bgColor  = { 58, 48, 36, 240 },
         portrait = "image/taoxia_portrait_v3.png",
         expressions = {
@@ -196,6 +290,9 @@ function M.createDialogueView(opts)
     local curText = steps[curStep] and steps[curStep].text or ""
     local curExpression = steps[curStep] and steps[curStep].expression or nil
 
+    -- 打字机：新 step 时重置
+    tw_reset(curText, curStep)
+
     -- 确定左右两侧立绘（统一逻辑：NPC 拜访 / 主线剧情 / 纯主角篝火）
     local leftCfg, rightCfg, leftDim, rightDim
     local leftPortrait, rightPortrait  -- 实际显示的立绘路径（含表情差分）
@@ -288,7 +385,7 @@ function M.createDialogueView(opts)
         UI.Label {
             text = d.title or "",
             fontSize = 13,
-            fontColor = { 200, 180, 140, 200 },
+            fontColor = Theme.colors.dialogue_title,
             flexShrink = 1,
         },
     }
@@ -297,7 +394,7 @@ function M.createDialogueView(opts)
         table.insert(topLeftChildren, UI.Label {
             text = opts.topInfo,
             fontSize = 11,
-            fontColor = { 150, 140, 120, 180 },
+            fontColor = Theme.colors.dialogue_info,
             flexShrink = 1,
         })
     end
@@ -331,7 +428,7 @@ function M.createDialogueView(opts)
                 width = "95%", height = "95%",
                 backgroundImage = leftPortrait,
                 backgroundFit = "contain",
-                imageTint = leftDim and { 80, 80, 80, 160 } or nil,
+                imageTint = leftDim and Theme.colors.dialogue_dim or nil,
                 position = "absolute",
                 left = "-22%",
                 top = "3%",
@@ -341,7 +438,7 @@ function M.createDialogueView(opts)
                 width = "95%", height = "95%",
                 backgroundImage = rightPortrait,
                 backgroundFit = "contain",
-                imageTint = rightDim and { 80, 80, 80, 160 } or nil,
+                imageTint = rightDim and Theme.colors.dialogue_dim or nil,
                 position = "absolute",
                 right = "-22%",
                 top = "3%",
@@ -357,7 +454,7 @@ function M.createDialogueView(opts)
         justifyContent = "space-between",
         alignItems = "center",
         paddingLeft = 16, paddingRight = 8,
-        backgroundColor = { 22, 19, 16, 120 },
+        backgroundColor = Theme.colors.dialogue_topbar,
         children = {
             UI.Panel {
                 flexDirection = "row", gap = 8, alignItems = "center",
@@ -417,14 +514,19 @@ function M.createDialogueView(opts)
             alignSelf = "flex-start",
         },
         nameDivider,
-        -- 对话文字
-        UI.Label {
-            text = curText,
-            fontSize = 15,
-            fontColor = { 225, 220, 210, 255 },
-            lineHeight = 1.7,
-            whiteSpace = "normal",
-        },
+        -- 对话文字（打字机逐字展开）
+        (function()
+            local lbl = UI.Label {
+                id = "galDialogueText",
+                text = "",  -- 初始空，由 update 逐字填充
+                fontSize = 15,
+                fontColor = Theme.colors.dialogue_text,
+                lineHeight = 1.7,
+                whiteSpace = "normal",
+            }
+            _tw.labelRef = lbl
+            return lbl
+        end)(),
     }
     -- 操作区（仅在有选项时显示）
     if allShown then
@@ -442,14 +544,16 @@ function M.createDialogueView(opts)
     local dialogueBox = UI.Panel {
         width = "100%",
         flexGrow = 1,
-        backgroundColor = { 15, 13, 10, 180 },
-        borderTopWidth = 1,
-        borderColor = { 80, 65, 40, 80 },
+        backgroundColor = Theme.colors.dialogue_bg,
         paddingLeft = 20, paddingRight = 20,
         paddingTop = 16, paddingBottom = 20,
         gap = 8,
         onClick = (not allShown) and function(self)
-            if opts.onAdvance then opts.onAdvance() end
+            if not _tw.finished then
+                tw_finish()  -- 文字未展完：立即展完
+            else
+                if opts.onAdvance then opts.onAdvance() end  -- 已展完：推进
+            end
         end or nil,
         children = dialogueBoxChildren,
     }
@@ -459,7 +563,7 @@ function M.createDialogueView(opts)
     return UI.Panel {
         id = "galScreen",
         width = "100%", height = "100%",
-        backgroundColor = { 18, 15, 12, 255 },
+        backgroundColor = Theme.colors.dialogue_root,
         children = galChildren,
     }
 end
@@ -509,7 +613,7 @@ function M.createHistoryView(opts)
                         UI.Label {
                             text = s.text or "",
                             fontSize = 14,
-                            fontColor = { 220, 215, 208, 255 },
+                            fontColor = Theme.colors.history_bubble_text,
                             lineHeight = 1.5,
                             whiteSpace = "normal",
                         },
@@ -522,7 +626,7 @@ function M.createHistoryView(opts)
     return UI.Panel {
         id = "galScreen",
         width = "100%", height = "100%",
-        backgroundColor = { 18, 15, 12, 255 },
+        backgroundColor = Theme.colors.dialogue_root,
         children = {
             -- 顶栏
             UI.Panel {
@@ -531,12 +635,12 @@ function M.createHistoryView(opts)
                 justifyContent = "space-between",
                 alignItems = "center",
                 paddingLeft = 16, paddingRight = 8,
-                backgroundColor = { 22, 19, 16, 120 },
+                backgroundColor = Theme.colors.dialogue_topbar,
                 children = {
                     UI.Label {
                         text = (d.title or "") .. " - LOG",
                         fontSize = 13,
-                        fontColor = { 200, 180, 140, 200 },
+                        fontColor = Theme.colors.dialogue_title,
                     },
                     F.actionBtn {
                         text = "返回",
@@ -655,7 +759,7 @@ function M.createResultView(opts)
             table.insert(cardChildren, UI.Label {
                 text = info.text,
                 fontSize = 11,
-                fontColor = info.color or { 218, 168, 102, 255 },
+                fontColor = info.color or Theme.colors.accent,
                 textAlign = "center",
             })
         end
@@ -717,7 +821,7 @@ function M.createResultView(opts)
     -- ▼ 结果卡片（半透明叠在立绘前面）
     local resultCard = UI.Panel {
         width = "100%",
-        backgroundColor = { 15, 13, 10, 200 },
+        backgroundColor = Theme.colors.dialogue_bg,
         padding = 20,
         gap = 10,
         alignItems = "center",
@@ -729,7 +833,7 @@ function M.createResultView(opts)
     return UI.Panel {
         id = "galScreen",
         width = "100%", height = "100%",
-        backgroundColor = { 18, 15, 12, 255 },
+        backgroundColor = Theme.colors.dialogue_root,
         justifyContent = "flex-end",
         children = resultChildren,
     }

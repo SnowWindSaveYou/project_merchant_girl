@@ -145,14 +145,18 @@ function F.actionBtn(props)
         paddingRight = p.paddingRight or nil,
         onClick = function(self)
             if disabled then return end
-            SoundMgr.play(p.sound or "click")
+            -- sound=false 跳过自动音效（由业务回调自行播放 coins/success 等）
+            if p.sound ~= false then
+                SoundMgr.play(p.sound or "click")
+            end
             if p.onClick then p.onClick(self) end
         end,
     }
 
     -- 注册手绘边框（sketch=false 可关闭）
+    -- highlight=true 时自动使用 accent_button 样式（金色墨水+呼吸+微光）
     if p.sketch ~= false then
-        local skStyle = p.sketchStyle or "button"
+        local skStyle = p.sketchStyle or (p.highlight and "accent_button" or "button")
         SketchBorder.register(btn, skStyle, p.sketchOverrides)
     end
 
@@ -165,22 +169,42 @@ end
 -- ============================================================
 --- 创建模态遮罩层
 --- props.onBackdropClick: 点击遮罩区域的回调（不传则静默拦截）
----@param props table { children, onBackdropClick?, backgroundColor?, id? }
+--- props.backgroundImage: 可选背景图路径，替代纯色遮罩，用 cover 铺满 + 渐变叠加
+---@param props table { children, onBackdropClick?, backgroundColor?, backgroundImage?, id? }
 ---@return table widget
 function F.overlay(props)
     local p = props or {}
-    return UI.Panel {
-        id     = p.id or nil,
-        width  = "100%", height = "100%",
-        backgroundColor    = p.backgroundColor or Theme.colors.bg_overlay,
-        justifyContent     = "center",
-        alignItems         = "center",
+    local hasBg = p.backgroundImage ~= nil
+
+    local layerChildren = {}
+
+    -- 层 1：背景图（全屏绝对定位 cover 铺满）
+    if hasBg then
+        table.insert(layerChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundImage = p.backgroundImage,
+            backgroundFit = "cover",
+        })
+        -- 层 2：压暗遮罩（均匀半透明黑 + 底部渐变加深，保证卡片文字可读）
+        table.insert(layerChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundColor = { 0, 0, 0, 160 },
+        })
+    end
+
+    -- 层 3：内容容器（居中）
+    table.insert(layerChildren, UI.Panel {
+        width = "100%", height = "100%",
+        justifyContent = "center",
+        alignItems     = "center",
         -- 拦截所有点击，防止穿透到下层 UI
         onClick = function(self)
             if p.onBackdropClick then p.onBackdropClick(self) end
         end,
         children = {
-            -- 内容容器：阻止内容区点击冒泡到遮罩
+            -- 内容区：阻止点击冒泡到遮罩
             UI.Panel {
                 onClick    = function(self) end,
                 alignItems = "center",
@@ -188,6 +212,13 @@ function F.overlay(props)
                 children   = p.children or {},
             },
         },
+    })
+
+    return UI.Panel {
+        id     = p.id or nil,
+        width  = "100%", height = "100%",
+        backgroundColor = hasBg and { 0, 0, 0, 255 } or (p.backgroundColor or Theme.colors.bg_overlay),
+        children = layerChildren,
     }
 end
 

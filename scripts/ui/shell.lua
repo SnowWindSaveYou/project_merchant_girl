@@ -10,6 +10,7 @@ local RoutePlanner = require("map/route_planner")
 local Graph        = require("map/world_graph")
 local Radio        = require("travel/radio")
 local SpeechBubble = require("ui/speech_bubble")
+local AudioMgr     = require("ui/audio_manager")
 
 local M = {}
 
@@ -227,6 +228,12 @@ function M.update(state, dt)
     -- 驱动全局气泡（收音机教程等）
     SpeechBubble.update(dt)
 
+    -- ── BGM + 环境音：根据游戏阶段自动切换音频场景 ──
+    -- （AudioMgr.update 已移至 router.lua 全局驱动，此处只负责设置场景）
+    local phase = Flow.get_phase(state)
+    local audioScene = (phase == Flow.Phase.TRAVELLING) and "travel" or "settlement"
+    AudioMgr.setScene(audioScene)
+
     -- 确保 radio 状态存在（兼容旧存档 & 据点阶段）
     if not state.flow.radio then
         state.flow.radio = Radio.init()
@@ -295,6 +302,10 @@ function M.update(state, dt)
     local radioCh = Radio.get_channel(state)
     local curBroadcast = Radio.get_current(state)
     local broadcastId  = curBroadcast and curBroadcast.id or nil
+
+    -- 收音机音频跟随状态：底噪跟开关，模糊人声跟播报
+    AudioMgr.setRadioNoise(radioOn)
+    AudioMgr.setRadioVoice(radioOn and curBroadcast ~= nil)
 
     local needRebuild = false
     if radioOn ~= _prevRadioOn then needRebuild = true end

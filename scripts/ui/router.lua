@@ -3,6 +3,7 @@
 local UI           = require("urhox-libs/UI")
 local Shell        = require("ui/shell")
 local SoundMgr     = require("ui/sound_manager")
+local AudioMgr     = require("ui/audio_manager")
 local F            = require("ui/ui_factory")
 local SketchBorder = require("ui/sketch_border")
 
@@ -23,7 +24,10 @@ function M.register(name, screenModule)
 end
 
 --- 切换到指定页面
-function M.navigate(name, params)
+--- opts.sound: 可选，页面切换时播放指定音效（如 "open"）
+---   默认不播放任何声音——按钮自身已负责点击音效，router 不再自动叠加。
+---   需要声音时显式传入: router.navigate("page", nil, { sound = "open" })
+function M.navigate(name, params, opts)
     -- 同页面导航 → 转为 refresh（保留滚动位置、抑制入场动画）
     if currentName == name then
         M.refresh(params)
@@ -38,9 +42,9 @@ function M.navigate(name, params)
         return
     end
 
-    -- 页面切换音效
-    if prevName then
-        SoundMgr.play("open")
+    -- 页面切换音效（仅当调用方显式要求时播放）
+    if prevName and opts and opts.sound then
+        SoundMgr.play(opts.sound)
     end
 
     -- 清空旧页面的手绘边框注册表（新页面 create 会重新注册）
@@ -167,6 +171,9 @@ function M.update(dt)
 
     -- 推进手绘边框呼吸动画时间
     SketchBorder.update(dt)
+
+    -- 全局驱动 BGM + 环境音淡入淡出（不依赖 Shell，对话页面也能运行）
+    AudioMgr.update(dt)
 end
 
 --- 获取游戏状态引用

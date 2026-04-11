@@ -1,11 +1,12 @@
 --- 闲逛场景页面
 --- 事件卡片式 UI，展示 2-3 个聚落场景
-local UI      = require("urhox-libs/UI")
-local Theme   = require("ui/theme")
-local F       = require("ui/ui_factory")
-local Stroll  = require("narrative/stroll")
-local Goods   = require("economy/goods")
-local Graph   = require("map/world_graph")
+local UI       = require("urhox-libs/UI")
+local Theme    = require("ui/theme")
+local F        = require("ui/ui_factory")
+local Stroll   = require("narrative/stroll")
+local Goods    = require("economy/goods")
+local Graph    = require("map/world_graph")
+local AudioMgr = require("ui/audio_manager")
 
 local M = {}
 ---@type table
@@ -17,6 +18,7 @@ local session = {
     phase    = "scene", -- "scene" | "result" | "summary"
     results  = {},      -- 每个场景的选择结果
     consumed = nil,     -- 消耗的物品
+    bgImage  = nil,     -- 当前聚落背景图
 }
 
 -- ============================================================
@@ -139,6 +141,7 @@ local function createSceneView(state, scene, sceneIdx, totalScenes)
 
     return F.overlay {
         id = "strollSceneView",
+        backgroundImage = session.bgImage,
         children = {
             UI.ScrollView {
                 width = "90%", maxWidth = 420,
@@ -227,6 +230,7 @@ local function createResultView(state)
 
     return F.overlay {
         id = "strollResultView",
+        backgroundImage = session.bgImage,
         children = {
             UI.ScrollView {
                 width = "90%", maxWidth = 420,
@@ -318,6 +322,7 @@ local function createSummaryView(state)
 
     return F.overlay {
         id = "strollSummaryView",
+        backgroundImage = session.bgImage,
         children = {
             UI.ScrollView {
                 width = "90%", maxWidth = 420,
@@ -351,6 +356,19 @@ function M.create(state, params, r)
         session.current  = 1
         session.phase    = "scene"
         session.results  = {}
+
+        -- 解析当前聚落背景图
+        local loc = state.map and state.map.current_location
+        if loc then
+            local node = Graph.get_node(loc)
+            session.bgImage = node and node.bg or nil
+        else
+            session.bgImage = nil
+        end
+
+        -- 闲逛发生在聚落，默认 "settlement"
+        -- 可通过 params.audioScene 覆盖
+        AudioMgr.setScene(params.audioScene or "settlement")
     end
 
     -- 内部导航（保持 session 不变）

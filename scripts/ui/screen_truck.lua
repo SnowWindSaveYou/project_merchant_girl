@@ -378,9 +378,11 @@ function createModulesSection(state, location)
                             variant = canUp and "primary" or "secondary",
                             height = 30, paddingLeft = 16, paddingRight = 16,
                             disabled = not canUp,
+                            sound = false,
                             onClick = function(self)
                                 local ok, err = Modules.upgrade(state, mid)
                                 if ok then
+                                    SoundMgr.play("success")
                                     local newLv = Modules.get_level(state, mid)
                                     local dialogue = Tutorial.get_upgrade_dialogue(mid, newLv)
                                     if dialogue then

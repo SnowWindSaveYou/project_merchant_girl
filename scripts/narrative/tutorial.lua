@@ -5,14 +5,15 @@ local Flags        = require("core/flags")
 local DialoguePool = require("narrative/dialogue_pool")
 local Graph        = require("map/world_graph")
 local Campfire     = require("narrative/campfire")
+local Theme        = require("ui/theme")
 
 local M = {}
 
 -- ============================================================
--- 气泡头像（统一复用）
+-- 气泡头像（引用 Theme.avatars，各模块共用）
 -- ============================================================
-M.AVATAR_LINLI  = "image/linli_avatar.png"
-M.AVATAR_TAOXIA = "image/taoxia_avatar.png"
+M.AVATAR_LINLI  = Theme.avatars.linli
+M.AVATAR_TAOXIA = Theme.avatars.taoxia
 
 -- ============================================================
 -- 教程阶段常量（由 flags 推导，不存储独立变量）
@@ -168,12 +169,11 @@ end
 
 --- 节点到达时的教程拦截
 --- 返回拦截指令或 nil（不干预）
---- 注意：此函数在 Flow.handle_node_arrival 之后调用，
----       此时教程订单可能已被 auto_deliver 交付，
----       因此直接用 flags 判断而非订单状态
+--- 注意：此函数在 Flow.handle_node_arrival **之前**调用（main.lua handleNodeArrival），
+---       若返回拦截，到达处理（交付/结算）会被延迟到对话结束后执行
 ---@param state table
 ---@param node_id string
----@return table|nil action  { type = "dialogue", dialogue_id = "..." }
+---@return table|nil action  { type = "dialogue", dialogue = DialogueData }
 function M.on_arrival(state, node_id)
     -- 抵达温室社区：教程已开始但温室社区介绍未完成
     if node_id == "greenhouse"

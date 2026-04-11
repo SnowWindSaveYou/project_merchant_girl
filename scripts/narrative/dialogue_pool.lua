@@ -146,7 +146,12 @@ function M.filter(state, node_type)
             end
         end
 
-        -- 6. min_trips（最低行程数要求）
+        -- 6. arrival_only：仅供到达拦截使用，不进入篝火对话池
+        if ok and d.arrival_only then
+            ok = false
+        end
+
+        -- 7. min_trips（最低行程数要求）
         if ok and d.min_trips then
             local trips = state.stats and state.stats.total_trips or 0
             if trips < d.min_trips then

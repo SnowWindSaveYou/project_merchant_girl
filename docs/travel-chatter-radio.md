@@ -249,7 +249,9 @@ end
 ### 对话气泡 (createChatterBubble)
 
 - 无对话时返回 `nil`，**不插入 contentChildren**，不占布局空间
-- 有对话时显示：说话人名（带角色颜色）+ 内容 + 可选回应按钮
+- 有对话时显示：角色头像（36×36 圆形）+ 说话人名（带角色颜色）+ 内容 + 可选回应按钮
+- 头像资源来自 `Theme.avatars[speaker]`（统一配置，教程气泡 / chatter 共用）
+- 横排布局（`flexDirection = "row"`）：左侧头像 + 右侧文字列
 - 边框颜色按说话人区分：林砾蓝 `{80,140,200}`、陶夏橙 `{200,130,80}`
 
 ### 收音机面板 (createRadioPanel)
@@ -273,7 +275,30 @@ end
 
 ---
 
-## 五、扩展指南
+## 五、头像配置
+
+角色头像资源统一定义在 `scripts/ui/theme.lua` 的 `Theme.avatars` 表中：
+
+```lua
+M.avatars = {
+    linli  = "image/linli_avatar.png",
+    taoxia = "image/taoxia_avatar.png",
+}
+```
+
+以下模块共用此配置（不再各自硬编码路径）：
+
+| 模块 | 用途 |
+|------|------|
+| `screen_home.lua` createChatterBubble | 行驶中日常对话气泡头像 |
+| `tutorial.lua` M.AVATAR_LINLI / M.AVATAR_TAOXIA | 教程引导气泡头像 |
+| `speech_bubble.lua` | 通用气泡组件（接收 portrait 参数） |
+
+添加新角色头像时，只需在 `Theme.avatars` 中添加对应键值即可。
+
+---
+
+## 六、扩展指南
 
 ### 添加新对话
 

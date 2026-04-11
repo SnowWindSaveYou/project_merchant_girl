@@ -7,6 +7,7 @@ local Graph = require("map/world_graph")
 local RoutePlanner = require("map/route_planner")
 local OrderBook = require("economy/order_book")
 local F = require("ui/ui_factory")
+local SoundMgr = require("ui/sound_manager")
 
 local M = {}
 ---@type table
@@ -155,8 +156,11 @@ function M.create(state, params, r)
             variant = "primary",
             height = 48, marginTop = 8,
             disabled = not canDepart,
+            sound = false,
             onClick = function(self)
                 if canDepart then
+                    SoundMgr.play("depart")
+
                     Flow.start_travel(state, plan)
                     router.navigate("home")
                 end
