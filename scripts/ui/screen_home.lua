@@ -699,6 +699,8 @@ function createSettlementView(state, curNode)
         -- 篝火（有主线话题且可用时高亮）
         local canCamp, campReason, isCampFree = Campfire.can_start(state)
         local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
+        local isFirstStoryVisit = curNode and curNode.type == "story"
+            and not (state._visited_story_nodes and state._visited_story_nodes[nodeId])
         local campLabel
         if canCamp then
             if hasStoryTopic then
