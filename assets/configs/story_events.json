@@ -2,13 +2,13 @@
   "meta": {
     "project": "末世行商",
     "file_type": "story_event_config",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "主线剧情事件配置（序章 ~ 第二章），供 event_pool 合并加载。"
   },
   "events": [
     {
       "event_id": "SEVT_001",
-      "event_name": "第一次出发",
+      "event_name": "车坏了",
       "phase": "early",
       "pool": "main_story",
       "scene": "drive",
@@ -16,85 +16,85 @@
       "cooldown_run": 99,
       "trigger_tags": [],
       "required_flags": [],
-      "forbidden_flags": ["prologue_done"],
+      "forbidden_flags": ["tutorial_started"],
       "choice_set_id": "CH_SEVT_001",
       "result_set_id": "RS_SEVT_001",
       "next_event_id": null,
       "chapter": 0,
-      "summary": "序章：第一趟行商出发，陶夏兴奋，林砾谨慎",
-      "remark": "序章氛围事件，建立双主角性格"
+      "summary": "序章：行驶中车辆抛锚，林砾下车检查",
+      "remark": "教程起始事件，配合 SD_PROLOGUE_01"
     },
     {
       "event_id": "SEVT_002",
-      "event_name": "夜里的篝火",
+      "event_name": "第一晚",
       "phase": "early",
       "pool": "main_story",
       "scene": "camp",
       "weight": 999,
       "cooldown_run": 99,
       "trigger_tags": [],
-      "required_flags": [],
+      "required_flags": ["tutorial_first_departure_done"],
       "forbidden_flags": ["prologue_done"],
       "choice_set_id": "CH_SEVT_002",
       "result_set_id": "RS_SEVT_002",
       "next_event_id": null,
       "chapter": 0,
-      "summary": "序章：第一次扎营篝火，确立行商的理由",
+      "summary": "序章：第一次在温室外面过夜",
       "remark": "设置 prologue_done flag，触发进章"
     },
     {
       "event_id": "SEVT_003",
-      "event_name": "陶夏的计划",
-      "phase": "early",
-      "pool": "main_story",
-      "scene": "drive",
-      "weight": 200,
-      "cooldown_run": 99,
-      "trigger_tags": [],
-      "required_flags": ["prologue_done"],
-      "forbidden_flags": ["ch1_taoxia_plan"],
-      "choice_set_id": "CH_SEVT_003",
-      "result_set_id": "RS_SEVT_003",
-      "next_event_id": null,
-      "chapter": 1,
-      "summary": "第一章：陶夏提出扩大贸易路线的想法",
-      "remark": "引导玩家探索更多聚落"
-    },
-    {
-      "event_id": "SEVT_004",
-      "event_name": "路上的旧痕迹",
+      "event_name": "路上的旧车辙",
       "phase": "early",
       "pool": "main_story",
       "scene": "route_node",
-      "weight": 180,
+      "weight": 160,
       "cooldown_run": 99,
       "trigger_tags": [],
       "required_flags": ["prologue_done"],
       "forbidden_flags": ["ch1_old_trail"],
-      "choice_set_id": "CH_SEVT_004",
-      "result_set_id": "RS_SEVT_004",
+      "choice_set_id": "CH_SEVT_003",
+      "result_set_id": "RS_SEVT_003",
       "next_event_id": null,
       "chapter": 1,
       "summary": "第一章：发现另一支商队的车辙印，已经很久了",
       "remark": "伏笔铁锁商队，世界观拓展"
     },
     {
-      "event_id": "SEVT_005",
-      "event_name": "林砾的笔记本",
+      "event_id": "SEVT_004",
+      "event_name": "林砾的频率",
       "phase": "early",
       "pool": "main_story",
       "scene": "camp",
-      "weight": 160,
+      "weight": 140,
       "cooldown_run": 99,
       "trigger_tags": [],
-      "required_flags": ["prologue_done"],
-      "forbidden_flags": ["ch1_linli_notebook"],
+      "required_flags": ["sd_ch1_01_done"],
+      "forbidden_flags": ["ch1_linli_frequency"],
+      "choice_set_id": "CH_SEVT_004",
+      "result_set_id": "RS_SEVT_004",
+      "next_event_id": null,
+      "chapter": 1,
+      "summary": "第一章：林砾在收音机旁停留了很久",
+      "remark": "信号支线伏笔，Ch2 回收"
+    },
+    {
+      "event_id": "SEVT_005",
+      "event_name": "废墟的传闻",
+      "phase": "early",
+      "pool": "main_story",
+      "scene": "route_node",
+      "weight": 150,
+      "cooldown_run": 99,
+      "trigger_tags": [],
+      "required_flags": ["ruins_market_intro"],
+      "forbidden_flags": ["ch1_ruins_rumor"],
       "choice_set_id": "CH_SEVT_005",
       "result_set_id": "RS_SEVT_005",
       "next_event_id": null,
       "chapter": 1,
-      "summary": "第一章：发现林砾一直在记录路况和聚落数据",
-      "remark": "展示林砾的细心性格，关系增温"
+      "summary": "第一章：路边听到废墟营地的人议论北边有大商队",
+      "remark": "铁锁商队伏笔升级"
     },
     {
       "event_id": "SEVT_006",
@@ -152,21 +152,21 @@
     },
     {
       "event_id": "SEVT_009",
-      "event_name": "废墟营地的烟火",
+      "event_name": "远方的信号",
       "phase": "early",
       "pool": "main_story",
-      "scene": "route_node",
+      "scene": "camp",
       "weight": 160,
       "cooldown_run": 99,
       "trigger_tags": [],
-      "required_flags": ["ch1_done"],
-      "forbidden_flags": ["ch2_ruins_smoke"],
+      "required_flags": ["ch2_greenhouse_signal", "ch2_tower_light"],
+      "forbidden_flags": ["ch2_distant_signal"],
       "choice_set_id": "CH_SEVT_009",
       "result_set_id": "RS_SEVT_009",
       "next_event_id": null,
       "chapter": 2,
-      "summary": "第二章：在路边看到废墟方向升起炊烟",
-      "remark": "引导玩家发现废墟营地"
+      "summary": "第二章：林砾坦白一直在追踪一个远方信号",
+      "remark": "Ch1 伏笔回收，林砾信号支线揭开"
     },
     {
       "event_id": "SEVT_010",
@@ -177,7 +177,7 @@
       "weight": 200,
       "cooldown_run": 99,
       "trigger_tags": [],
-      "required_flags": ["ch2_greenhouse_signal", "ch2_bell_tower_pages", "ch2_tower_light", "ch2_ruins_smoke"],
+      "required_flags": ["ch2_greenhouse_signal", "ch2_bell_tower_pages", "ch2_tower_light", "ch2_distant_signal"],
       "forbidden_flags": ["ch2_four_settlements_talk"],
       "choice_set_id": "CH_SEVT_010",
       "result_set_id": "RS_SEVT_010",
@@ -192,14 +192,14 @@
       {
         "choice_set_id": "CH_SEVT_001",
         "choice_id": "A",
-        "choice_text": "让陶夏选路线",
+        "choice_text": "回温室吧",
         "show_condition": [],
         "result_key": "RES_SEVT_001_A"
       },
       {
         "choice_set_id": "CH_SEVT_001",
         "choice_id": "B",
-        "choice_text": "按林砾的建议走稳妥路线",
+        "choice_text": "往前走走看",
         "show_condition": [],
         "result_key": "RES_SEVT_001_B"
       }
@@ -208,76 +208,69 @@
       {
         "choice_set_id": "CH_SEVT_002",
         "choice_id": "A",
-        "choice_text": "「总得有人跑这条路。」",
+        "choice_text": "总得有人在路上",
         "show_condition": [],
         "result_key": "RES_SEVT_002_A"
       },
       {
         "choice_set_id": "CH_SEVT_002",
         "choice_id": "B",
-        "choice_text": "「赚够了就停下来。」",
+        "choice_text": "想看看外面什么样",
         "show_condition": [],
         "result_key": "RES_SEVT_002_B"
-      },
-      {
-        "choice_set_id": "CH_SEVT_002",
-        "choice_id": "C",
-        "choice_text": "「先活下去再说。」",
-        "show_condition": [],
-        "result_key": "RES_SEVT_002_C"
       }
     ],
     "CH_SEVT_003": [
       {
         "choice_set_id": "CH_SEVT_003",
         "choice_id": "A",
-        "choice_text": "「好主意，多跑几个地方。」",
+        "choice_text": "仔细查看车辙方向",
         "show_condition": [],
         "result_key": "RES_SEVT_003_A"
       },
       {
         "choice_set_id": "CH_SEVT_003",
         "choice_id": "B",
-        "choice_text": "「先把现有路线跑稳。」",
+        "choice_text": "标记在地图上",
         "show_condition": [],
         "result_key": "RES_SEVT_003_B"
+      },
+      {
+        "choice_set_id": "CH_SEVT_003",
+        "choice_id": "C",
+        "choice_text": "不管，继续赶路",
+        "show_condition": [],
+        "result_key": "RES_SEVT_003_C"
       }
     ],
     "CH_SEVT_004": [
       {
         "choice_set_id": "CH_SEVT_004",
         "choice_id": "A",
-        "choice_text": "仔细查看车辙方向",
+        "choice_text": "问她在找什么",
         "show_condition": [],
         "result_key": "RES_SEVT_004_A"
       },
       {
         "choice_set_id": "CH_SEVT_004",
         "choice_id": "B",
-        "choice_text": "标记在地图上",
+        "choice_text": "没打扰她",
         "show_condition": [],
         "result_key": "RES_SEVT_004_B"
-      },
-      {
-        "choice_set_id": "CH_SEVT_004",
-        "choice_id": "C",
-        "choice_text": "不管，继续赶路",
-        "show_condition": [],
-        "result_key": "RES_SEVT_004_C"
       }
     ],
     "CH_SEVT_005": [
       {
         "choice_set_id": "CH_SEVT_005",
         "choice_id": "A",
-        "choice_text": "翻看笔记本内容",
+        "choice_text": "详细打听",
         "show_condition": [],
         "result_key": "RES_SEVT_005_A"
       },
       {
         "choice_set_id": "CH_SEVT_005",
         "choice_id": "B",
-        "choice_text": "装作没看见",
+        "choice_text": "随便听听",
         "show_condition": [],
         "result_key": "RES_SEVT_005_B"
       }
@@ -341,14 +334,14 @@
       {
         "choice_set_id": "CH_SEVT_009",
         "choice_id": "A",
-        "choice_text": "开过去看看",
+        "choice_text": "你想去找那个信号？",
         "show_condition": [],
         "result_key": "RES_SEVT_009_A"
       },
       {
         "choice_set_id": "CH_SEVT_009",
         "choice_id": "B",
-        "choice_text": "保持距离观察",
+        "choice_text": "你想找的那个信号……很重要吗？",
         "show_condition": [],
         "result_key": "RES_SEVT_009_B"
       }
@@ -357,21 +350,21 @@
       {
         "choice_set_id": "CH_SEVT_010",
         "choice_id": "A",
-        "choice_text": "「每个地方都需要不同的东西。」",
+        "choice_text": "每个地方都需要不同的东西",
         "show_condition": [],
         "result_key": "RES_SEVT_010_A"
       },
       {
         "choice_set_id": "CH_SEVT_010",
         "choice_id": "B",
-        "choice_text": "「也许我们能帮上更多忙。」",
+        "choice_text": "也许我们能帮上更多忙",
         "show_condition": [],
         "result_key": "RES_SEVT_010_B"
       },
       {
         "choice_set_id": "CH_SEVT_010",
         "choice_id": "C",
-        "choice_text": "「做好买卖就行了。」",
+        "choice_text": "做好买卖就行了",
         "show_condition": [],
         "result_key": "RES_SEVT_010_C"
       }
@@ -381,76 +374,50 @@
     "RS_SEVT_001": [
       {
         "result_key": "RES_SEVT_001_A",
-        "ops": ["add_relation_taoxia:2"],
-        "reward_desc": "陶夏兴奋地铺开地图，画了一条弯弯绕绕的路线。",
+        "ops": ["add_relation_linli:1"],
+        "reward_desc": "林砾点了点头，掉转车头。熟悉的路，熟悉的目的地。至少今天不会迷路。",
         "risk_desc": "",
-        "set_flags": ["sevt_first_depart"],
+        "set_flags": ["tutorial_started", "chose_safe_return"],
         "clear_flags": []
       },
       {
         "result_key": "RES_SEVT_001_B",
-        "ops": ["add_relation_linli:2"],
-        "reward_desc": "林砾点了点头，沿着她标注的安全路线出发。",
+        "ops": ["add_relation_taoxia:2"],
+        "reward_desc": "林砾看了陶夏一眼。陶夏笑了笑。麻薯号继续往前开，驶入更远的灰。",
         "risk_desc": "",
-        "set_flags": ["sevt_first_depart"],
+        "set_flags": ["tutorial_started", "chose_go_forward"],
         "clear_flags": []
       }
     ],
     "RS_SEVT_002": [
       {
         "result_key": "RES_SEVT_002_A",
-        "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
-        "reward_desc": "两个人都没说话。火苗噼啪响了一会儿，林砺小声说：「嗯。」",
+        "ops": ["add_relation_linli:2", "add_relation_taoxia:2"],
+        "reward_desc": "两个人都没说话。火苗噼啪响了一会儿。这个答案够重，不需要解释。",
         "risk_desc": "",
         "set_flags": ["prologue_done", "motivation_duty"],
         "clear_flags": []
       },
       {
         "result_key": "RES_SEVT_002_B",
-        "ops": ["add_relation_taoxia:2"],
-        "reward_desc": "陶夏笑了：「那得赚好多好多。」林砾没答话，把火拨旺了些。",
+        "ops": ["add_relation_taoxia:3"],
+        "reward_desc": "陶夏愣了一下，然后笑了。「我也是。」林砾叹了口气，但嘴角弯了一下。",
         "risk_desc": "",
-        "set_flags": ["prologue_done", "motivation_freedom"],
-        "clear_flags": []
-      },
-      {
-        "result_key": "RES_SEVT_002_C",
-        "ops": ["add_relation_linli:2"],
-        "reward_desc": "林砾递过来一罐打开的豆子：「那先吃饭。」",
-        "risk_desc": "",
-        "set_flags": ["prologue_done", "motivation_survival"],
+        "set_flags": ["prologue_done", "motivation_curiosity"],
         "clear_flags": []
       }
     ],
     "RS_SEVT_003": [
       {
         "result_key": "RES_SEVT_003_A",
-        "ops": ["add_relation_taoxia:2"],
-        "reward_desc": "陶夏拍了拍方向盘：「就知道你会答应！」",
-        "risk_desc": "",
-        "set_flags": ["ch1_taoxia_plan"],
-        "clear_flags": []
-      },
-      {
-        "result_key": "RES_SEVT_003_B",
-        "ops": ["add_relation_linli:1", "add_credit:10"],
-        "reward_desc": "林砾赞同地点头。陶夏虽然有点失落，但也承认现在还没准备好。",
-        "risk_desc": "",
-        "set_flags": ["ch1_taoxia_plan"],
-        "clear_flags": []
-      }
-    ],
-    "RS_SEVT_004": [
-      {
-        "result_key": "RES_SEVT_004_A",
         "ops": ["add_time:3"],
-        "reward_desc": "车辙很深，是重型货车。走的方向和你们不同，已经长了杂草。",
+        "reward_desc": "车辙很深，是重型货车。走的方向和你们不同，已经长了杂草。以前也有人跑过这条路。",
         "risk_desc": "耽搁了一些时间",
         "set_flags": ["ch1_old_trail", "iron_lock_foreshadow"],
         "clear_flags": []
       },
       {
-        "result_key": "RES_SEVT_004_B",
+        "result_key": "RES_SEVT_003_B",
         "ops": [],
         "reward_desc": "林砾在地图上做了标注。「以后可能用得上。」",
         "risk_desc": "",
@@ -458,7 +425,7 @@
         "clear_flags": []
       },
       {
-        "result_key": "RES_SEVT_004_C",
+        "result_key": "RES_SEVT_003_C",
         "ops": [],
         "reward_desc": "陶夏瞄了一眼后方的车辙：「以前也有人跑过这条路啊。」",
         "risk_desc": "",
@@ -466,21 +433,39 @@
         "clear_flags": []
       }
     ],
+    "RS_SEVT_004": [
+      {
+        "result_key": "RES_SEVT_004_A",
+        "ops": ["add_relation_linli:2"],
+        "reward_desc": "林砾收回了手。「……没什么。就是在调频。」但她的手在那个位置停了很久。",
+        "risk_desc": "",
+        "set_flags": ["ch1_linli_frequency"],
+        "clear_flags": []
+      },
+      {
+        "result_key": "RES_SEVT_004_B",
+        "ops": ["add_relation_linli:1"],
+        "reward_desc": "你没有打扰她。有些事情，她会在准备好时告诉你。",
+        "risk_desc": "",
+        "set_flags": ["ch1_linli_frequency"],
+        "clear_flags": []
+      }
+    ],
     "RS_SEVT_005": [
       {
         "result_key": "RES_SEVT_005_A",
-        "ops": ["add_relation_linli:3"],
-        "reward_desc": "笔记本上密密麻麻记着路况、油耗、每个聚落的物价。林砾有些不好意思：「习惯了。」",
+        "ops": ["add_relation_taoxia:2"],
+        "reward_desc": "拾荒者压低声音：「听说北边有一支大商队，比谁都大。自己有油、有零件、有武器。」他摇了摇头。「不是咱们能惹得起的。」",
         "risk_desc": "",
-        "set_flags": ["ch1_linli_notebook"],
+        "set_flags": ["ch1_ruins_rumor", "iron_lock_heard"],
         "clear_flags": []
       },
       {
         "result_key": "RES_SEVT_005_B",
-        "ops": ["add_relation_linli:1"],
-        "reward_desc": "你把笔记本放回原处。有些东西不用说出来也挺好的。",
+        "ops": [],
+        "reward_desc": "只言片语飘过来——「北边」「大商队」「不好惹」。陶夏看了一眼林砾，林砾在开车，没说话。",
         "risk_desc": "",
-        "set_flags": ["ch1_linli_notebook"],
+        "set_flags": ["ch1_ruins_rumor"],
         "clear_flags": []
       }
     ],
@@ -496,7 +481,7 @@
       {
         "result_key": "RES_SEVT_006_B",
         "ops": [],
-        "reward_desc": "陶夏记下了频率。「温室社区……听起来挺大的。」",
+        "reward_desc": "陶夏记下了频率。「温室那边出事了？」",
         "risk_desc": "",
         "set_flags": ["ch2_greenhouse_signal"],
         "clear_flags": []
@@ -549,18 +534,18 @@
     "RS_SEVT_009": [
       {
         "result_key": "RES_SEVT_009_A",
-        "ops": ["add_goodwill:ruins_camp:2"],
-        "reward_desc": "废墟边搭着简易帐篷，几个人围着火堆。看到你们的货车，有人站起来招了招手。",
+        "ops": ["add_relation_linli:3", "add_relation_taoxia:2"],
+        "reward_desc": "林砾沉默了很久。「……从山城出来那天起，我就在听一个信号。周期性的。来自西南方向。」她看着火。「我不知道那是什么。但我想到那里去看看。」",
         "risk_desc": "",
-        "set_flags": ["ch2_ruins_smoke"],
+        "set_flags": ["ch2_distant_signal", "linli_signal_revealed"],
         "clear_flags": []
       },
       {
         "result_key": "RES_SEVT_009_B",
-        "ops": [],
-        "reward_desc": "远远看去，那里像是有人长期居住。陶夏用望远镜看了一会儿：「不像坏人。」",
+        "ops": ["add_relation_linli:4"],
+        "reward_desc": "林砾没有马上回答。火噼啪响了一下。「……从山城出来那天起。」她没有说完。但你觉得，这是她第一次对你敞开这么多。",
         "risk_desc": "",
-        "set_flags": ["ch2_ruins_smoke"],
+        "set_flags": ["ch2_distant_signal", "linli_signal_revealed"],
         "clear_flags": []
       }
     ],

@@ -94,8 +94,11 @@ function M.get_phase(state)
 
     -- 已到达温室社区且完成介绍
     if Flags.has(state, "tutorial_arrived_greenhouse") then
-        -- 篝火引导完成 或 已接北穹订单 → 进入探索阶段
-        if Flags.has(state, "tutorial_campfire_done") then
+        -- 篝火引导完成 且 已在温室交互过 → 进入探索阶段
+        -- 注意：tutorial_campfire_done 可能由序章篝火提前设置，
+        --       需额外确认玩家已在温室自由探索后才跳过 GREENHOUSE_FREE
+        if Flags.has(state, "tutorial_campfire_done")
+            and Flags.has(state, "tutorial_shop_intro") then
             return M.Phase.EXPLORE
         end
         -- 检查是否已接教程订单去北穹

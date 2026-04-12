@@ -3,40 +3,39 @@
     "id": "prologue",
     "chapter": 0,
     "name": "序章",
-    "subtitle": "第一道车辙",
-    "summary": "车坏了。修好之后，往哪走？",
+    "subtitle": "废土上的第一步",
+    "summary": "琳立和陶夏离开温室社区，踏上行商之路。",
     "advance_conditions": {
       "flag": "prologue_done"
     },
     "on_advance_flags": ["prologue_done"],
-    "unlocks": ["chatter_prologue", "radio_mingsha"]
+    "unlocks": []
   },
   {
     "id": "ch1",
     "chapter": 1,
     "name": "第一章",
     "subtitle": "熟悉的路",
-    "summary": "温室和废墟之间的日常。路越跑越熟，两个人越来越自在。",
+    "summary": "在废土上跑了几趟，开始认识这片世界的规则。",
     "advance_conditions": {
-      "min_trips": 8,
-      "min_settlements_visited": 2,
-      "required_flags": ["sd_ch1_03_done"]
+      "min_trips": 5,
+      "min_settlements_visited": 2
     },
     "on_advance_flags": ["ch1_done"],
-    "unlocks": ["chatter_ch1", "radio_ch1", "stroll_greenhouse", "stroll_ruins"]
+    "unlocks": ["chatter_ch1", "radio_ch1"]
   },
   {
     "id": "ch2",
     "chapter": 2,
     "name": "第二章",
     "subtitle": "四种声音",
-    "summary": "塔台和书院打开了新的路。四座聚落各有各的生存方式——和各自的问题。",
+    "summary": "四大聚落各有各的生存方式——和各自的问题。",
     "advance_conditions": {
-      "min_trips": 18,
+      "min_trips": 12,
       "all_main_settlements_visited": true
     },
-    "on_advance_flags": ["ch2_done", "ch2_started"],
-    "unlocks": ["npc_ji_wei", "npc_old_gan", "npc_dao_yu", "npc_xie_ling", "stroll_tower", "stroll_academy"]
+    "on_advance_flags": ["ch2_done"],
+    "unlocks": ["npc_ji_wei", "npc_old_gan", "npc_dao_yu", "npc_xie_ling"]
   },
   {
     "id": "ch3",
@@ -45,9 +44,9 @@
     "subtitle": "铁锁",
     "summary": "一支叫铁锁商队的队伍开始在贸易路线上出现。",
     "advance_conditions": {
-      "min_trips": 28,
+      "min_trips": 20,
       "min_goodwill_level": 1,
-      "min_goodwill_count": 2
+      "min_goodwill_count": 1
     },
     "on_advance_flags": ["ch3_done", "iron_lock_encountered"],
     "unlocks": ["npc_jiang_han", "npc_xiao_mao", "faction_iron_lock"]
@@ -59,7 +58,7 @@
     "subtitle": "裂痕与种子",
     "summary": "旧秩序在瓦解，新的联系在生长。",
     "advance_conditions": {
-      "min_trips": 38,
+      "min_trips": 30,
       "min_goodwill_level": 2,
       "min_goodwill_count": 1
     },
@@ -73,7 +72,7 @@
     "subtitle": "静潮",
     "summary": "有人不希望这个世界被重新连接。",
     "advance_conditions": {
-      "min_trips": 48,
+      "min_trips": 40,
       "min_goodwill_level": 2,
       "min_goodwill_count": 2,
       "required_flags": ["shuangqi_met"]
@@ -88,7 +87,7 @@
     "subtitle": "地图的另一半",
     "summary": "拼凑起来的碎片指向一个从未到达的地方。",
     "advance_conditions": {
-      "min_trips": 58,
+      "min_trips": 50,
       "min_goodwill_level": 2,
       "min_goodwill_count": 3,
       "min_hidden_nodes_found": 3

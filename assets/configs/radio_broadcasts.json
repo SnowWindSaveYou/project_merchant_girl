@@ -89,6 +89,41 @@
         "weight": 45,
         "duration": 10,
         "reward": { "type": "info", "value": "parts_price_up_tower", "desc": "获得情报：塔台零件涨价" }
+      },
+      {
+        "id": "RADIO_MS_CH1_001",
+        "text": "有听众来信问：'这个世界上还有别的聚落吗？'……当然有。我走过的地方，每一个都有人在努力活着。",
+        "weight": 45,
+        "duration": 12,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_CH1_002",
+        "text": "温室社区的蔬菜今年长得不错，据说他们的水循环系统终于修好了第三层。好消息总会慢慢传开。",
+        "weight": 40,
+        "duration": 11,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_CH1_003",
+        "text": "听说西南方向……很远的地方，偶尔能看到光。有行商说那是闪电，也有人说是别的什么。我也不知道。不过有人在那边活着，应该是真的。",
+        "weight": 35,
+        "duration": 13,
+        "reward": { "type": "flag", "value": "heard_southwest_lights", "desc": "获得情报：西南方向有光" }
+      },
+      {
+        "id": "RADIO_MS_CH1_004",
+        "text": "废墟营地的夜市最近多了几个新摊位。如果你在那一带跑商，值得去看看。有些旧时代的小玩意还挺有用的。",
+        "weight": 40,
+        "duration": 11,
+        "reward": null
+      },
+      {
+        "id": "RADIO_MS_CH1_005",
+        "text": "今天路上遇到了一小群候鸟。往南飞的。连鸟都知道该往哪走。我们呢？……算了，我还是继续播报吧。",
+        "weight": 40,
+        "duration": 12,
+        "reward": null
       }
     ],
     "settlement": [

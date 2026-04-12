@@ -1,36 +1,312 @@
 {
   "dialogues": [
     {
-      "id": "CF_001",
-      "title": "最后一罐热罐头",
+      "id": "CF_PROLOGUE_01",
+      "title": "晚安",
+      "type": "daily",
+      "node_types": [],
+      "relation_stage": "any",
+      "weight": 999,
+      "cooldown": 99,
+      "required_flags": ["sd_prologue_01_done"],
+      "forbidden_flags": ["sd_prologue_02_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "夜里。货车旁。篝火很小，只够照见两个人的脸。" },
+        { "speaker": "taoxia", "text": "今天路上那个……你想说什么？", "expression": "thinking" },
+        { "speaker": "linli", "text": "没什么。" },
+        { "speaker": "taoxia", "text": "你每次都说没什么。", "expression": "sad" },
+        { "speaker": "narrator", "text": "林砾没回答。她正在记录今天的油耗。" },
+        { "speaker": "taoxia", "text": "算了。我睡了。", "expression": "sad" },
+        { "speaker": "linli", "text": "……晚安。" },
+        { "speaker": "taoxia", "text": "你居然会说晚安了。", "expression": "surprised" },
+        { "speaker": "linli", "text": "……" },
+        { "speaker": "narrator", "text": "但她嘴角动了一下。" }
+      ],
+      "choices": [
+        {
+          "text": "嗯，晚安",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:2"],
+          "result_text": "两个人各自躺下。夜风从废墟那边吹来，带着一点铁锈的味道。但篝火还暖着。",
+          "memory": {
+            "id": "mem_first_goodnight",
+            "title": "第一次晚安",
+            "desc": "在外面过夜的时候，林砾第一次说了晚安。很轻。"
+          }
+        },
+        {
+          "text": "明天教我也记账",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:3"],
+          "result_text": "林砾愣了一下。「……行。」陶夏裹紧毯子，觉得今晚没那么冷了。"
+        }
+      ]
+    },
+    {
+      "id": "CF_CH1_001",
+      "title": "记账",
       "type": "daily",
       "node_types": [],
       "relation_stage": "early",
       "weight": 60,
-      "cooldown": 3,
-      "required_flags": [],
+      "cooldown": 4,
+      "required_flags": ["prologue_done"],
       "forbidden_flags": [],
       "steps": [
-        { "speaker": "taoxia", "text": "嘿，林砾，今天就剩这一罐了……要不我们分着吃？", "expression": "happy" },
-        { "speaker": "linli", "text": "……你先吃。我不太饿。" },
-        { "speaker": "taoxia", "text": "骗人。你今天连午饭都没吃。给，张嘴。", "expression": "angry" },
-        { "speaker": "linli", "text": "…………谢了。", "expression": "happy" }
+        { "speaker": "narrator", "text": "陶夏在算账，嘴里嘀嘀咕咕。林砾在擦扳手，偶尔看一眼她的账本。" },
+        { "speaker": "taoxia", "text": "这趟赚了十二个净水片……扣掉油钱、过路费……", "expression": "thinking" },
+        { "speaker": "linli", "text": "……你算错了。第三行。" },
+        { "speaker": "taoxia", "text": "真的？", "expression": "surprised" },
+        { "speaker": "linli", "text": "应该是十四个。你忘了外围农场那单加急费。" },
+        { "speaker": "taoxia", "text": "你怎么比我还清楚？", "expression": "surprised" },
+        { "speaker": "linli", "text": "……我顺便看的。" },
+        { "speaker": "taoxia", "text": "你是偷看吧。", "expression": "happy" }
       ],
       "choices": [
         {
-          "text": "接过来默默吃掉",
+          "text": "那以后你记账",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:1"],
+          "result_text": "林砾摇头。「我只看数字。写字太慢。」"
+        },
+        {
+          "text": "咱俩一起记，谁也不许错",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:2"],
+          "result_text": "陶夏重新算了一遍。这次没错。两个人对着账本又研究了一会儿，发现上趟的油钱多记了两个净水片。赚了。"
+        }
+      ]
+    },
+    {
+      "id": "CF_CH1_002",
+      "title": "沉默",
+      "type": "daily",
+      "node_types": [],
+      "relation_stage": "early",
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "narrator", "text": "两个人坐在火堆旁。陶夏在看地图。林砾在擦扳手。" },
+        { "speaker": "narrator", "text": "没有人说话。" },
+        { "speaker": "narrator", "text": "但陶夏往火堆里添了根柴。林砾把水壶往陶夏那边推了推。" },
+        { "speaker": "taoxia", "text": "谢了。", "expression": "normal" },
+        { "speaker": "linli", "text": "嗯。" },
+        { "speaker": "narrator", "text": "火噼啪响。" },
+        { "speaker": "narrator", "text": "远处有风吹过废墟的声音。两边的路标在夜色里看不清。" }
+      ],
+      "choices": [
+        {
+          "text": "就静静地待着",
           "ops": ["add_relation_linli:2", "add_relation_taoxia:2"],
-          "result_text": "温热的罐头在夜风中格外珍贵。",
+          "result_text": "没有话也没关系。两个人各做各的事，火在中间烧着。这就够了。"
+        },
+        {
+          "text": "问问明天的路线",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
+          "result_text": "林砾指了指地图上的一个点。还是老路线。但那条路已经跑得很熟了。"
+        }
+      ]
+    },
+    {
+      "id": "CF_CH1_003",
+      "title": "一起修车",
+      "type": "cooperation",
+      "node_types": [],
+      "relation_stage": "early",
+      "weight": 55,
+      "cooldown": 4,
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "linli", "text": "趁停着把减震器调一下。陶夏，帮我递扳手。" },
+        { "speaker": "taoxia", "text": "这个？还是那个大的？", "expression": "surprised" },
+        { "speaker": "linli", "text": "……大的那个。你每次都拿错。" },
+        { "speaker": "taoxia", "text": "嘿嘿，所以我负责递工具，你负责修车嘛。", "expression": "happy" },
+        { "speaker": "linli", "text": "……行吧。你把灯举高点。" },
+        { "speaker": "taoxia", "text": "遵命！", "expression": "happy" },
+        { "speaker": "narrator", "text": "修了一半，陶夏探头看林砾在拧什么。" },
+        { "speaker": "taoxia", "text": "这个弹簧是不是有点歪？", "expression": "thinking" },
+        { "speaker": "linli", "text": "……看出来了？", "expression": "surprised" },
+        { "speaker": "taoxia", "text": "跟你跑了这么久，多少学了点嘛。", "expression": "happy" }
+      ],
+      "choices": [
+        {
+          "text": "两人配合修好了",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:2", "add_durability:8"],
+          "result_text": "修完后陶夏得意地拍了拍车身。麻薯号又精神了一点。"
+        },
+        {
+          "text": "顺便教陶夏认工具",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:3", "add_durability:5"],
+          "result_text": "陶夏认真记下了三种扳手的区别。虽然下次大概还是会拿错。"
+        }
+      ]
+    },
+    {
+      "id": "CF_CH1_004",
+      "title": "沈禾的话",
+      "type": "daily",
+      "node_types": [],
+      "relation_stage": "early",
+      "weight": 45,
+      "cooldown": 5,
+      "required_flags": ["sd_ch1_01_done"],
+      "forbidden_flags": ["cf_ch1_004_done"],
+      "steps": [
+        { "speaker": "taoxia", "text": "沈禾今天说东边还有聚落的事……你听到了吧？", "expression": "thinking" },
+        { "speaker": "linli", "text": "嗯。" },
+        { "speaker": "taoxia", "text": "塔台，还有钟楼什么的。你不好奇吗？", "expression": "thinking" },
+        { "speaker": "linli", "text": "……远。" },
+        { "speaker": "taoxia", "text": "我们就靠跑远路吃饭的诶。", "expression": "happy" },
+        { "speaker": "linli", "text": "先把手头的路跑熟。" },
+        { "speaker": "narrator", "text": "陶夏看着火，没再追问。但她知道林砾在听——她检查轮胎的时候动作慢了一拍。" }
+      ],
+      "choices": [
+        {
+          "text": "等路熟了再说",
+          "ops": ["add_relation_linli:2"],
+          "result_text": "林砾点了点头。火光映在她的侧脸上。她知道更远的地方在等着，但不急。",
+          "set_flags": ["cf_ch1_004_done"]
+        },
+        {
+          "text": "我想去看看",
+          "ops": ["add_relation_taoxia:2"],
+          "result_text": "陶夏的声音很轻，但很确定。林砾没接话。但火堆旁的沉默，比之前暖了一点。",
+          "set_flags": ["cf_ch1_004_done", "hint_tower_curiosity"]
+        }
+      ]
+    },
+    {
+      "id": "CF_CH1_005",
+      "title": "最后一罐",
+      "type": "daily",
+      "node_types": [],
+      "relation_stage": "early",
+      "weight": 55,
+      "cooldown": 4,
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "今天就剩这一罐了……分着吃？", "expression": "thinking" },
+        { "speaker": "linli", "text": "……你先吃。我不太饿。" },
+        { "speaker": "taoxia", "text": "骗人。你中午也没吃。给，张嘴。", "expression": "angry" },
+        { "speaker": "linli", "text": "…………谢了。", "expression": "happy" },
+        { "speaker": "narrator", "text": "罐头在嘴里嘎嘣响。温热的，咸咸的。两个人蹲在火堆旁，各自嚼各自的。" },
+        { "speaker": "taoxia", "text": "下次到废墟多换几罐。", "expression": "thinking" },
+        { "speaker": "linli", "text": "……换之前先看看保质期。上次那罐酸了。" },
+        { "speaker": "taoxia", "text": "那次是你自己挑的！", "expression": "angry" },
+        { "speaker": "linli", "text": "……我看的日期没错。是密封不好。" }
+      ],
+      "choices": [
+        {
+          "text": "下次换罐头的事交给我",
+          "ops": ["add_relation_taoxia:2", "add_relation_linli:1"],
+          "result_text": "陶夏拍着胸脯保证。林砾看着她，嘴角弯了一下——大概是觉得上次更靠谱。"
+        },
+        {
+          "text": "一起挑，谁也别跑",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:2"],
+          "result_text": "罐头分完了。两个人一起把空罐子洗干净收好，下次还能用来烧水。"
+        }
+      ]
+    },
+    {
+      "id": "CF_CH1_006",
+      "title": "废墟的人",
+      "type": "daily",
+      "node_types": [],
+      "relation_stage": "early",
+      "weight": 45,
+      "cooldown": 5,
+      "required_flags": ["ruins_market_intro"],
+      "forbidden_flags": ["cf_ch1_006_done"],
+      "steps": [
+        { "speaker": "taoxia", "text": "今天那个聚落的人看我们的眼神……有点不一样。", "expression": "thinking" },
+        { "speaker": "linli", "text": "行商在哪里都不受信任。习惯就好。" },
+        { "speaker": "taoxia", "text": "可是我们明明是在帮他们运货啊。", "expression": "angry" },
+        { "speaker": "linli", "text": "上一个帮他们运货的人带着货跑了。他们没有理由信任陌生人。", "expression": "thinking" },
+        { "speaker": "taoxia", "text": "……那我们怎么才能让他们信我们？", "expression": "thinking" },
+        { "speaker": "linli", "text": "一次一次地送到。没有别的办法。" }
+      ],
+      "choices": [
+        {
+          "text": "信任是慢慢攒出来的",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:2"],
+          "result_text": "沉默了一会儿。陶夏重重点了点头。",
+          "set_flags": ["cf_ch1_006_done"],
           "memory": {
-            "id": "mem_shared_meal",
-            "title": "分食的温暖",
-            "desc": "在寂静的废土夜晚，两人分享了最后一罐热罐头。"
+            "id": "mem_about_trust",
+            "title": "关于信任",
+            "desc": "林砾说信任没有捷径——一次一次地送到，就是最好的证明。"
           }
         },
         {
-          "text": "推回去说你吃吧",
+          "text": "做好自己就行",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1"],
+          "result_text": "陶夏叹了口气，往篝火里又添了根柴。",
+          "set_flags": ["cf_ch1_006_done"]
+        }
+      ]
+    },
+    {
+      "id": "CF_CH1_007",
+      "title": "收音机",
+      "type": "daily",
+      "node_types": [],
+      "relation_stage": "early",
+      "weight": 50,
+      "cooldown": 5,
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "taoxia", "text": "嘘——听，收音机在响。", "expression": "surprised" },
+        { "speaker": "linli", "text": "……哪里来的信号？", "expression": "surprised" },
+        { "speaker": "narrator", "text": "杂音里隐约有一段旋律，断断续续的。听不太清。" },
+        { "speaker": "taoxia", "text": "好好听……你听过吗？", "expression": "happy" },
+        { "speaker": "linli", "text": "没有。大概是灾变前的老歌。" },
+        { "speaker": "narrator", "text": "信号很快断了。两个人安静了一会儿，听着余下的杂音。" },
+        { "speaker": "taoxia", "text": "下次路过有碟片的地方，我要找找看。", "expression": "sad" },
+        { "speaker": "linli", "text": "……嗯。" }
+      ],
+      "choices": [
+        {
+          "text": "帮她留意碟片",
+          "ops": ["add_relation_taoxia:3", "add_relation_linli:1"],
+          "result_text": "陶夏高兴地哼起了刚才那段旋律，虽然大部分都走调了。"
+        },
+        {
+          "text": "关掉收音机省电",
+          "ops": ["add_relation_linli:2"],
+          "result_text": "陶夏嘟了嘟嘴，但也知道电很珍贵。但她记住了那段旋律。"
+        }
+      ]
+    },
+    {
+      "id": "CF_CH1_008",
+      "title": "分担夜哨",
+      "type": "cooperation",
+      "node_types": [],
+      "relation_stage": "early",
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": [],
+      "steps": [
+        { "speaker": "linli", "text": "今晚你先睡，我来守前半夜。" },
+        { "speaker": "taoxia", "text": "不行不行，上次就是你守了一整夜，第二天开车差点翻沟里。", "expression": "angry" },
+        { "speaker": "linli", "text": "……那只是打了个盹。" },
+        { "speaker": "taoxia", "text": "是打了三个盹！我都数着呢。", "expression": "angry" },
+        { "speaker": "taoxia", "text": "这样，你守前半夜，我守后半夜。不许逞强。", "expression": "thinking" },
+        { "speaker": "linli", "text": "……行。", "expression": "happy" }
+      ],
+      "choices": [
+        {
+          "text": "按约定换岗",
+          "ops": ["add_relation_linli:2", "add_relation_taoxia:2", "add_durability:3"],
+          "result_text": "后半夜陶夏准时接岗，林砾睡了一个难得的好觉。第二天状态不错。"
+        },
+        {
+          "text": "多守一会儿让她多睡",
           "ops": ["add_relation_linli:1", "add_relation_taoxia:3"],
-          "result_text": "陶夏叹了口气，把罐头掰成两半塞了一半过来。"
+          "result_text": "陶夏醒来发现天都亮了，气得拿水壶追着林砾跑了三圈。但没真生气。"
         }
       ]
     },
@@ -42,7 +318,7 @@
       "relation_stage": "mid",
       "weight": 40,
       "cooldown": 5,
-      "required_flags": [],
+      "required_flags": ["prologue_done"],
       "forbidden_flags": ["mem_garage_morning"],
       "steps": [
         { "speaker": "linli", "text": "……有时候会梦到那天早上。", "expression": "thinking" },
@@ -80,7 +356,7 @@
       "relation_stage": "mid",
       "weight": 35,
       "cooldown": 5,
-      "required_flags": [],
+      "required_flags": ["prologue_done"],
       "forbidden_flags": ["mem_why_travel"],
       "steps": [
         { "speaker": "taoxia", "text": "林砾，你有没有想过……我们到底为什么还在跑商？", "expression": "thinking" },
@@ -104,67 +380,6 @@
           "text": "想那么多没用，睡觉吧。",
           "ops": ["add_relation_taoxia:1", "set_flag:mem_why_travel"],
           "result_text": "陶夏笑了笑，裹紧了斗篷。"
-        }
-      ]
-    },
-    {
-      "id": "CF_004",
-      "title": "一起修车",
-      "type": "cooperation",
-      "node_types": [],
-      "relation_stage": "any",
-      "weight": 50,
-      "cooldown": 4,
-      "required_flags": [],
-      "forbidden_flags": [],
-      "steps": [
-        { "speaker": "linli", "text": "趁停着的时候把减震器调一下。陶夏，帮我递扳手。" },
-        { "speaker": "taoxia", "text": "这个？还是那个大的？", "expression": "surprised" },
-        { "speaker": "linli", "text": "……大的那个。你每次都拿错。", "expression": "angry" },
-        { "speaker": "taoxia", "text": "嘿嘿，所以我负责递工具，你负责修车嘛。", "expression": "happy" },
-        { "speaker": "linli", "text": "……行吧，你把灯举高点。" },
-        { "speaker": "taoxia", "text": "遵命！", "expression": "happy" }
-      ],
-      "choices": [
-        {
-          "text": "两人配合默契，很快修好了",
-          "ops": ["add_relation_linli:2", "add_relation_taoxia:2", "add_durability:8"],
-          "result_text": "修完后陶夏得意地拍了拍车身。耐久恢复了一些。"
-        },
-        {
-          "text": "顺便教陶夏认一下工具",
-          "ops": ["add_relation_linli:1", "add_relation_taoxia:3", "add_durability:5"],
-          "result_text": "陶夏认真地记下了三种扳手的区别，虽然下次大概还是会拿错。"
-        }
-      ]
-    },
-    {
-      "id": "CF_005",
-      "title": "收音机里的歌",
-      "type": "daily",
-      "node_types": [],
-      "relation_stage": "early",
-      "weight": 55,
-      "cooldown": 3,
-      "required_flags": [],
-      "forbidden_flags": [],
-      "steps": [
-        { "speaker": "taoxia", "text": "嘘——听，收音机在响。", "expression": "surprised" },
-        { "speaker": "linli", "text": "……哪里来的信号？", "expression": "surprised" },
-        { "speaker": "taoxia", "text": "不知道，但是这首歌好好听……你听过吗？", "expression": "happy" },
-        { "speaker": "linli", "text": "没有。大概是灾变前的老歌。", "expression": "thinking" },
-        { "speaker": "taoxia", "text": "好可惜，就放了一段就断了。下次路过有碟片的地方，我要找找看。", "expression": "sad" }
-      ],
-      "choices": [
-        {
-          "text": "帮她留意碟片",
-          "ops": ["add_relation_taoxia:3", "add_relation_linli:1"],
-          "result_text": "陶夏高兴地哼起了刚才那段旋律，虽然大部分都走调了。"
-        },
-        {
-          "text": "关掉收音机省电",
-          "ops": ["add_relation_linli:2"],
-          "result_text": "陶夏嘟了嘟嘴，但也知道电很珍贵。"
         }
       ]
     },
@@ -207,103 +422,6 @@
       ]
     },
     {
-      "id": "CF_007",
-      "title": "关于信任",
-      "type": "philosophy",
-      "node_types": ["settlement"],
-      "relation_stage": "early",
-      "weight": 45,
-      "cooldown": 4,
-      "required_flags": [],
-      "forbidden_flags": ["mem_about_trust"],
-      "steps": [
-        { "speaker": "taoxia", "text": "今天那个聚落的人看我们的眼神……有点不对劲。", "expression": "sad" },
-        { "speaker": "linli", "text": "行商在哪里都不受信任，习惯就好。" },
-        { "speaker": "taoxia", "text": "可是我们明明是在帮他们运货啊。", "expression": "angry" },
-        { "speaker": "linli", "text": "上一个帮他们运货的人带着货跑了，你觉得他们还能信谁？", "expression": "thinking" },
-        { "speaker": "taoxia", "text": "……那我们怎么才能让他们信我们？", "expression": "thinking" },
-        { "speaker": "linli", "text": "一次一次地送到。没有别的办法。" }
-      ],
-      "choices": [
-        {
-          "text": "信任是慢慢攒出来的。",
-          "ops": ["add_relation_linli:2", "add_relation_taoxia:2", "set_flag:mem_about_trust"],
-          "result_text": "沉默了一会儿，陶夏重重点了点头。",
-          "memory": {
-            "id": "mem_about_trust",
-            "title": "关于信任",
-            "desc": "林砾说信任没有捷径——一次一次地送到，就是最好的证明。"
-          }
-        },
-        {
-          "text": "别想太多，做好自己就行。",
-          "ops": ["add_relation_linli:1", "add_relation_taoxia:1", "set_flag:mem_about_trust"],
-          "result_text": "陶夏叹了口气，往篝火里又添了根柴。"
-        }
-      ]
-    },
-    {
-      "id": "CF_008",
-      "title": "分担夜哨",
-      "type": "cooperation",
-      "node_types": ["resource", "transit", "hazard", "story"],
-      "relation_stage": "mid",
-      "weight": 50,
-      "cooldown": 4,
-      "required_flags": [],
-      "forbidden_flags": [],
-      "steps": [
-        { "speaker": "linli", "text": "今晚你先睡，我来守前半夜。" },
-        { "speaker": "taoxia", "text": "不行不行，上次就是你守了一整夜，第二天开车差点翻沟里。", "expression": "angry" },
-        { "speaker": "linli", "text": "……那只是打了个盹。" },
-        { "speaker": "taoxia", "text": "是打了三个盹！我都数着呢。", "expression": "angry" },
-        { "speaker": "taoxia", "text": "这样，你守前半夜，我守后半夜。不许逞强。", "expression": "thinking" },
-        { "speaker": "linli", "text": "……行。", "expression": "happy" }
-      ],
-      "choices": [
-        {
-          "text": "按约定换岗",
-          "ops": ["add_relation_linli:2", "add_relation_taoxia:2", "add_durability:3"],
-          "result_text": "后半夜陶夏准时接岗，林砾睡了一个难得的好觉。第二天状态不错。"
-        },
-        {
-          "text": "多守一会儿让她多睡",
-          "ops": ["add_relation_linli:1", "add_relation_taoxia:3"],
-          "result_text": "陶夏醒来发现天都亮了，气得拿水壶追着林砾跑了三圈。"
-        }
-      ]
-    },
-    {
-      "id": "CF_009",
-      "title": "废墟里的涂鸦",
-      "type": "daily",
-      "node_types": ["resource", "hazard"],
-      "relation_stage": "early",
-      "weight": 50,
-      "cooldown": 4,
-      "required_flags": [],
-      "forbidden_flags": [],
-      "steps": [
-        { "speaker": "taoxia", "text": "快来看这面墙！有人在上面画了好多东西。", "expression": "surprised" },
-        { "speaker": "linli", "text": "……小心点，这种地方结构不一定稳。" },
-        { "speaker": "taoxia", "text": "你看，这里画了一只猫……还写了日期。三年前的。", "expression": "happy" },
-        { "speaker": "linli", "text": "三年前这里大概还住着人。", "expression": "thinking" },
-        { "speaker": "taoxia", "text": "他们画猫的时候，应该觉得日子还能过下去吧。", "expression": "sad" }
-      ],
-      "choices": [
-        {
-          "text": "在旁边画一辆小货车",
-          "ops": ["add_relation_taoxia:3", "add_relation_linli:1"],
-          "result_text": "陶夏找了根炭笔，在涂鸦旁画了一辆歪歪扭扭的货车，写上了今天的日期。"
-        },
-        {
-          "text": "拍拍她肩膀说走吧",
-          "ops": ["add_relation_linli:2"],
-          "result_text": "陶夏最后看了一眼墙上的猫，跟上了林砾的脚步。"
-        }
-      ]
-    },
-    {
       "id": "CF_010",
       "title": "荒野的篝火味",
       "type": "memory",
@@ -318,7 +436,7 @@
         { "speaker": "taoxia", "text": "我知道。但今天实在太冷了，而且你已经咳了好几次了。", "expression": "angry" },
         { "speaker": "linli", "text": "没事，是灰尘。" },
         { "speaker": "taoxia", "text": "骗人。你一直在发抖。", "expression": "sad" },
-        { "speaker": "taoxia", "text": "至少烤烤手吧。这里离主路远，应该不会被发现。" },
+        { "speaker": "taoxia", "text": "至少烤烤手吧。这里离主路远，应该不会被发现。", "expression": "thinking" },
         { "speaker": "linli", "text": "……谢了。", "expression": "happy" },
         { "speaker": "taoxia", "text": "在外面过夜的时候，篝火的味道会留在衣服上很久。", "expression": "thinking" },
         { "speaker": "taoxia", "text": "以后闻到这个味道，大概就会想起今晚吧。", "expression": "happy" }

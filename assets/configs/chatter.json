@@ -157,7 +157,7 @@
       "duration": 10,
       "edge_types": [],
       "progress_range": [0, 1],
-      "required_flags": [],
+      "required_flags": ["ch2_started"],
       "forbidden_flags": [],
       "response": null
     },
@@ -301,7 +301,7 @@
       "duration": 11,
       "edge_types": [],
       "progress_range": [0, 1],
-      "required_flags": [],
+      "required_flags": ["ch2_started"],
       "forbidden_flags": [],
       "response": null
     },
@@ -398,6 +398,147 @@
       "edge_types": [],
       "progress_range": [0.3, 0.7],
       "required_flags": [],
+      "forbidden_flags": [],
+      "response": null
+    },
+    {
+      "id": "CHAT_CH1_001",
+      "speaker": "taoxia",
+      "text": "沈禾说他们今年种的番茄比去年甜。我试了一口——确实！不知道是不是水质变好了。",
+      "weight": 45,
+      "duration": 10,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": ["ch2_started"],
+      "response": null
+    },
+    {
+      "id": "CHAT_CH1_002",
+      "speaker": "linli",
+      "text": "……温室到废墟这条路，我已经能闭着眼开了。",
+      "weight": 40,
+      "duration": 7,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": ["ch1_done"],
+      "response": {
+        "text": "那你闭着眼开试试？",
+        "effect": { "relation_linli": 1, "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_003",
+      "speaker": "taoxia",
+      "text": "伍拾七那家伙，看着凶巴巴的，其实每次我们走的时候都会多塞两个净水片。嘴硬心软。",
+      "weight": 40,
+      "duration": 10,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["ruins_market_intro"],
+      "forbidden_flags": ["ch2_started"],
+      "response": {
+        "text": "……他只是不想我们饿死在路上丢他面子。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_004",
+      "speaker": "taoxia",
+      "text": "刀鱼今天又想卖给我一个'旧时代珍品'。这次是一个发光的方盒子。",
+      "weight": 40,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["ruins_market_intro"],
+      "forbidden_flags": ["ch2_started"],
+      "response": {
+        "text": "……那是电池充电器。问她多少钱。",
+        "effect": { "relation_linli": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_005",
+      "speaker": "linli",
+      "text": "……赵苗说外围农场的灌溉渠堵了一段。下趟可以帮她带根管子。",
+      "weight": 40,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": ["ch1_done"],
+      "response": null
+    },
+    {
+      "id": "CHAT_CH1_006",
+      "speaker": "taoxia",
+      "text": "麻薯今天跑得好稳！你是不是调过悬挂了？",
+      "weight": 45,
+      "duration": 8,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": [],
+      "response": {
+        "text": "……昨天调的。减震弹簧换了。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_007",
+      "speaker": "linli",
+      "text": "……收音机刚才收到一段杂音。大概是干扰。",
+      "weight": 35,
+      "duration": 7,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": ["ch1_done"],
+      "response": {
+        "text": "是吗？我还以为是一首歌呢。",
+        "effect": { "relation_linli": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_008",
+      "speaker": "taoxia",
+      "text": "老甘的夜市烤肉真的好好吃……虽然不知道是什么肉。不不不，我不要知道。",
+      "weight": 45,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["ruins_market_intro"],
+      "forbidden_flags": [],
+      "response": {
+        "text": "……别问了。",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_009",
+      "speaker": "taoxia",
+      "text": "你有没有觉得……我们跑的路线越来越远了？",
+      "weight": 35,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0.3, 0.8],
+      "required_flags": ["sd_ch1_03_done"],
+      "forbidden_flags": ["ch1_done"],
+      "response": {
+        "text": "远单利润高。",
+        "effect": { "relation_linli": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_010",
+      "speaker": "linli",
+      "text": "……这段路旁边的花开了。以前没注意过。",
+      "weight": 40,
+      "duration": 7,
+      "edge_types": [],
+      "progress_range": [0.2, 0.7],
+      "required_flags": ["prologue_done"],
       "forbidden_flags": [],
       "response": null
     }

@@ -1,0 +1,10 @@
+{
+  "tutorial_flags": [
+    "tutorial_started",
+    "tutorial_first_departure_done",
+    "tutorial_arrived_greenhouse",
+    "tutorial_campfire_done",
+    "tutorial_explore_guided",
+    "tutorial_arrived_tower"
+  ]
+}
