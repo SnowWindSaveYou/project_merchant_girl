@@ -2484,6 +2484,271 @@
       ]
     },
     {
+      "id": "NPC_XD_001",
+      "npc_id": "xue_dong",
+      "title": "路边的邮包",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 80,
+      "cooldown": 99,
+      "required_flags": [],
+      "forbidden_flags": [
+        "npc_xue_dong_intro"
+      ],
+      "steps": [
+        {
+          "speaker": "narrator",
+          "text": "路边蹲着一个女孩，正手忙脚乱地把散落的信封塞回一个大邮包里。"
+        },
+        {
+          "speaker": "taoxia",
+          "text": "需要帮忙吗？"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "啊！不、不用……我自己来就……"
+        },
+        {
+          "speaker": "narrator",
+          "text": "她抬头看了你们一眼，又迅速低下头，把最后一封信按进包里。"
+        },
+        {
+          "speaker": "taoxia",
+          "text": "这么多信？你是邮递员？"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "嗯……自己封的。废土又没有邮局。但总得有人……送信吧。"
+        },
+        {
+          "speaker": "linli",
+          "text": "你一个人跑这么远送信？",
+          "expression": "surprised"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "习惯了。信比我重要。那……那我走了。路上小心。"
+        }
+      ],
+      "choices": [
+        {
+          "text": "等等，你叫什么名字？",
+          "ops": [
+            "set_flag:npc_xue_dong_intro"
+          ],
+          "result_text": "她犹豫了一下，小声说：\"雪冬。\"然后背起邮包，快步走远了——但你注意到她回头看了一眼。"
+        },
+        {
+          "text": "路上小心，下次见",
+          "ops": [
+            "set_flag:npc_xue_dong_intro"
+          ],
+          "result_text": "她点了点头，抱紧邮包转身就走。陶夏看着她的背影说：\"废土还有邮递员啊……挺厉害的。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_XD_002",
+      "npc_id": "xue_dong",
+      "title": "不会写的回信",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": [
+        "npc_xue_dong_intro"
+      ],
+      "forbidden_flags": [],
+      "steps": [
+        {
+          "speaker": "narrator",
+          "text": "雪冬坐在一块石头上，面前摊着一张皱巴巴的纸，笔握在手里却迟迟不落。"
+        },
+        {
+          "speaker": "taoxia",
+          "text": "又碰到了！在写信？"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "不是我的……有人请我帮忙代写回信。但……"
+        },
+        {
+          "speaker": "linli",
+          "text": "写不出来？",
+          "expression": "thinking"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "别人的话我写不出来。每个人说话的方式都不一样……我怕写得不像他。"
+        },
+        {
+          "speaker": "taoxia",
+          "text": "那你就按自己的感觉写嘛，意思到了就行。"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "……不行。信是很重要的东西。写错了，收到的人会难过。"
+        }
+      ],
+      "choices": [
+        {
+          "text": "你对信件很认真呢",
+          "ops": [
+            "add_relation_linli:1"
+          ],
+          "result_text": "雪冬低下头，耳朵有点红：\"信……是别人的心意。我只是帮忙跑腿的。\""
+        },
+        {
+          "text": "要不让林砾帮你想想措辞？",
+          "ops": [
+            "add_relation_taoxia:1"
+          ],
+          "result_text": "雪冬连连摆手：\"不、不用！我……我再想想。\"但你注意到她偷偷记下了林砾说话的样子。"
+        }
+      ]
+    },
+    {
+      "id": "NPC_XD_003",
+      "npc_id": "xue_dong",
+      "title": "塔台的邮箱",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 50,
+      "cooldown": 4,
+      "required_flags": [
+        "npc_xue_dong_intro"
+      ],
+      "forbidden_flags": [],
+      "steps": [
+        {
+          "speaker": "taoxia",
+          "text": "雪冬，你老家是哪里的？"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "塔台。韩策……你们应该认识吧。"
+        },
+        {
+          "speaker": "linli",
+          "text": "韩策？你和他是什么关系？",
+          "expression": "thinking"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "他让我帮忙整理过旧信件。灾前留下来的那些。"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "那些信好老了……有的字都看不清。但你能感觉到，写的人很认真。"
+        },
+        {
+          "speaker": "taoxia",
+          "text": "所以你才想当邮递员？"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "……大概吧。那些信再也送不到了。但现在的信……还来得及。"
+        }
+      ],
+      "choices": [
+        {
+          "text": "来得及就好——信能送到，就还有希望",
+          "ops": [
+            "add_relation_linli:2",
+            "add_relation_taoxia:1"
+          ],
+          "result_text": "雪冬抬起头，眼睛亮了一下：\"嗯。我也……这么觉得。\""
+        },
+        {
+          "text": "你帮了韩策很大的忙",
+          "ops": [
+            "add_relation_taoxia:2"
+          ],
+          "result_text": "雪冬摇摇头：\"韩策的字……真的很难认。但墨迹压得很重。写得用力的人，一般都是认真的。\""
+        }
+      ]
+    },
+    {
+      "id": "NPC_XD_004",
+      "npc_id": "xue_dong",
+      "title": "没寄出的信",
+      "goodwill_min": 0,
+      "goodwill_max": 999,
+      "weight": 40,
+      "cooldown": 99,
+      "required_flags": [
+        "npc_xue_dong_intro"
+      ],
+      "forbidden_flags": [
+        "mem_xue_dong_letter"
+      ],
+      "steps": [
+        {
+          "speaker": "narrator",
+          "text": "雪冬的邮包开着，你无意间瞥到里面有一封信——没有收件地址，封口贴了又撕、撕了又贴。"
+        },
+        {
+          "speaker": "taoxia",
+          "text": "这封是谁的？看起来反复拆过好多次。"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "…………"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "我自己写的。写了很多次。"
+        },
+        {
+          "speaker": "linli",
+          "text": "想寄给谁？",
+          "expression": "thinking"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "教我认字的人。塔台的一个老人……他说识字很重要，'会写字就不怕忘记'。"
+        },
+        {
+          "speaker": "xue_dong",
+          "text": "我想跟他说……谢谢你教我写字。但他已经……收不到了。"
+        },
+        {
+          "speaker": "narrator",
+          "text": "雪冬沉默了很久。陶夏没有追问，只是轻轻拍了拍她的肩。"
+        }
+      ],
+      "choices": [
+        {
+          "text": "（安静地陪着她）",
+          "ops": [
+            "add_relation_linli:2",
+            "add_relation_taoxia:2",
+            "set_flag:mem_xue_dong_letter"
+          ],
+          "result_text": "过了一会儿，雪冬深吸一口气，把信小心地放回包里：\"……谢谢你们没有追问。\"",
+          "memory": {
+            "id": "mem_xue_dong_letter",
+            "title": "没寄出的信",
+            "desc": "雪冬的邮包里有一封永远寄不出的信——写给教她认字的老人。信的内容只有一句话：谢谢你教我写字。"
+          }
+        },
+        {
+          "text": "也许可以把信放在他住过的地方",
+          "ops": [
+            "add_relation_linli:1",
+            "add_relation_taoxia:3",
+            "set_flag:mem_xue_dong_letter"
+          ],
+          "result_text": "雪冬愣了一下，然后嘴角微微弯了弯——那是你第一次看到她笑：\"……嗯。也许吧。\"",
+          "memory": {
+            "id": "mem_xue_dong_letter",
+            "title": "没寄出的信",
+            "desc": "雪冬的邮包里有一封永远寄不出的信。陶夏提议把它放在收信人住过的地方——雪冬第一次露出了微笑。"
+          }
+        }
+      ]
+    },
+    {
       "id": "NPC_DY_001",
       "npc_id": "dao_yu",
       "title": "刀鱼的收藏",

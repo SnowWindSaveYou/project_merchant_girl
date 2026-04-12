@@ -16,6 +16,8 @@ local BlackMarket = require("settlement/black_market")
 local Archives   = require("settlement/archives")
 local Flags      = require("core/flags")
 local Tutorial   = require("narrative/tutorial")
+local LetterSystem = require("narrative/letter_system")
+local WanderingNpc = require("narrative/wandering_npc")
 
 local M = {}
 ---@type table
@@ -257,6 +259,94 @@ function M._build(state)
         })
     end
     table.insert(sections, M._sectionCard("旅行加速", travelChildren))
+
+    -- ── 2.5 行程数调整 ──
+    table.insert(sections, M._sectionCard("行程数", {
+        adjustRow(
+            "总行程",
+            tostring(state.stats.total_trips or 0),
+            function(n)
+                state.stats.total_trips = math.max(0, (state.stats.total_trips or 0) - n)
+                M._refresh(state)
+            end,
+            function(n)
+                state.stats.total_trips = (state.stats.total_trips or 0) + n
+                M._refresh(state)
+            end
+        ),
+    }))
+
+    -- ── 2.6 流浪 NPC ──
+    WanderingNpc.ensure_init(state)
+    local wandererChildren = {}
+    local curLoc = state.map.current_location or "?"
+    table.insert(wandererChildren, UI.Label {
+        text = "当前位置: " .. curLoc,
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.text_primary,
+    })
+    for wid, wdef in pairs(WanderingNpc.WANDERERS) do
+        local loc = WanderingNpc.get_location(state, wid) or "?"
+        local isHere = (loc == curLoc)
+        local captureId = wid
+        table.insert(wandererChildren, UI.Panel {
+            width = "100%", flexDirection = "row",
+            alignItems = "center", gap = 6,
+            children = {
+                UI.Label {
+                    text = wdef.icon .. " " .. wdef.name,
+                    fontSize = Theme.sizes.font_normal,
+                    fontColor = Theme.colors.text_primary,
+                    width = 80,
+                },
+                UI.Label {
+                    text = isHere and ("📍 " .. loc) or loc,
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = isHere and Theme.colors.accent or Theme.colors.text_dim,
+                    flexGrow = 1,
+                },
+                UI.Button {
+                    text = isHere and "已在此" or "召唤",
+                    width = 56, height = 28,
+                    fontSize = Theme.sizes.font_tiny,
+                    variant = isHere and "outline" or "primary",
+                    disabled = isHere,
+                    onClick = function()
+                        state.narrative.wanderer_locations[captureId] = curLoc
+                        print("[Debug] Summoned " .. captureId .. " to " .. curLoc)
+                        M._refresh(state)
+                    end,
+                },
+            },
+        })
+    end
+    table.insert(wandererChildren, UI.Panel {
+        width = "100%", flexDirection = "row", gap = 8,
+        children = {
+            UI.Button {
+                text = "全部召唤到此", height = 36,
+                fontSize = Theme.sizes.font_small,
+                variant = "primary",
+                onClick = function()
+                    for wid2, _ in pairs(WanderingNpc.WANDERERS) do
+                        state.narrative.wanderer_locations[wid2] = curLoc
+                    end
+                    print("[Debug] All wanderers summoned to " .. curLoc)
+                    M._refresh(state)
+                end,
+            },
+            UI.Button {
+                text = "随机迁移一次", height = 36,
+                fontSize = Theme.sizes.font_small,
+                variant = "outline",
+                onClick = function()
+                    WanderingNpc.migrate_all(state)
+                    M._refresh(state)
+                end,
+            },
+        },
+    })
+    table.insert(sections, M._sectionCard("流浪 NPC", wandererChildren))
 
     -- ── 3. 货物调整 ──
     local cargoChildren = {}
@@ -552,7 +642,105 @@ function M._build(state)
 
     table.insert(sections, M._sectionCard("聚落子系统", settlementChildren))
 
-    -- ── 6. 事件触发（折叠/展开） ──
+    -- ── 6. 信件系统 ──
+    local letterChildren = {}
+    local pendingN = LetterSystem.pending_count(state)
+    local readN    = LetterSystem.read_count(state)
+    local allLetters = LetterSystem.get_all_letters()
+    local totalN = #allLetters
+    table.insert(letterChildren, UI.Label {
+        text = "待领取: " .. pendingN .. "  已读: " .. readN .. "  配置总数: " .. totalN,
+        fontSize = Theme.sizes.font_normal,
+        fontColor = Theme.colors.text_primary,
+    })
+    table.insert(letterChildren, UI.Panel {
+        width = "100%", flexDirection = "row", gap = 8, flexWrap = "wrap",
+        children = {
+            UI.Button {
+                text = "强制全部入队", height = 36,
+                fontSize = Theme.sizes.font_small,
+                variant = "primary",
+                onClick = function()
+                    local allLt = LetterSystem.get_all_letters()
+                    for _, lt in ipairs(allLt) do
+                        LetterSystem.debug_enqueue(state, lt.id)
+                    end
+                    print("[Debug] Force enqueued all " .. #allLt .. " letters")
+                    M._refresh(state)
+                end,
+            },
+            UI.Button {
+                text = "领取全部", height = 36,
+                fontSize = Theme.sizes.font_small,
+                variant = "primary",
+                disabled = pendingN == 0,
+                onClick = function()
+                    local letters = LetterSystem.collect_all(state)
+                    if letters and #letters > 0 and router then
+                        router.navigate("letter", {
+                            letters = letters,
+                            state = state,
+                            onFinish = function()
+                                router.navigate("debug")
+                            end,
+                        })
+                    end
+                end,
+            },
+            UI.Button {
+                text = "重置全部", height = 36,
+                fontSize = Theme.sizes.font_small,
+                variant = "danger",
+                onClick = function()
+                    LetterSystem.debug_reset(state)
+                    print("[Debug] Letter system reset")
+                    M._refresh(state)
+                end,
+            },
+        },
+    })
+    -- 逐封信件入队按钮
+    for _, lt in ipairs(allLetters) do
+        local lid = lt.id
+        local delivered = state.narrative
+            and state.narrative.letters_delivered
+            and state.narrative.letters_delivered[lid]
+        local isRead = state.narrative
+            and state.narrative.letters_read
+            and state.narrative.letters_read[lid]
+        local statusText = isRead and "✅" or (delivered and "📬" or "—")
+        table.insert(letterChildren, UI.Panel {
+            width = "100%", flexDirection = "row",
+            alignItems = "center", gap = 6,
+            children = {
+                UI.Label {
+                    text = statusText,
+                    fontSize = Theme.sizes.font_normal,
+                    width = 24, textAlign = "center",
+                },
+                UI.Label {
+                    text = lt.sender_name .. ": " .. lt.title,
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.text_primary,
+                    flexGrow = 1, flexShrink = 1,
+                },
+                UI.Button {
+                    text = "入队", width = 48, height = 28,
+                    fontSize = Theme.sizes.font_tiny,
+                    variant = "outline",
+                    disabled = delivered or false,
+                    onClick = function()
+                        LetterSystem.debug_enqueue(state, lid)
+                        print("[Debug] Enqueued letter: " .. lid)
+                        M._refresh(state)
+                    end,
+                },
+            },
+        })
+    end
+    table.insert(sections, M._sectionCard("信件系统", letterChildren))
+
+    -- ── 7. 事件触发（折叠/展开） ──
     local eventChildren = {}
     EventPool._load_config()
     local allEvents = EventPool.EVENTS

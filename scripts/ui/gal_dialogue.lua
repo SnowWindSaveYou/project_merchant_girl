@@ -161,6 +161,7 @@ local NPC_PORTRAITS = {
     a_xiu      = "image/portrait_a_xiu_20260409120249.png",
     cheng_yuan = "image/portrait_cheng_yuan_20260409120343.png",
     su_mo      = "image/portrait_su_mo_20260409120418.png",
+    xue_dong   = "image/portrait_xue_dong_20260412064247.png",
 }
 
 --- 势力通用立绘（非领袖 NPC 使用）

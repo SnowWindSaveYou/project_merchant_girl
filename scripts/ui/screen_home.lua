@@ -33,6 +33,7 @@ local Flags               = require("core/flags")
 local UnlockStories       = require("narrative/unlock_stories")
 local Stroll              = require("narrative/stroll")
 local MainStory           = require("narrative/main_story")
+local LetterSystem        = require("narrative/letter_system")
 local Tutorial            = require("narrative/tutorial")
 local SpeechBubble        = require("ui/speech_bubble")
 local SketchBorder        = require("ui/sketch_border")
@@ -544,6 +545,29 @@ function createSettlementView(state, curNode)
             end
         end
 
+        -- 信件领取（雪冬送信）
+        if LetterSystem.has_pending(state) then
+            local pendingCount = LetterSystem.pending_count(state)
+            table.insert(lowerChildren, F.actionBtn {
+                text = "📨 雪冬送来了 " .. pendingCount .. " 封信",
+                variant = "primary",
+                fontSize = Theme.sizes.font_normal,
+                highlight = true,
+                onClick = function(self)
+                    local letters = LetterSystem.collect_all(state)
+                    if letters and #letters > 0 then
+                        router.navigate("letter", {
+                            letters = letters,
+                            state = state,
+                            onFinish = function()
+                                router.navigate("home")
+                            end,
+                        })
+                    end
+                end,
+            })
+        end
+
         -- 委托
         table.insert(lowerChildren, F.actionBtn {
             text = "📋 接取委托",
@@ -697,6 +721,18 @@ function createSettlementView(state, curNode)
                 end
             end,
         })
+
+        -- 信箱（已读信件回顾）
+        if LetterSystem.read_count(state) > 0 then
+            table.insert(lowerChildren, F.actionBtn {
+                text = "📬 信箱（" .. LetterSystem.read_count(state) .. " 封）",
+                variant = "secondary",
+                fontSize = Theme.sizes.font_normal,
+                onClick = function(self)
+                    router.navigate("mailbox")
+                end,
+            })
+        end
 
         -- 篝火（有主线话题且可用时高亮）
         local canCamp, campReason, isCampFree = Campfire.can_start(state)

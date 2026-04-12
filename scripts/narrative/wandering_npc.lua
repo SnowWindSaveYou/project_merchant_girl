@@ -25,6 +25,15 @@ M.WANDERERS = {
         bg    = {  44,  38,  28, 240 },
         prefer_types = { "settlement", "resource" },
     },
+    xue_dong = {
+        id    = "xue_dong",
+        name  = "雪冬",
+        title = "自封邮递员",
+        icon  = "📮",
+        color = { 168, 188, 208, 255 },
+        bg    = {  32,  38,  48, 240 },
+        prefer_types = { "settlement", "transit" },
+    },
 }
 
 --- 获取流浪 NPC 定义
