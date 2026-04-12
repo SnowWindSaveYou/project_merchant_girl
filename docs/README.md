@@ -12,7 +12,7 @@
 |------|------|
 | [core_design.md](design/core_design.md) | 核心设计文档（世界观、玩法循环、经济、战斗、升级系统） |
 | [main_story.md](design/main_story.md) | 主线剧情设计（章节结构、角色弧光、关键事件） |
-| [prologue_detail.md](design/prologue_detail.md) | **序章详细设计**（14 场景完整台词、通道时刻表、悬念审计） |
+| [prologue_detail.md](design/prologue_detail.md) | **序章叙事设计 v3.0**（8 个教学窗口台词骨架、情感弧线、信号暗线） |
 | [narrative_guidelines.md](design/narrative_guidelines.md) | 叙事撰写规范（文风、对话风格、禁忌） |
 | [suspense_hooks.md](design/suspense_hooks.md) | 悬念钩子设计（三级钩子方法论、逐章审计、warming 机制） |
 | [letter_system.md](design/letter_system.md) | 信件系统设计（雪冬角色、信件流、投递委托、跨通道整合） |

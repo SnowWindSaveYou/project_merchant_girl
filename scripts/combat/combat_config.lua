@@ -114,12 +114,13 @@ M.EXPLORE_ROOMS = {
     abandoned_warehouse = {
         name = "废弃仓库",
         desc = "灰尘遍布的铁皮仓库，角落堆满锈蚀货架",
+        scene = "ruins",
         crates = {
-            { name = "铁箱", loot = {
+            { name = "铁箱", icon = "military", loot = {
                 { id = "metal_scrap", count = 2, chance = 0.8 },
                 { id = "fuel_cell",   count = 1, chance = 0.4 },
             }},
-            { name = "木箱", loot = {
+            { name = "木箱", icon = "wooden", loot = {
                 { id = "food_can", count = 2, chance = 0.7 },
                 { id = "water",    count = 2, chance = 0.6 },
             }},
@@ -133,12 +134,13 @@ M.EXPLORE_ROOMS = {
     old_clinic = {
         name = "旧诊所",
         desc = "药柜大多被翻空，但深处可能还有存货",
+        scene = "ruins",
         crates = {
-            { name = "药柜", loot = {
+            { name = "药柜", icon = "cabinet", loot = {
                 { id = "medicine", count = 1, chance = 0.6 },
                 { id = "medicine", count = 1, chance = 0.3 },
             }},
-            { name = "急救箱", loot = {
+            { name = "急救箱", icon = "cabinet", loot = {
                 { id = "medicine", count = 1, chance = 0.5 },
                 { id = "water",    count = 1, chance = 0.4 },
             }},
@@ -152,12 +154,13 @@ M.EXPLORE_ROOMS = {
     military_outpost = {
         name = "军事哨站",
         desc = "半塌的混凝土掩体，弹孔密布的围墙",
+        scene = "military",
         crates = {
-            { name = "弹药箱", loot = {
+            { name = "弹药箱", icon = "military", loot = {
                 { id = "ammo",       count = 2, chance = 0.7 },
                 { id = "smoke_bomb", count = 1, chance = 0.4 },
             }},
-            { name = "储物柜", loot = {
+            { name = "储物柜", icon = "cabinet", loot = {
                 { id = "circuit",     count = 1, chance = 0.5 },
                 { id = "metal_scrap", count = 2, chance = 0.6 },
             }},
@@ -172,12 +175,13 @@ M.EXPLORE_ROOMS = {
     radar_station = {
         name = "废弃雷达站",
         desc = "锈迹斑斑的信号塔矗立在高处，控制室的屏幕早已碎裂",
+        scene = "military",
         crates = {
-            { name = "信号柜", loot = {
+            { name = "信号柜", icon = "cabinet", loot = {
                 { id = "circuit",   count = 2, chance = 0.7 },
                 { id = "circuit",   count = 1, chance = 0.3 },
             }},
-            { name = "工具箱", loot = {
+            { name = "工具箱", icon = "cabinet", loot = {
                 { id = "metal_scrap", count = 2, chance = 0.6 },
                 { id = "fuel_cell",   count = 1, chance = 0.35 },
             }},
@@ -194,12 +198,13 @@ M.EXPLORE_ROOMS = {
     irrigation_tunnels = {
         name = "灌溉水渠",
         desc = "半淹没的混凝土渠道，苔藓覆盖的阀门还在滴水",
+        scene = "underground",
         crates = {
-            { name = "水阀间", loot = {
+            { name = "水阀间", icon = "organic", loot = {
                 { id = "water",    count = 3, chance = 0.8 },
                 { id = "water",    count = 2, chance = 0.4 },
             }},
-            { name = "渠壁暗格", loot = {
+            { name = "渠壁暗格", icon = "organic", loot = {
                 { id = "food_can", count = 2, chance = 0.6 },
                 { id = "medicine", count = 1, chance = 0.25 },
             }},
@@ -213,12 +218,13 @@ M.EXPLORE_ROOMS = {
     mushroom_grotto = {
         name = "蘑菇洞穴",
         desc = "潮湿的岩洞中发着微光，菌丝覆满墙壁",
+        scene = "underground",
         crates = {
-            { name = "菌床", loot = {
+            { name = "菌床", icon = "organic", loot = {
                 { id = "food_can", count = 3, chance = 0.85 },
                 { id = "food_can", count = 2, chance = 0.4 },
             }},
-            { name = "旧急救包", loot = {
+            { name = "旧急救包", icon = "organic", loot = {
                 { id = "medicine", count = 1, chance = 0.5 },
                 { id = "water",    count = 1, chance = 0.35 },
             }},
@@ -232,12 +238,13 @@ M.EXPLORE_ROOMS = {
     solar_panels = {
         name = "太阳能田",
         desc = "成排的光伏板在烈日下闪烁，控制箱散落田间",
+        scene = "military",
         crates = {
-            { name = "控制箱", loot = {
+            { name = "控制箱", icon = "cabinet", loot = {
                 { id = "circuit",   count = 2, chance = 0.75 },
                 { id = "circuit",   count = 1, chance = 0.35 },
             }},
-            { name = "储电柜", loot = {
+            { name = "储电柜", icon = "cabinet", loot = {
                 { id = "fuel_cell", count = 1, chance = 0.6 },
                 { id = "metal_scrap", count = 1, chance = 0.4 },
             }},
@@ -251,12 +258,13 @@ M.EXPLORE_ROOMS = {
     junk_heap = {
         name = "废品堆场",
         desc = "金属垃圾堆成小山，锈味刺鼻，偶有可用零件",
+        scene = "ruins",
         crates = {
-            { name = "废铁堆", loot = {
+            { name = "废铁堆", icon = "scrap", loot = {
                 { id = "metal_scrap", count = 3, chance = 0.85 },
                 { id = "metal_scrap", count = 2, chance = 0.5 },
             }},
-            { name = "旧电器", loot = {
+            { name = "旧电器", icon = "scrap", loot = {
                 { id = "circuit",     count = 1, chance = 0.45 },
                 { id = "fuel_cell",   count = 1, chance = 0.25 },
             }},
@@ -270,12 +278,13 @@ M.EXPLORE_ROOMS = {
     print_shop = {
         name = "印刷厂遗址",
         desc = "油墨味弥漫的厂房，残破的印刷机积满灰尘",
+        scene = "ruins",
         crates = {
-            { name = "档案柜", loot = {
+            { name = "档案柜", icon = "cabinet", loot = {
                 { id = "old_book",  count = 2, chance = 0.7 },
                 { id = "old_book",  count = 1, chance = 0.4 },
             }},
-            { name = "维修间", loot = {
+            { name = "维修间", icon = "cabinet", loot = {
                 { id = "circuit",     count = 1, chance = 0.5 },
                 { id = "metal_scrap", count = 1, chance = 0.35 },
             }},
@@ -289,12 +298,13 @@ M.EXPLORE_ROOMS = {
     scrap_pit = {
         name = "废铁场",
         desc = "巨型液压机旁散落着被压扁的车壳，深处有未拆解的残骸",
+        scene = "ruins",
         crates = {
-            { name = "车壳残骸", loot = {
+            { name = "车壳残骸", icon = "scrap", loot = {
                 { id = "metal_scrap", count = 2, chance = 0.8 },
                 { id = "ammo",        count = 1, chance = 0.35 },
             }},
-            { name = "工具房", loot = {
+            { name = "工具房", icon = "cabinet", loot = {
                 { id = "metal_scrap", count = 2, chance = 0.6 },
                 { id = "fuel_cell",   count = 1, chance = 0.3 },
             }},
@@ -308,13 +318,14 @@ M.EXPLORE_ROOMS = {
     logistics_depot = {
         name = "旧物流中心",
         desc = "传送带锈死在原地，货架上残留着各类物资",
+        scene = "military",
         crates = {
-            { name = "货架A", loot = {
+            { name = "货架A", icon = "wooden", loot = {
                 { id = "food_can",    count = 1, chance = 0.5 },
                 { id = "water",       count = 1, chance = 0.5 },
                 { id = "medicine",    count = 1, chance = 0.3 },
             }},
-            { name = "货架B", loot = {
+            { name = "货架B", icon = "wooden", loot = {
                 { id = "metal_scrap", count = 1, chance = 0.5 },
                 { id = "circuit",     count = 1, chance = 0.4 },
                 { id = "ammo",        count = 1, chance = 0.25 },
@@ -332,12 +343,13 @@ M.EXPLORE_ROOMS = {
     sewer_depths = {
         name = "下水道深处",
         desc = "恶臭的地下通道，积水没过脚踝，墙壁渗着不明液体",
+        scene = "underground",
         crates = {
-            { name = "被冲来的箱子", loot = {
+            { name = "被冲来的箱子", icon = "wooden", loot = {
                 { id = "medicine",    count = 2, chance = 0.6 },
                 { id = "medicine",    count = 1, chance = 0.35 },
             }},
-            { name = "密封桶", loot = {
+            { name = "密封桶", icon = "organic", loot = {
                 { id = "water",       count = 2, chance = 0.5 },
                 { id = "smoke_bomb",  count = 1, chance = 0.3 },
             }},
@@ -352,12 +364,13 @@ M.EXPLORE_ROOMS = {
     bunker_interior = {
         name = "军事掩体内部",
         desc = "厚重的防爆门半开着，里面的武器架还没被完全搬空",
+        scene = "military",
         crates = {
-            { name = "弹药库", loot = {
+            { name = "弹药库", icon = "military", loot = {
                 { id = "ammo",       count = 3, chance = 0.7 },
                 { id = "smoke_bomb", count = 1, chance = 0.5 },
             }},
-            { name = "军官储物柜", loot = {
+            { name = "军官储物柜", icon = "military", loot = {
                 { id = "circuit",     count = 2, chance = 0.55 },
                 { id = "medicine",    count = 1, chance = 0.4 },
             }},
@@ -372,12 +385,13 @@ M.EXPLORE_ROOMS = {
     crater_salvage = {
         name = "弹坑残骸",
         desc = "巨大的弹坑边缘，半埋的车辆和设备等待被拆解",
+        scene = "ruins",
         crates = {
-            { name = "半埋载具", loot = {
+            { name = "半埋载具", icon = "scrap", loot = {
                 { id = "fuel_cell",   count = 2, chance = 0.65 },
                 { id = "metal_scrap", count = 2, chance = 0.7 },
             }},
-            { name = "散落碎片", loot = {
+            { name = "散落碎片", icon = "scrap", loot = {
                 { id = "metal_scrap", count = 2, chance = 0.6 },
                 { id = "circuit",     count = 1, chance = 0.3 },
             }},

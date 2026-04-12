@@ -120,6 +120,11 @@ local BREATH_FREQ   = 0.6
 local BREATH_AMP    = 0.035
 local IDLE_BOB_FREQ = 0.8
 local IDLE_BOB_PX   = 2.5
+--- 战斗徘徊参数
+local COMBAT_SWAY_RANGE = 0.04   -- 归一化 x 徘徊幅度（±）
+local COMBAT_SWAY_SPEED = 0.06   -- 归一化/秒，徘徊移动速度
+local COMBAT_SWAY_PAUSE_MIN = 0.8  -- 到达目标后停顿最短时间
+local COMBAT_SWAY_PAUSE_MAX = 2.0  -- 到达目标后停顿最长时间
 --- 气泡表情配置
 local EMOTE_INTERVAL_MIN = 8
 local EMOTE_INTERVAL_MAX = 20
@@ -215,6 +220,10 @@ function M.createChibi(id, zone, facing)
         clickBounce = 0,
         clickCombo = 0,
         clickComboTimer = 0,
+        -- 战斗徘徊
+        _combatSwayCenter = 0.5,
+        _combatSwayTarget = 0.5,
+        _combatSwayPause = 0,
     }
 end
 
@@ -418,10 +427,44 @@ local function updateSingleChibi(c, ci, dt, chibis, zoneDefs, isDriving, combatL
         if c._zoneFadeIn < 0 then c._zoneFadeIn = 0 end
     end
 
-    -- 战斗中锁定的角色跳过 AI（位置/状态由 setCombatRenderer 控制）
-    -- 但仍需更新 idleTime 以驱动呼吸动画
+    -- 战斗中锁定的角色：跳过 zone 切换和状态机
+    -- 但在小范围内来回徘徊走位（facing 不变）
     if c._combatLocked then
-        c.idleTime = c.idleTime + dt
+        -- 初始化徘徊中心（仅首次）
+        if c._combatSwayCenter == 0.5 and c.x ~= 0.5 then
+            c._combatSwayCenter = c.x
+            c._combatSwayTarget = c.x
+            c._combatSwayPause = 1.0 + math.random() * 1.5
+        end
+
+        -- 停顿中：等待一会再选下一个目标
+        if c._combatSwayPause > 0 then
+            c._combatSwayPause = c._combatSwayPause - dt
+            c.idleTime = c.idleTime + dt
+            c.walkTime = 0
+            c.state = "idle"
+        else
+            -- 移动到徘徊目标
+            local dx = c._combatSwayTarget - c.x
+            if math.abs(dx) < COMBAT_SWAY_SPEED * dt then
+                c.x = c._combatSwayTarget
+                c.walkTime = 0
+                c.state = "idle"
+                c.idleTime = 0
+                -- 选新目标，在中心点 ± SWAY_RANGE 内随机
+                c._combatSwayTarget = c._combatSwayCenter
+                    + (math.random() * 2 - 1) * COMBAT_SWAY_RANGE
+                c._combatSwayPause = COMBAT_SWAY_PAUSE_MIN
+                    + math.random() * (COMBAT_SWAY_PAUSE_MAX - COMBAT_SWAY_PAUSE_MIN)
+            else
+                local dir = dx > 0 and 1 or -1
+                c.x = c.x + dir * COMBAT_SWAY_SPEED * dt
+                c.walkTime = c.walkTime + dt
+                c.state = "walk"
+                c.idleTime = 0
+                -- facing / scaleX 保持不变（面向敌人）
+            end
+        end
         return
     end
 

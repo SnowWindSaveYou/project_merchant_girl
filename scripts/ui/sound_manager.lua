@@ -20,6 +20,12 @@ local soundNode = nil
 ---@type SoundSource
 local soundSource = nil
 
+--- 多通道支持：额外的 SoundSource 池，用于并发播放
+local NUM_EXTRA_CHANNELS = 3
+---@type SoundSource[]
+local extraSources = {}
+local nextChannel = 1
+
 --- UI 音效音量 (0~1)
 local masterVolume = 0.7
 
@@ -46,6 +52,13 @@ local function ensureInit()
     soundSource = soundNode:CreateComponent("SoundSource")
     soundSource.soundType = "Effect"
     soundSource.gain = masterVolume
+    -- 创建额外通道，支持多音效并发
+    for i = 1, NUM_EXTRA_CHANNELS do
+        local src = soundNode:CreateComponent("SoundSource")
+        src.soundType = "Effect"
+        src.gain = masterVolume
+        extraSources[i] = src
+    end
 end
 
 --- 获取或缓存 Sound 资源
@@ -78,6 +91,25 @@ function M.play(name, gain)
     local snd = getSound(name)
     if not snd then return end
 
+    -- 选择空闲通道；如果都在播放则轮询下一个
+    local src = soundSource
+    if soundSource:IsPlaying() then
+        -- 找一个空闲的额外通道
+        local found = false
+        for i = 1, NUM_EXTRA_CHANNELS do
+            if not extraSources[i]:IsPlaying() then
+                src = extraSources[i]
+                found = true
+                break
+            end
+        end
+        if not found then
+            -- 全部占用，轮询覆盖最旧的通道
+            src = extraSources[nextChannel]
+            nextChannel = (nextChannel % NUM_EXTRA_CHANNELS) + 1
+        end
+    end
+
     local baseGain = gain or masterVolume
     local rand = RANDOMIZE[name]
     if rand then
@@ -88,9 +120,9 @@ function M.play(name, gain)
         -- 随机 gain 微调
         local gAdj = 1.0 + (math.random() * 2 - 1) * rand.gainRange
         local g = math.max(0.05, math.min(1.0, baseGain * gAdj))
-        soundSource:Play(snd, freq, g)
+        src:Play(snd, freq, g)
     else
-        soundSource:Play(snd, snd.frequency, baseGain)
+        src:Play(snd, snd.frequency, baseGain)
     end
 end
 
@@ -100,6 +132,11 @@ function M.setVolume(vol)
     masterVolume = math.max(0, math.min(1, vol))
     if soundSource then
         soundSource.gain = masterVolume
+        for i = 1, NUM_EXTRA_CHANNELS do
+            if extraSources[i] then
+                extraSources[i].gain = masterVolume
+            end
+        end
     end
 end
 

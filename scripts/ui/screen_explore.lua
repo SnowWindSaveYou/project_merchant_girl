@@ -80,12 +80,25 @@ local function initScene(state)
     if state.flow and state.flow.environment then
         ChibiScene.setEnvironment(Environment.get_current(state.flow.environment))
     end
+    -- 根据房间 scene 类型切换探索背景
+    if explore and explore.room and explore.room.scene then
+        ChibiScene.setExploreBg(explore.room.scene)
+    end
 end
+
+--- 箱子 icon → 贴图映射
+local CRATE_IMAGES = {
+    military = "image/crate_military_20260412060117.png",
+    wooden   = "image/crate_wooden_20260412060116.png",
+    cabinet  = "image/crate_cabinet_20260412060120.png",
+    organic  = "image/crate_organic_20260412060118.png",
+    scrap    = "image/crate_scrap_20260412060544.png",
+}
+local CRATE_IMAGE_DEFAULT = "image/chibi_box.png"
 
 --- 根据 explore.crates 设置场景中的箱子可视化
 local function syncExploreItems()
     if not explore then return end
-    local CRATE_IMAGE = "image/chibi_box.png"
     local items = {}
     -- 将箱子均匀分布在 ground_center ~ ground_right 区域 (x: 0.35 ~ 0.85)
     local count = #explore.crates
@@ -94,7 +107,7 @@ local function syncExploreItems()
         if count == 1 then xNorm = 0.55 end  -- 单个箱子居中偏右
         items[i] = {
             id    = "crate_" .. i,
-            image = CRATE_IMAGE,
+            image = CRATE_IMAGES[crate.icon] or CRATE_IMAGE_DEFAULT,
             xNorm = xNorm,
         }
     end
@@ -251,6 +264,7 @@ function M._build_intro_view(state)
                                         onClick = function(self)
                                             deactivateCombat()
                                             ChibiScene.clearExploreItems()
+                                            ChibiScene.clearExploreBg()
                                             router.navigate("home")
                                         end,
                                     },
@@ -275,6 +289,7 @@ function M._refresh(state)
     if explore.phase == Explore.Phase.RESULT then
         deactivateCombat()
         ChibiScene.clearExploreItems()
+        ChibiScene.clearExploreBg()
         M._show_result_view(state)
         return
     end

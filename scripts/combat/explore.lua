@@ -45,6 +45,7 @@ function M.create(state, room_id)
     for i, c in ipairs(template.crates) do
         crates[i] = {
             name    = c.name,
+            icon    = c.icon,
             loot    = c.loot,
             looted  = false,
             result  = nil,   -- 搜刮后的结果 { items_found }

@@ -36,6 +36,17 @@ local BOB_PX          = 2.0
 local BREATH_FREQ     = 0.5
 local BREATH_AMP      = 0.03
 
+-- 敌方徘徊参数（ground 模式）
+local ENEMY_SWAY_RANGE  = 0.03   -- 归一化 x 徘徊幅度
+local ENEMY_SWAY_SPEED  = 0.04   -- 归一化/秒
+local ENEMY_SWAY_PAUSE_MIN = 0.6
+local ENEMY_SWAY_PAUSE_MAX = 1.8
+
+-- 近战冲锋参数
+local MELEE_CHARGE_DURATION = 0.35  -- 冲到目标耗时
+local MELEE_HIT_PAUSE       = 0.15  -- 命中停顿
+local MELEE_RETREAT_DURATION = 0.40 -- 退回耗时
+
 -- 车轮
 local WHEEL_IMAGE       = "image/wheel.png"
 
@@ -90,54 +101,65 @@ local EXPLORE_ENEMY_VISUALS = {
     _default = {
         chibi = "image/chibi_npc_scavenger_20260409100005.png",
     },
-    -- ── 生物敌人 ──
+    -- ── 生物敌人（近战 melee）──
     ["变异鼠群"] = {
         chibi = "image/chibi_enemy_rat_swarm_20260412044725.png",
+        melee = true,
     },
     ["洞穴蜘蛛"] = {
         chibi = "image/chibi_enemy_cave_spider_20260412044749.png",
+        melee = true,
     },
     ["野狗群"] = {
         chibi = "image/chibi_enemy_wild_dogs_20260412044808.png",
+        melee = true,
     },
     ["拾荒犬"] = {
         chibi = "image/chibi_enemy_wild_dogs_20260412044808.png",
+        melee = true,
     },
     ["日灼蜥蜴"] = {
         chibi = "image/chibi_enemy_sun_lizard_20260412044738.png",
+        melee = true,
     },
     ["水蛭群"] = {
         chibi = "image/chibi_enemy_leech_20260412044948.png",
+        melee = true,
     },
     ["纸巢虫"] = {
         chibi = "image/chibi_enemy_paper_bug_20260412044916.png",
+        melee = true,
     },
     ["铁锈蝎"] = {
         chibi = "image/chibi_enemy_rust_scorpion_20260412044731.png",
+        melee = true,
     },
     ["污水巨蛙"] = {
         chibi = "image/chibi_enemy_giant_frog_20260412044923.png",
+        melee = true,
     },
     ["管道鼠王"] = {
         chibi = "image/chibi_enemy_rat_king_20260412044913.png",
+        melee = true,
     },
     ["辐射獾"] = {
         chibi = "image/chibi_enemy_rad_badger_20260412044934.png",
+        melee = true,
     },
-    -- ── 人形敌人 ──
+    -- ── 人形敌人（远程 ranged）──
     ["流浪者"] = {
         chibi = "image/chibi_npc_scavenger_20260409100005.png",
     },
     ["残兵"] = {
-        chibi = "image/chibi_enemy_soldier_20260412045048.png",
+        chibi = "image/chibi_enemy_soldier_20260412052449.png",
     },
     ["流浪者团伙"] = {
-        chibi = "image/chibi_enemy_vagrant_gang_20260412045050.png",
+        chibi = "image/chibi_enemy_vagrant_gang_20260412052449.png",
     },
     ["武装巡逻兵"] = {
         chibi = "image/chibi_npc_han_ce_20260409102702.png",
     },
-    -- ── 机械敌人 ──
+    -- ── 机械敌人（远程 ranged）──
     ["巡逻机器人"] = {
         chibi = "image/chibi_enemy_patrol_bot_20260412045044.png",
     },
@@ -190,8 +212,14 @@ local RECOIL_DECAY    = 6      -- 后坐力恢复速度
 
 -- ── 敌方攻击系统 ──
 local enemyAttack_      = nil
+local isMelee_          = false   -- 当前敌人是否为近战类型
 local ENEMY_ATK_DELAY   = 0.5
 local ENEMY_ATK_DURATION = 0.9
+
+-- ── ground 模式敌方徘徊 ──
+local enemySwayCenter_  = GROUND_ENEMY_BASE_X
+local enemySwayTarget_  = GROUND_ENEMY_BASE_X
+local enemySwayPause_   = 1.0
 
 -- 玩家卡车受击闪红
 local truckFlashTimer_ = 0
@@ -273,8 +301,14 @@ function M.activate(enemy_id, opts)
         -- ── ground 模式：查找步行立绘 ──
         visuals_ = EXPLORE_ENEMY_VISUALS[enemy_id]
             or EXPLORE_ENEMY_VISUALS._default
+        isMelee_ = visuals_.melee or false
         groundEnemyX_ = GROUND_ENEMY_ENTER_X   -- 从画面外入场
         groundEnemyXTarget_ = GROUND_ENEMY_BASE_X
+
+        -- 敌方徘徊初始化
+        enemySwayCenter_ = GROUND_ENEMY_BASE_X
+        enemySwayTarget_ = GROUND_ENEMY_BASE_X
+        enemySwayPause_  = 1.5 + math.random()
 
         -- 创建单个敌方纸娃娃
         table.insert(enemyChibis_, {
@@ -307,6 +341,7 @@ end
 function M.deactivate()
     active_ = false
     groundMode_ = false
+    isMelee_ = false
     enemyId_ = nil
     visuals_ = nil
     truckDamageLevel_ = "pristine"
@@ -321,6 +356,9 @@ function M.deactivate()
     enemyXTarget_ = ENEMY_BASE_X
     groundEnemyX_ = GROUND_ENEMY_ENTER_X
     groundEnemyXTarget_ = GROUND_ENEMY_BASE_X
+    enemySwayCenter_ = GROUND_ENEMY_BASE_X
+    enemySwayTarget_ = GROUND_ENEMY_BASE_X
+    enemySwayPause_  = 1.0
 end
 
 --- 触发战术视觉效果
@@ -419,31 +457,50 @@ function M.triggerEffect(tacticId, result)
     end
 
     -- ══════════════════════════════════════════════
-    -- 敌人侧：反击弹道
+    -- 敌人侧：反击
     -- ══════════════════════════════════════════════
     local dmg = result and result.dmg_taken or 0
-    local tracerCount = 2 + math.random(2)
-    enemyParticles_ = {}
-    for i = 1, tracerCount do
-        table.insert(enemyParticles_, {
-            delay    = (i - 1) * 0.12,
-            progress = 0,
-            hit      = false,
-            ySpread  = dmg > 0
-                and (math.random() - 0.5) * 0.15
-                or  (0.3 + math.random() * 0.4) * (math.random() < 0.5 and -1 or 1),
-            xSpread  = (math.random() - 0.5) * 0.06,
-        })
+
+    if groundMode_ and isMelee_ then
+        -- 近战冲锋攻击：冲到主角位置 → 短暂停顿 → 退回
+        local totalDur = MELEE_CHARGE_DURATION + MELEE_HIT_PAUSE + MELEE_RETREAT_DURATION
+        enemyAttack_ = {
+            delay    = ENEMY_ATK_DELAY * 0.6,  -- 近战反应更快
+            timer    = 0,
+            duration = totalDur,
+            dmg      = dmg,
+            melee    = true,
+            phase    = "waiting",  -- waiting → charge → hit → retreat → done
+            tracers  = {},
+            started  = false,
+            done     = false,
+        }
+    else
+        -- 远程射击弹道
+        local tracerCount = 2 + math.random(2)
+        enemyParticles_ = {}
+        for i = 1, tracerCount do
+            table.insert(enemyParticles_, {
+                delay    = (i - 1) * 0.12,
+                progress = 0,
+                hit      = false,
+                ySpread  = dmg > 0
+                    and (math.random() - 0.5) * 0.15
+                    or  (0.3 + math.random() * 0.4) * (math.random() < 0.5 and -1 or 1),
+                xSpread  = (math.random() - 0.5) * 0.06,
+            })
+        end
+        enemyAttack_ = {
+            delay    = ENEMY_ATK_DELAY,
+            timer    = 0,
+            duration = ENEMY_ATK_DURATION,
+            dmg      = dmg,
+            melee    = false,
+            tracers  = enemyParticles_,
+            started  = false,
+            done     = false,
+        }
     end
-    enemyAttack_ = {
-        delay    = ENEMY_ATK_DELAY,
-        timer    = 0,
-        duration = ENEMY_ATK_DURATION,
-        dmg      = dmg,
-        tracers  = enemyParticles_,
-        started  = false,
-        done     = false,
-    }
 end
 
 -- ═══════════════════════════════════════════════════════════════
@@ -468,6 +525,28 @@ function M.update(dt)
     if groundMode_ then
         -- ground 模式：敌人入场缓动
         groundEnemyX_ = lerp(groundEnemyX_, groundEnemyXTarget_, dt, 3)
+
+        -- 敌方徘徊（非攻击冲锋时）
+        local isCharging = enemyAttack_ and enemyAttack_.melee
+            and enemyAttack_.started and not enemyAttack_.done
+        if not isCharging then
+            if enemySwayPause_ > 0 then
+                enemySwayPause_ = enemySwayPause_ - dt
+            else
+                local dx = enemySwayTarget_ - groundEnemyXTarget_
+                if math.abs(dx) < ENEMY_SWAY_SPEED * dt then
+                    groundEnemyXTarget_ = enemySwayTarget_
+                    -- 选新的徘徊目标
+                    enemySwayTarget_ = enemySwayCenter_
+                        + (math.random() * 2 - 1) * ENEMY_SWAY_RANGE
+                    enemySwayPause_ = ENEMY_SWAY_PAUSE_MIN
+                        + math.random() * (ENEMY_SWAY_PAUSE_MAX - ENEMY_SWAY_PAUSE_MIN)
+                else
+                    local dir = dx > 0 and 1 or -1
+                    groundEnemyXTarget_ = groundEnemyXTarget_ + dir * ENEMY_SWAY_SPEED * dt
+                end
+            end
+        end
     else
         -- vehicle 模式：卡车偏移 + 敌车位置缓动
         truckOffset_ = lerp(truckOffset_, truckOffsetTarget_, dt, 3)
@@ -567,9 +646,59 @@ function M.update(dt)
             if enemyAttack_.timer >= enemyAttack_.delay then
                 enemyAttack_.started = true
                 enemyAttack_.timer = 0
-                SoundMgr.play("combat_gunfire", 0.6)
+                if enemyAttack_.melee then
+                    enemyAttack_.phase = "charge"
+                    SoundMgr.play("combat_evade", 0.8)  -- 冲锋音效
+                else
+                    SoundMgr.play("combat_gunfire", 0.6)
+                end
+            end
+        elseif enemyAttack_.melee then
+            -- ── 近战冲锋状态机 ──
+            local t = enemyAttack_.timer
+            if enemyAttack_.phase == "charge" then
+                -- 冲锋阶段：敌人快速移动到主角附近
+                local progress = math.min(1.0, t / MELEE_CHARGE_DURATION)
+                -- 使用 ease-in 加速
+                enemyAttack_.chargeProgress = progress * progress
+                -- 驱动 groundEnemyXTarget_ 冲向玩家（陶侠在0.35，琳莉在0.75）
+                local chargeTargetX = 0.58  -- 冲到两位主角之间
+                groundEnemyXTarget_ = GROUND_ENEMY_BASE_X
+                    + (chargeTargetX - GROUND_ENEMY_BASE_X) * enemyAttack_.chargeProgress
+                if progress >= 1.0 then
+                    enemyAttack_.phase = "hit"
+                    enemyAttack_.timer = 0
+                    -- 命中效果
+                    if enemyAttack_.dmg > 0 then
+                        truckFlashTimer_ = TRUCK_FLASH_DUR
+                        screenShakeX_ = screenShakeX_ + (math.random() - 0.5) * 8
+                        screenShakeY_ = screenShakeY_ + 5 + math.random() * 3
+                        SoundMgr.play("combat_gunfire", 0.5)  -- 撞击音效
+                    end
+                end
+            elseif enemyAttack_.phase == "hit" then
+                -- 命中停顿
+                local t2 = enemyAttack_.timer
+                if t2 >= MELEE_HIT_PAUSE then
+                    enemyAttack_.phase = "retreat"
+                    enemyAttack_.timer = 0
+                end
+            elseif enemyAttack_.phase == "retreat" then
+                -- 退回阶段
+                local t2 = enemyAttack_.timer
+                local progress = math.min(1.0, t2 / MELEE_RETREAT_DURATION)
+                -- ease-out 减速退回
+                local eased = 1.0 - (1.0 - progress) * (1.0 - progress)
+                local chargeTargetX = 0.58
+                groundEnemyXTarget_ = chargeTargetX
+                    + (enemySwayCenter_ - chargeTargetX) * eased
+                if progress >= 1.0 then
+                    groundEnemyXTarget_ = enemySwayCenter_
+                    enemyAttack_.done = true
+                end
             end
         else
+            -- ── 远程弹道攻击 ──
             local t = enemyAttack_.timer
             local d = enemyAttack_.duration
             local flyTime = d * 0.25
@@ -1014,6 +1143,109 @@ end
 function M._renderEnemyAttack(nvg, l, tb, ex, ey, ew, eh)
     local atk = enemyAttack_
     if not atk then return end
+
+    -- ── 近战冲锋渲染（ground 模式专用） ──
+    if atk.melee then
+        if not atk.started then return end
+        local phase = atk.phase
+        local t = atk.timer
+
+        -- 目标位置（主角身前）
+        local hitX = l.x + l.w * 0.72
+        local hitY = l.y + l.h * 0.68
+
+        -- 冲锋阶段：敌人身后拉出速度线
+        if phase == "charge" then
+            local progress = math.min(1.0, t / MELEE_CHARGE_DURATION)
+            local alpha = math.floor(progress * 180)
+            local enemyCX = ex + ew * 0.5
+            local enemyCY = ey + eh * 0.5
+            nvgSave(nvg)
+            for i = 1, 4 do
+                local yOff = (i - 2.5) * (eh * 0.15)
+                local lineLen = progress * ew * 0.8
+                local lineAlpha = math.floor((1.0 - (i - 1) / 4) * alpha * 0.6)
+                nvgBeginPath(nvg)
+                nvgMoveTo(nvg, enemyCX - ew * 0.3, enemyCY + yOff)
+                nvgLineTo(nvg, enemyCX - ew * 0.3 - lineLen, enemyCY + yOff)
+                nvgStrokeWidth(nvg, 1.5 - i * 0.2)
+                nvgStrokeColor(nvg, nvgRGBA(255, 220, 180, lineAlpha))
+                nvgStroke(nvg)
+            end
+            nvgRestore(nvg)
+        end
+
+        -- 命中阶段：爪痕冲击效果
+        if phase == "hit" then
+            local hitProg = math.min(1.0, t / MELEE_HIT_PAUSE)
+            nvgSave(nvg)
+            -- 冲击波纹
+            local waveR = hitProg * 30
+            local waveAlpha = math.floor((1.0 - hitProg) * 200)
+            nvgBeginPath(nvg)
+            nvgCircle(nvg, hitX, hitY, waveR)
+            nvgStrokeWidth(nvg, 2.5 - hitProg * 2)
+            nvgStrokeColor(nvg, nvgRGBA(255, 200, 100, waveAlpha))
+            nvgStroke(nvg)
+
+            -- 爪痕斜线（三条）
+            local slashAlpha = math.floor((1.0 - hitProg * 0.5) * 220)
+            local slashLen = 12 + hitProg * 8
+            for si = 1, 3 do
+                local ox = (si - 2) * 8
+                local oy = (si - 2) * 5
+                nvgBeginPath(nvg)
+                nvgMoveTo(nvg, hitX + ox - slashLen * 0.5, hitY + oy - slashLen * 0.4)
+                nvgLineTo(nvg, hitX + ox + slashLen * 0.5, hitY + oy + slashLen * 0.4)
+                nvgStrokeWidth(nvg, 2.5 - si * 0.3)
+                nvgStrokeColor(nvg, nvgRGBA(255, 120, 40, slashAlpha))
+                nvgStroke(nvg)
+            end
+
+            -- 碎屑粒子
+            for si = 1, 6 do
+                local angle = (si / 6) * math.pi * 2 + t * 8
+                local dist = hitProg * 20
+                local px = hitX + math.cos(angle) * dist
+                local py = hitY + math.sin(angle) * dist
+                local pAlpha = math.floor((1.0 - hitProg) * 200)
+                local pr = 2.5 - hitProg * 2
+                if pr > 0.3 then
+                    nvgBeginPath(nvg)
+                    nvgCircle(nvg, px, py, pr)
+                    nvgFillColor(nvg, nvgRGBA(255, 160, 60, pAlpha))
+                    nvgFill(nvg)
+                end
+            end
+            nvgRestore(nvg)
+        end
+
+        -- 退回阶段：残留痕迹淡出
+        if phase == "retreat" then
+            local retreatProg = math.min(1.0, t / MELEE_RETREAT_DURATION)
+            local fadeA = math.floor((1.0 - retreatProg) * 120)
+            if fadeA > 5 then
+                nvgSave(nvg)
+                -- 淡出爪痕
+                local slashLen = 18
+                for si = 1, 3 do
+                    local ox = (si - 2) * 8
+                    local oy = (si - 2) * 5
+                    nvgBeginPath(nvg)
+                    nvgMoveTo(nvg, hitX + ox - slashLen * 0.5, hitY + oy - slashLen * 0.4)
+                    nvgLineTo(nvg, hitX + ox + slashLen * 0.5, hitY + oy + slashLen * 0.4)
+                    nvgStrokeWidth(nvg, 1.5)
+                    nvgStrokeColor(nvg, nvgRGBA(255, 100, 30, fadeA))
+                    nvgStroke(nvg)
+                end
+                nvgRestore(nvg)
+            end
+        end
+
+        return  -- 近战不渲染弹道
+    end
+
+    -- ── 远程弹道渲染 ──
     local t = atk.timer
     local d = atk.duration
     local flyTime = d * 0.25

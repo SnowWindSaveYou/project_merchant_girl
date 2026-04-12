@@ -85,6 +85,15 @@ local SETTLEMENT_SCENE_IMAGES = {
 
 local settlementSceneImage_ = nil
 
+--- 探索背景图（scene 类型 → 图片路径）
+local EXPLORE_BG_IMAGES = {
+    ruins       = "image/bg_generic_ruins_industrial_20260409080003.png",
+    military    = "image/bg_generic_tech_facility_20260409080009.png",
+    underground = "image/bg_generic_underground_20260409080000.png",
+}
+local EXPLORE_BG_DEFAULT = "image/bg_generic_road_20260409075956.png"
+local exploreBgImage_ = nil
+
 --- 视差层定义
 local LAYER_DEFS = {
     { image = "image/parallax_sky_20260408180927.png",     speed = 0.0,  yStart = 0.0, yEnd = 1.0  },
@@ -259,6 +268,8 @@ function ChibiSceneWidget:Render(nvg)
     -- 背景层
     if settlementSceneImage_ then
         self:drawSettlementScene(nvg, l)
+    elseif exploreBgImage_ then
+        self:drawExploreBgScene(nvg, l)
     else
         self:drawLayer(nvg, l, LAYER_DEFS[1])
         self:drawTimeTint(nvg, l)
@@ -312,6 +323,18 @@ end
 -- ── 聚落静态场景 ────────────────────────────────────────────
 function ChibiSceneWidget:drawSettlementScene(nvg, l)
     local imgHandle = ImageCache.Get(settlementSceneImage_)
+    if imgHandle == 0 then return end
+    local paint = nvgImagePattern(nvg, l.x, l.y, l.w, l.h, 0, imgHandle, 1.0)
+    nvgBeginPath(nvg)
+    nvgRect(nvg, l.x, l.y, l.w, l.h)
+    nvgFillPaint(nvg, paint)
+    nvgFill(nvg)
+    self:drawTimeTint(nvg, l)
+end
+
+-- ── 探索背景静态场景 ────────────────────────────────────────
+function ChibiSceneWidget:drawExploreBgScene(nvg, l)
+    local imgHandle = ImageCache.Get(exploreBgImage_)
     if imgHandle == 0 then return end
     local paint = nvgImagePattern(nvg, l.x, l.y, l.w, l.h, 0, imgHandle, 1.0)
     nvgBeginPath(nvg)
@@ -1040,6 +1063,21 @@ end
 --- 清空探索物品
 function M.clearExploreItems()
     exploreItems_ = {}
+end
+
+--- 设置探索背景（按 scene 类型切换静态背景图）
+---@param sceneType string "ruins"|"military"|"underground" 等
+function M.setExploreBg(sceneType)
+    local img = EXPLORE_BG_IMAGES[sceneType] or EXPLORE_BG_DEFAULT
+    exploreBgImage_ = img
+    print("[ChibiScene] explore bg → " .. tostring(sceneType) .. " → " .. img)
+end
+
+--- 清除探索背景（恢复视差滚动）
+function M.clearExploreBg()
+    if not exploreBgImage_ then return end
+    exploreBgImage_ = nil
+    print("[ChibiScene] explore bg cleared")
 end
 
 function M.setSettlement(settlementId)
