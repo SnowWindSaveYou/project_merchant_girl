@@ -131,7 +131,7 @@ function M.create(state, params, r)
     if isTravelling then
         table.insert(contentChildren, UI.Panel {
             width = "100%", padding = 12,
-            backgroundColor = { 28, 42, 58, 240 },
+            backgroundColor = Theme.colors.home_travel_tint,
             borderRadius = Theme.sizes.radius,
             borderWidth = 1, borderColor = Theme.colors.info,
             flexDirection = "row", alignItems = "center", gap = 8,

@@ -213,7 +213,7 @@ function createSlotCard(state, index, slot, available)
 
         return UI.Panel {
             width = "100%", padding = 10,
-            backgroundColor = { 40, 38, 36, 180 },
+            backgroundColor = Theme.colors.bg_card,
             borderRadius = Theme.sizes.radius,
             borderWidth = 1, borderColor = Theme.colors.border,
             borderStyle = "dashed",

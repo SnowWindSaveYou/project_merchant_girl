@@ -624,7 +624,7 @@ function M._build(state)
     -- ── 组装页面 ──
     return UI.Panel {
         width = "100%", height = "100%",
-        backgroundColor = { 20, 18, 16, 240 },
+        backgroundColor = Theme.colors.bg_primary,
         children = {
             UI.SafeAreaView {
                 width = "100%", height = "100%",

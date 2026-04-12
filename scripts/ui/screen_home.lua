@@ -1696,12 +1696,12 @@ function createChatterBubble(state)
     if not cur then return nil end
 
     local speakerNames = { linli = "林砾", taoxia = "陶夏" }
-    local speakerColors = {
-        linli  = { 80, 140, 200, 255 },
-        taoxia = { 200, 130, 80, 255 },
+    local speakerColorKeys = {
+        linli  = "chatter_linli_name",
+        taoxia = "chatter_taoxia_name",
     }
     local name  = speakerNames[cur.speaker] or cur.speaker
-    local color = speakerColors[cur.speaker] or Theme.colors.accent
+    local color = Theme.colors[speakerColorKeys[cur.speaker]] or Theme.colors.accent
     local avatar = Theme.avatars[cur.speaker] or Theme.avatars.linli
 
     -- 文字列子元素
@@ -1733,13 +1733,12 @@ function createChatterBubble(state)
         })
     end
 
-    return UI.Panel {
-        width = "100%", padding = 10,
+    return F.card {
+        width = "100%",
         backgroundColor = Theme.colors.chatter_bubble_bg,
-        borderRadius = Theme.sizes.radius,
-        borderWidth = 1, borderColor = color,
         flexDirection = "row",
         alignItems = "flex-start",
+        padding = 10,
         gap = 8,
         children = {
             -- 头像

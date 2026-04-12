@@ -115,7 +115,7 @@ function M.create(state, params, r)
         end
         table.insert(children, UI.Panel {
             width = "100%", padding = 10, marginTop = 4,
-            backgroundColor = { 42, 38, 48, 200 },
+            backgroundColor = Theme.colors.bg_inset,
             borderRadius = Theme.sizes.radius_small,
             alignItems = "center",
             children = {

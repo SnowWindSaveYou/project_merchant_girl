@@ -132,7 +132,7 @@ function createItemCard(state, index, item)
 
     return F.card {
         width = "100%", padding = 10,
-        borderWidth = 1, borderColor = { 168, 128, 82, 120 },
+        borderWidth = 1, borderColor = Theme.colors.border_rare,
         gap = 4,
         children = {
             UI.Panel {
@@ -343,7 +343,7 @@ function createHaggleView(state, hs)
 
     return UI.Panel {
         width = "100%", padding = 14,
-        backgroundColor = { 48, 38, 30, 240 },
+        backgroundColor = Theme.colors.bg_card,
         borderRadius = Theme.sizes.radius,
         borderWidth = 1, borderColor = Theme.colors.accent,
         gap = 8,

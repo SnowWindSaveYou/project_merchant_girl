@@ -3,6 +3,7 @@
 --- 独立 NanoVG 上下文，覆盖在所有 UI 之上
 local Goods = require("economy/goods")
 local UI    = require("urhox-libs/UI")
+local Theme = require("ui/theme")
 
 local M = {}
 
@@ -97,12 +98,13 @@ function HandleFloatingTextRender(eventType, eventData)
         local py = baseY - e.offset + (idx - 1) * STACK_GAP
 
         -- 颜色：绿色=获得 / 橙红=消耗 / 米白=信息
-        local r, g, b = 215, 208, 195
+        local _c = Theme.colors.text_primary
         if e.ctype == "gain" then
-            r, g, b = 120, 220, 140
+            _c = Theme.colors.float_gain
         elseif e.ctype == "loss" then
-            r, g, b = 255, 150, 100
+            _c = Theme.colors.float_loss
         end
+        local r, g, b = _c[1], _c[2], _c[3]
 
         -- 文字阴影
         nvgFillColor(_nvgCtx, nvgRGBA(0, 0, 0, math.floor(160 * alpha)))

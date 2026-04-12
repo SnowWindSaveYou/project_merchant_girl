@@ -204,7 +204,7 @@ function M._build_combat_view(state)
     if combat.last_round then
         table.insert(children, UI.Panel {
             width = "100%", padding = 10,
-            backgroundColor = { 30, 28, 25, 200 },
+            backgroundColor = Theme.colors.bg_inset,
             borderRadius = Theme.sizes.radius_small,
             children = {
                 UI.Label {
@@ -282,7 +282,7 @@ function M._build_combat_view(state)
         table.insert(layers, UI.Panel {
             width = "100%", height = "100%",
             position = "absolute", left = 0, top = 0,
-            backgroundColor = { 0, 0, 0, 160 },
+            backgroundColor = Theme.colors.bg_overlay,
         })
     end
     table.insert(layers, UI.Panel {
@@ -296,7 +296,7 @@ function M._build_combat_view(state)
     return UI.Panel {
         id = "ambushScreen",
         width = "100%", height = "100%",
-        backgroundColor = bgImage_ and { 0, 0, 0, 255 } or { 20, 15, 12, 255 },
+        backgroundColor = bgImage_ and { 0, 0, 0, 255 } or Theme.colors.bg_primary,
         children = layers,
     }
 end
@@ -343,7 +343,7 @@ function M._show_result_view(state)
         for i, round in ipairs(combat.round_log) do
             table.insert(reviewWidgets, UI.Panel {
                 width = "100%", padding = 6,
-                backgroundColor = { 30, 28, 25, 180 },
+                backgroundColor = Theme.colors.bg_inset,
                 borderRadius = Theme.sizes.radius_small,
                 children = {
                     UI.Label {

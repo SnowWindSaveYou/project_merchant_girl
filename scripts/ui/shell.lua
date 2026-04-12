@@ -121,7 +121,8 @@ function HandleRadioTickerRender(eventType, eventData)
             end
             prevY = y
         end
-        nvgStrokeColor(_radioNvgCtx, nvgRGBA(80, 170, 90, sl.alpha))
+        local _rw = Theme.colors.radio_wave
+        nvgStrokeColor(_radioNvgCtx, nvgRGBA(_rw[1], _rw[2], _rw[3], sl.alpha))
         nvgStrokeWidth(_radioNvgCtx, sl.width)
         nvgStroke(_radioNvgCtx)
     end
@@ -129,7 +130,8 @@ function HandleRadioTickerRender(eventType, eventData)
     -- ── 文字绘制 ──
     nvgFontFace(_radioNvgCtx, "radio")
     nvgFontSize(_radioNvgCtx, 13)
-    nvgFillColor(_radioNvgCtx, nvgRGBA(215, 208, 195, 255))
+    local _tp = Theme.colors.text_primary
+    nvgFillColor(_radioNvgCtx, nvgRGBA(_tp[1], _tp[2], _tp[3], _tp[4]))
     nvgTextAlign(_radioNvgCtx, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE)
 
     -- 测量文本宽度（首次渲染时缓存）

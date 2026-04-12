@@ -74,7 +74,7 @@ M.styles = {
         breakChance = 0.10,
         ink_color   = Theme.sketch.ink_accent,
         glow        = true,
-        glow_color  = { 240, 220, 170 },  -- 偏白暖光
+        glow_color  = Theme.colors.sketch_glow,  -- 随主题变化
     },
 }
 
@@ -383,19 +383,19 @@ function M.patchProgressBar()
         end
         local seed = instanceSeeds[self]
 
-        -- 获取颜色
-        local trackColor = Theme.colors.bg_card
+        -- 获取颜色（统一走游戏 Theme，不依赖 UI 库内部配色）
+        local trackColor = Theme.colors.progress_bg
         local fillColor
         if variant == "success" then
-            fillColor = UiTheme.Color("success")
+            fillColor = Theme.colors.success
         elseif variant == "warning" then
-            fillColor = UiTheme.Color("warning")
+            fillColor = Theme.colors.warning
         elseif variant == "error" or variant == "danger" then
-            fillColor = UiTheme.Color("error")
+            fillColor = Theme.colors.danger
         elseif variant == "info" then
-            fillColor = Theme.colors.info or UiTheme.Color("primary")
+            fillColor = Theme.colors.info
         else
-            fillColor = UiTheme.Color("primary")
+            fillColor = Theme.colors.progress_fill
         end
 
         -- 1. 画轨道背景（直角矩形，无圆角）
@@ -441,7 +441,7 @@ function M.patchProgressBar()
             local percent = math.floor(progress * 100)
             local labelText = string.format("%d%%", percent)
             local fontFamily = UiTheme.FontFamily()
-            local textColor = UiTheme.Color("text")
+            local textColor = Theme.colors.text_primary
             nvgFontFace(nvg, fontFamily)
             nvgFontSize(nvg, UiTheme.FontSizeOf("small"))
             nvgFillColor(nvg, nvgRGBA(textColor[1], textColor[2], textColor[3], textColor[4] or 255))

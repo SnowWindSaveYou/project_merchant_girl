@@ -118,7 +118,7 @@ function M.create(state, params, r)
     if planError then
         table.insert(contentChildren, UI.Panel {
             width = "100%", padding = 16,
-            backgroundColor = { 60, 30, 30, 200 }, borderRadius = Theme.sizes.radius,
+            backgroundColor = Theme.colors.bg_error, borderRadius = Theme.sizes.radius,
             children = {
                 UI.Label {
                     text = planError,

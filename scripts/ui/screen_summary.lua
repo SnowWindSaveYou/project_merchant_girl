@@ -145,12 +145,12 @@ function M.create(state, params, r)
                                 text = "抵达 " .. destName,
                                 fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.info,
                             },
-                            UI.Panel { width = "100%", height = 1, backgroundColor = Theme.colors.divider },
+                            F.divider(),
                             -- 路线信息
                             createResultRow("策略", STRATEGY_NAMES[strategy] or strategy),
                             createResultRow("耗时", string.format("%d分%02d秒", mins, secs)),
                             createResultRow("燃料消耗", tostring(totalFuel)),
-                            UI.Panel { width = "100%", height = 1, backgroundColor = Theme.colors.divider },
+                            F.divider(),
                             -- 交付订单
                             UI.Label {
                                 text = "交付明细",
@@ -161,7 +161,7 @@ function M.create(state, params, r)
                                 width = "100%", gap = 4,
                                 children = deliveryCards,
                             },
-                            UI.Panel { width = "100%", height = 1, backgroundColor = Theme.colors.divider },
+                            F.divider(),
                             -- 收入
                             UI.Label {
                                 text = "+ $ " .. tostring(totalReward),

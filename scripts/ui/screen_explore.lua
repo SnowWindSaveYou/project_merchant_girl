@@ -189,7 +189,7 @@ function M._build_intro_view(state)
     return UI.Panel {
         id = "exploreScreen",
         width = "100%", height = "100%",
-        backgroundColor = { 18, 20, 15, 255 },
+        backgroundColor = Theme.colors.bg_primary,
         children = {
             -- 顶部纸娃娃场景
             buildScenePanel(),
@@ -388,7 +388,7 @@ function M._build_explore_view(state)
     if lastNarration ~= "" then
         table.insert(children, UI.Panel {
             width = "100%", padding = 10, marginTop = 4,
-            backgroundColor = { 30, 32, 28, 200 },
+            backgroundColor = Theme.colors.bg_inset,
             borderRadius = Theme.sizes.radius_small,
             children = {
                 UI.Label {
@@ -459,7 +459,7 @@ function M._build_explore_view(state)
     return UI.Panel {
         id = "exploreScreen",
         width = "100%", height = "100%",
-        backgroundColor = { 18, 20, 15, 255 },
+        backgroundColor = Theme.colors.bg_primary,
         children = {
             -- 标题行（场景上方）
             titleBar,
@@ -508,7 +508,7 @@ function M._show_result_view(state)
     local root = UI.Panel {
         id = "exploreScreen",
         width = "100%", height = "100%",
-        backgroundColor = { 18, 20, 15, 255 },
+        backgroundColor = Theme.colors.bg_primary,
         children = {
             -- 顶部场景（和平状态）
             buildScenePanel(),

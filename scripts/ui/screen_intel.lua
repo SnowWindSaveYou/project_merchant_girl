@@ -40,7 +40,7 @@ function M.create(state, params, r)
     -- ── 说明 ──
     table.insert(children, UI.Panel {
         width = "100%", padding = 10,
-        backgroundColor = { 32, 40, 54, 220 },
+        backgroundColor = Theme.colors.bg_intel_hint,
         borderRadius = Theme.sizes.radius,
         children = {
             UI.Label {
@@ -131,7 +131,7 @@ function M.create(state, params, r)
         for _, info in ipairs(activeIntel) do
             table.insert(children, UI.Panel {
                 width = "100%", padding = 8,
-                backgroundColor = { 28, 42, 38, 220 },
+                backgroundColor = Theme.colors.bg_intel_active,
                 borderRadius = Theme.sizes.radius_small,
                 gap = 2,
                 children = {
