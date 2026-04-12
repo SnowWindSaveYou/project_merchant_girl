@@ -44,6 +44,7 @@ KEY_REGISTRY_PATH = Path(__file__).resolve().parent / "story_tree_keys.json"
 DATA_FILES = {
     "chapters": "story_chapters.json",
     "story_dialogues": "story_dialogues.json",
+    "tutorial_dialogues": "tutorial_dialogues.json",
     "story_events": "story_events.json",
     "campfire_dialogues": "campfire_dialogues.json",
     "npc_dialogues": "npc_dialogues.json",
@@ -54,6 +55,7 @@ DATA_FILES = {
 KEY_TYPE_LABELS = {
     "chapters": "章节 (prologue, ch1, ch2, ...)",
     "dialogues": "主线对话 (SD_*)",
+    "tutorial": "教程对话 (SD_TUTORIAL_*)",
     "campfires": "篝火对话 (CF_*)",
     "npc_dialogues": "NPC 对话 (NPC_*)",
     "events": "主线事件 (SEVT_*)",
@@ -80,6 +82,7 @@ class StoryData:
         self.chapters: list[dict] = []
         self.dialogues: list[dict] = []
         self.campfire_dialogues: list[dict] = []
+        self.tutorial_dialogues: list[dict] = []
         self.npc_dialogues: list[dict] = []
         self.story_events: list[dict] = []
         self.choice_sets: dict[str, list[dict]] = {}
@@ -126,6 +129,12 @@ class StoryData:
             self.campfire_dialogues = data["dialogues"]
             for d in self.campfire_dialogues:
                 self._campfire_by_id[d["id"]] = d
+
+        data = self._load_json(DATA_FILES["tutorial_dialogues"])
+        if data and "dialogues" in data:
+            self.tutorial_dialogues = data["dialogues"]
+            for d in self.tutorial_dialogues:
+                self._dialogue_by_id[d["id"]] = d  # tutorial dialogues also lookupable by ID
 
         data = self._load_json(DATA_FILES["npc_dialogues"])
         if data and "dialogues" in data:
@@ -192,6 +201,18 @@ class StoryData:
                     self.flag_producers[f].append(did)
                     self.all_flags.add(f)
 
+        for d in self.tutorial_dialogues:
+            did = d["id"]
+            for f in d.get("required_flags", []):
+                self.flag_consumers[f].append(did)
+                self.all_flags.add(f)
+            for f in d.get("forbidden_flags", []):
+                self.all_flags.add(f)
+            for ch in d.get("choices", []):
+                for f in ch.get("set_flags", []):
+                    self.flag_producers[f].append(did)
+                    self.all_flags.add(f)
+
         for d in self.npc_dialogues:
             did = d["id"]
             for f in d.get("required_flags", []):
@@ -242,6 +263,8 @@ class StoryData:
             return [d["id"] for d in self.dialogues]
         elif key_type == "campfires":
             return [d["id"] for d in self.campfire_dialogues]
+        elif key_type == "tutorial":
+            return [d["id"] for d in self.tutorial_dialogues]
         elif key_type == "npc_dialogues":
             return [d["id"] for d in self.npc_dialogues]
         elif key_type == "events":
@@ -265,7 +288,7 @@ class StoryData:
             return sorted(keys)
         elif key_type == "memories":
             mems = set()
-            for d in self.dialogues + self.campfire_dialogues + self.npc_dialogues:
+            for d in self.dialogues + self.tutorial_dialogues + self.campfire_dialogues + self.npc_dialogues:
                 for ch in d.get("choices", []):
                     mem = ch.get("memory")
                     if mem and "id" in mem:
@@ -273,7 +296,7 @@ class StoryData:
             return sorted(mems)
         elif key_type == "ops":
             ops = set()
-            for d in self.dialogues + self.campfire_dialogues + self.npc_dialogues:
+            for d in self.dialogues + self.tutorial_dialogues + self.campfire_dialogues + self.npc_dialogues:
                 for ch in d.get("choices", []):
                     for op in ch.get("ops", []):
                         ops.add(self._normalize_op(op))
@@ -337,7 +360,7 @@ class StoryData:
                         return r
             return None
         elif key_type == "memories":
-            for d in self.dialogues + self.campfire_dialogues + self.npc_dialogues:
+            for d in self.dialogues + self.tutorial_dialogues + self.campfire_dialogues + self.npc_dialogues:
                 for ch in d.get("choices", []):
                     mem = ch.get("memory")
                     if mem and mem.get("id") == key_id:
@@ -423,6 +446,9 @@ class StoryData:
         for d in self.campfire_dialogues:
             if q in json.dumps(d, ensure_ascii=False).lower():
                 results["campfires"].append(d["id"])
+        for d in self.tutorial_dialogues:
+            if q in json.dumps(d, ensure_ascii=False).lower():
+                results["tutorial"].append(d["id"])
         for d in self.npc_dialogues:
             if q in json.dumps(d, ensure_ascii=False).lower():
                 results["npc_dialogues"].append(d["id"])
@@ -479,6 +505,10 @@ class StoryData:
             for i, d in enumerate(self.campfire_dialogues):
                 if d["id"] == key_id:
                     return (DATA_FILES["campfire_dialogues"], f"dialogues[{i}]")
+        elif key_type == "tutorial":
+            for i, d in enumerate(self.tutorial_dialogues):
+                if d["id"] == key_id:
+                    return (DATA_FILES["tutorial_dialogues"], f"dialogues[{i}]")
         elif key_type == "npc_dialogues":
             for i, d in enumerate(self.npc_dialogues):
                 if d["id"] == key_id:
@@ -661,7 +691,7 @@ class StorySimulator:
 
     def get_available(self) -> dict:
         """获取当前所有可触发的内容，分类返回。"""
-        result = {"dialogues": [], "events": [], "campfires": [], "npc_dialogues": []}
+        result = {"dialogues": [], "events": [], "campfires": [], "tutorial": [], "npc_dialogues": []}
         for d in self.sd.dialogues:
             ok, _ = self._check_dialogue(d)
             if ok:
@@ -674,6 +704,10 @@ class StorySimulator:
             ok, _ = self._check_dialogue(d)
             if ok:
                 result["campfires"].append(d)
+        for d in self.sd.tutorial_dialogues:
+            ok, _ = self._check_dialogue(d)
+            if ok:
+                result["tutorial"].append(d)
         for d in self.sd.npc_dialogues:
             ok, _ = self._check_dialogue(d)
             if ok:
@@ -698,6 +732,11 @@ class StorySimulator:
             if not ok:
                 locked.append({"id": d["id"], "title": d.get("title", ""),
                                "type": "campfire", "reasons": missing})
+        for d in self.sd.tutorial_dialogues:
+            ok, missing = self._check_dialogue(d)
+            if not ok:
+                locked.append({"id": d["id"], "title": d.get("title", ""),
+                               "type": "tutorial", "reasons": missing})
         for d in self.sd.npc_dialogues:
             ok, missing = self._check_dialogue(d)
             if not ok:
@@ -719,6 +758,10 @@ class StorySimulator:
             if ok:
                 ids.add(e["event_id"])
         for d in self.sd.campfire_dialogues:
+            ok, _ = self._check_dialogue(d)
+            if ok:
+                ids.add(d["id"])
+        for d in self.sd.tutorial_dialogues:
             ok, _ = self._check_dialogue(d)
             if ok:
                 ids.add(d["id"])
@@ -937,6 +980,7 @@ class StorySimulator:
         newly_available = []
         all_items = (
             [(dd, "dialogue") for dd in self.sd.dialogues] +
+            [(dd, "tutorial") for dd in self.sd.tutorial_dialogues] +
             [(dd, "campfire") for dd in self.sd.campfire_dialogues] +
             [(dd, "npc_dialogue") for dd in self.sd.npc_dialogues] +
             [(ee, "event") for ee in self.sd.story_events]
@@ -990,6 +1034,7 @@ class StorySimulator:
         newly_available = []
         all_items = (
             [(dd, "dialogue") for dd in self.sd.dialogues] +
+            [(dd, "tutorial") for dd in self.sd.tutorial_dialogues] +
             [(dd, "campfire") for dd in self.sd.campfire_dialogues] +
             [(dd, "npc_dialogue") for dd in self.sd.npc_dialogues] +
             [(ee, "event") for ee in self.sd.story_events]

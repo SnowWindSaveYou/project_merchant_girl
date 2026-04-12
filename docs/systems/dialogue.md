@@ -11,26 +11,31 @@ scripts/
 │   ├── screen_campfire.lua     # 篝火对话页面（林砾 + 陶夏）
 │   └── screen_npc.lua          # NPC 对话页面（主角 + NPC）
 ├── narrative/
-│   ├── campfire.lua            # 篝火对话逻辑（关系值、选项结算）
-│   ├── dialogue_pool.lua       # 篝火对话池（从 JSON 加载，按阶段筛选）
+│   ├── story_director.lua      # 叙事导演（主动推送主线对话 + 故事事件）
+│   ├── campfire.lua            # 篝火对话逻辑（仅日常类话题）
+│   ├── tutorial.lua            # 教程逻辑（温室即结束）
+│   ├── dialogue_pool.lua       # 统一对话池（从 3 个 JSON 加载，按类型标记）
 │   ├── npc_manager.lua         # NPC 对话逻辑（好感度、选项结算）
 │   └── npc_dialogue_pool.lua   # NPC 对话池
 └── configs/
-    └── campfire_dialogues.json # 篝火对话数据
+    ├── campfire_dialogues.json # 篝火日常对话数据
+    ├── story_dialogues.json    # 主线剧情对话数据
+    └── tutorial_dialogues.json # 教程对话数据
 ```
 
 ---
 
 ## 数据来源
 
-对话数据分布在两个 JSON 文件中，由 `dialogue_pool.lua` 统一加载：
+对话数据分布在三个 JSON 文件中，由 `dialogue_pool.lua` 统一加载并合并到同一个池：
 
-| 文件 | 内容 | 备注 |
-|------|------|------|
-| `assets/configs/campfire_dialogues.json` | 日常篝火对话 | 关系养成、闲聊、随机话题 |
-| `assets/configs/story_dialogues.json` | 主线 / 教程 / 到达剧情 | 加载时自动标记 `is_story = true` |
+| 文件 | 内容 | 加载器标记 | 驱动模块 |
+|------|------|-----------|---------|
+| `assets/configs/campfire_dialogues.json` | 日常篝火对话 | 无 | Campfire |
+| `assets/configs/story_dialogues.json` | 主线剧情对话 | `is_story = true` | StoryDirector |
+| `assets/configs/tutorial_dialogues.json` | 教程对话 | `is_tutorial = true` | Tutorial |
 
-两个文件格式相同，合并到同一个对话池中筛选。
+三个文件格式相同，合并到同一个对话池中。下游模块通过 `type`/`is_story`/`is_tutorial` 做二次过滤。
 
 ---
 
@@ -76,10 +81,10 @@ scripts/
     "cooldown": 5,                       // 抽中后冷却回合数
 
     // ── 分类标记 ──
-    "type": "tutorial",                  // 对话类型标签（自由字符串）
+    "type": "tutorial",                  // 对话类型标签（main_story|tutorial|daily|cooperation|memory|philosophy）
     "chapter": 0,                        // 章节号
-    "is_story": true,                    // 主线对话（story_dialogues.json 自动标记）
-    "arrival_only": true,                // 🆕 到达拦截专用：不进入篝火对话池（见下方说明）
+    // is_story / is_tutorial 由加载器按来源文件自动设置，不在 JSON 中声明
+    "arrival_only": true,                // 到达拦截专用：不进入篝火对话池（见下方说明）
 
     // ── 演出控制 ──
     "audioScene": "settlement",          // 音频场景: campfire|settlement|travel|silent
@@ -161,6 +166,52 @@ end)
 ```
 cooldown → node_type → relation_stage → required_flags → forbidden_flags → arrival_only → min_trips
 ```
+
+---
+
+## 叙事导演: StoryDirector
+
+**文件**: `scripts/narrative/story_director.lua`
+
+主动推送主线对话和故事事件的调度模块，不依赖 Campfire。
+
+### 触发时机
+
+| 时机 | 方法 | 行为 |
+|------|------|------|
+| 到达节点 | `on_node_arrival(state)` | 检查故事事件 + 主线对话 |
+| 行程结束 | `on_trip_finish(state)` | 检查故事事件 |
+| 主页空闲 | `check_home_auto_trigger(state)` | 检查主线对话 |
+
+### 主线对话查找
+
+```lua
+-- 从 DialoguePool 筛选结果中找第一个 main_story 类型
+local pool = DialoguePool.filter(state, node.type)
+for _, d in ipairs(pool) do
+    if d.is_story and d.type == "main_story" then
+        return d  -- 找到 → 自动弹出
+    end
+end
+```
+
+### 故事事件推送
+
+```lua
+-- 遍历 story_events.json，条件首次满足 → 强制入队
+for _, evt in ipairs(story_events_) do
+    if 条件满足 and not 已推送 then
+        EventScheduler.queue_story_event(evt.event_id)
+        state.narrative._director_queued[evt.event_id] = true
+    end
+end
+```
+
+### 与 Campfire 的关系
+
+- StoryDirector 推送主线对话 → 直接弹出，不消耗篝火资源/次数
+- Campfire 抽取日常对话 → 跳过 `main_story` 和 `tutorial` 类型
+- 两者共享 DialoguePool 数据，但过滤逻辑完全独立
 
 ---
 
@@ -377,7 +428,9 @@ faction_portraits["farm"]      ← 3. 兜底：农耕派立绘
 
 在 `assets/configs/campfire_dialogues.json` 中添加新条目，格式参照上方「数据结构」。
 
-主线/教程对话则添加到 `assets/configs/story_dialogues.json`（加载时自动标记 `is_story = true`）。
+主线对话添加到 `assets/configs/story_dialogues.json`（加载时自动标记 `is_story = true`）。
+
+教程对话添加到 `assets/configs/tutorial_dialogues.json`（加载时自动标记 `is_tutorial = true`）。
 
 ### 添加到达触发对话
 
@@ -385,7 +438,7 @@ faction_portraits["farm"]      ← 3. 兜底：农耕派立绘
 
 **第 1 步：在 JSON 中定义对话**
 
-在 `assets/configs/story_dialogues.json` 中添加对话，设置两个关键字段：
+在 `assets/configs/story_dialogues.json` 中添加对话（仅限主线），设置两个关键字段：
 
 ```jsonc
 {

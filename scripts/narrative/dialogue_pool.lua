@@ -5,8 +5,9 @@ local DataLoader = require("data_loader/loader")
 
 local M = {}
 
-local CONFIG_PATH       = "configs/campfire_dialogues.json"
-local STORY_CONFIG_PATH = "configs/story_dialogues.json"
+local CONFIG_PATH         = "configs/campfire_dialogues.json"
+local STORY_CONFIG_PATH   = "configs/story_dialogues.json"
+local TUTORIAL_CONFIG_PATH = "configs/tutorial_dialogues.json"
 
 -- 内部数据
 M._dialogues    = {}   -- array of dialogue tables
@@ -69,6 +70,21 @@ function M._load()
         end
         if count > 0 then
             print("[DialoguePool] Loaded " .. count .. " story dialogues")
+        end
+    end
+
+    -- 加载教程对话（合并到同一个池中，但标记为 is_tutorial）
+    local tut_data = DataLoader.load(TUTORIAL_CONFIG_PATH)
+    if tut_data then
+        local count = 0
+        for _, raw in ipairs(tut_data.dialogues or {}) do
+            raw.is_tutorial = true  -- 标记为教程对话
+            table.insert(M._dialogues, raw)
+            M._by_id[raw.id] = raw
+            count = count + 1
+        end
+        if count > 0 then
+            print("[DialoguePool] Loaded " .. count .. " tutorial dialogues")
         end
     end
 end

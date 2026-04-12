@@ -140,17 +140,16 @@ function M._build(state)
                 -- 设置所有教程相关 flags
                 local tutFlags = {
                     "tutorial_started",
+                    "tutorial_first_departure_done",
                     "tutorial_arrived_greenhouse",
-                    "tutorial_campfire_done",
-                    "tutorial_explore_guided",
-                    "tutorial_arrived_tower",
-                    "tutorial_explore_home_shown",
-                    "tutorial_map_explore_shown",
                     "tutorial_shop_intro",
                     "tutorial_truck_intro",
                     "tutorial_radio_intro",
                     "tutorial_auto_plan_intro",
                     "tutorial_explore_scavenge",
+                    "tutorial_route_explore",
+                    "tutorial_explore_guided",
+                    "tutorial_arrived_tower",
                 }
                 for _, f in ipairs(tutFlags) do
                     Flags.set(state, f)

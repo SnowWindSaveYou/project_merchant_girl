@@ -49,6 +49,7 @@ local Intel             = require("settlement/intel")
 local BlackMarket       = require("settlement/black_market")
 local MainStory         = require("narrative/main_story")
 local Tutorial          = require("narrative/tutorial")
+local StoryDirector     = require("narrative/story_director")
 
 -- 游戏状态
 ---@type table
@@ -392,6 +393,9 @@ function handleTripFinish()
         print("[Main] Chapter advanced to: " .. newChapter.name .. " - " .. newChapter.subtitle)
     end
 
+    -- 叙事导演：行程结束后检查剧情事件入队
+    StoryDirector.on_trip_finish(gameState)
+
     Router.navigate("summary", {
         result = result,
         delivered_orders = tripDeliveries,
@@ -432,6 +436,21 @@ function handleNodeArrival(arrivalInfo)
         end
         print("[Main] 自动交付 " .. #arrResult.delivered .. " 个订单于 "
             .. Graph.get_node_name(arrResult.node_id))
+    end
+
+    -- 叙事导演：到达后检查是否有应自动触发的主线内容
+    -- 仅在最终节点（已停稳）时检查，中间节点不停
+    if arrResult.is_final then
+        local directorAction = StoryDirector.on_node_arrival(gameState)
+        if directorAction and directorAction.type == "story_dialogue" then
+            print("[Main] StoryDirector: auto-triggering story dialogue: "
+                .. (directorAction.dialogue and directorAction.dialogue.id or "?"))
+            Router.navigate("campfire", {
+                dialogue = directorAction.dialogue,
+                consumed = false,
+            })
+            return  -- 跳过 handleTripFinish，等对话结束后走延迟到达逻辑
+        end
     end
 
     -- 如果是最终节点，进入结算
@@ -598,6 +617,22 @@ function HandleUpdate(eventType, eventData)
             if evt then
                 print("[Main] Travel event triggered: " .. evt.id)
                 Router.navigate("event", { event = evt })
+            end
+        end
+
+    -- 2d. 非行驶中：叙事导演在 home 页检查主线内容自动触发
+    -- 主线对话直接弹出，不经过篝火系统
+    elseif on_regular_page then
+        local curPage2 = Router.current()
+        if curPage2 == "home" then
+            local directorAction = StoryDirector.check_home_auto_trigger(gameState)
+            if directorAction and directorAction.type == "story_dialogue" then
+                print("[Main] StoryDirector: auto-triggering story dialogue on home: "
+                    .. (directorAction.dialogue and directorAction.dialogue.id or "?"))
+                Router.navigate("campfire", {
+                    dialogue = directorAction.dialogue,
+                    consumed = false,
+                })
             end
         end
     end

@@ -21,18 +21,22 @@ local function get_current_node(state)
     return node and node.type or nil, node
 end
 
---- 检查当前位置是否有主线/故事对话可触发（is_story 标记）
---- 有主线话题时篝火免资源消耗并高亮
+--- 检查当前位置是否有篝火专属故事对话可触发
+--- 注意：主线对话 (main_story) 由 StoryDirector 直接弹出，不走篝火
+--- 教程对话 (tutorial) 由 Tutorial 系统驱动，不走篝火
+--- 此处只检查篝火专属的剧情对话
 ---@param state table
 ---@return boolean has_topic
----@return table|nil first_story_dialogue 第一个可用的主线对话
+---@return table|nil first_story_dialogue 第一个可用的篝火故事对话
 function M.has_story_topic(state)
     local node_type = get_current_node(state)
     if not node_type then return false, nil end
 
     local pool = DialoguePool.filter(state, node_type)
     for _, d in ipairs(pool) do
-        if d.is_story then
+        -- 主线对话由 StoryDirector 处理，教程对话由 Tutorial 处理
+        -- 篝火只管日常类的故事对话
+        if d.is_story and d.type ~= "main_story" and d.type ~= "tutorial" then
             return true, d
         end
     end
@@ -120,19 +124,29 @@ function M.start(state)
         end
     end
 
-    -- 抽取对话（有主线话题时优先选择主线对话）
+    -- 抽取对话（篝火不抽主线对话，主线由 StoryDirector 负责）
     local node_type = get_current_node(state)
     local dialogue
 
     if is_free then
-        -- 有主线话题：直接取第一个主线对话
+        -- 有篝火故事话题：直接取第一个非主线故事对话
         local _, story_d = M.has_story_topic(state)
         dialogue = story_d
     end
 
     if not dialogue then
-        -- 普通抽取
-        dialogue = DialoguePool.pick(state, node_type)
+        -- 普通抽取（跳过主线对话和教程对话，主线由 StoryDirector 弹出，教程由 Tutorial 驱动）
+        local pool = DialoguePool.filter(state, node_type)
+        for _, d in ipairs(pool) do
+            if d.type ~= "main_story" and d.type ~= "tutorial" then
+                dialogue = d
+                break
+            end
+        end
+        -- 兜底：如果池里只有主线对话（不应该发生），取第一个
+        if not dialogue and #pool > 0 then
+            dialogue = pool[1]
+        end
     end
 
     if not dialogue then

@@ -1,10 +1,9 @@
 --- 新手教程引导系统
---- 通过 flags 推导教程阶段，提供教程订单、到达拦截、气泡配置
+--- 教程服务于叙事：引导玩家从出生点到温室社区，完成后由故事接管
 --- 旧存档无 tutorial_started flag 时整个教程跳过
 local Flags        = require("core/flags")
 local DialoguePool = require("narrative/dialogue_pool")
 local Graph        = require("map/world_graph")
-local Campfire     = require("narrative/campfire")
 local Theme        = require("ui/theme")
 
 local M = {}
@@ -17,15 +16,14 @@ M.AVATAR_TAOXIA = Theme.avatars.taoxia
 
 -- ============================================================
 -- 教程阶段常量（由 flags 推导，不存储独立变量）
+-- 教程在温室社区完成后结束，后续由 StoryDirector 接管叙事
 -- ============================================================
 M.Phase = {
     NONE                = "none",               -- 非教程状态（旧存档或未开始）
     SPAWN               = "spawn",              -- 在出生点，引导接单去温室社区
     TRAVEL_TO_GREENHOUSE = "travel_to_greenhouse", -- 正在前往温室社区
-    AT_GREENHOUSE       = "at_greenhouse",      -- 抵达温室社区，强制触发介绍对话
-    GREENHOUSE_FREE     = "greenhouse_free",    -- 温室社区介绍完毕，自由探索+篝火引导
-    EXPLORE             = "explore",            -- 引导探索未知节点前往北穹塔台
-    COMPLETE            = "complete",           -- 教程完成
+    AT_GREENHOUSE       = "at_greenhouse",      -- 抵达温室社区，引导使用交易所
+    COMPLETE            = "complete",           -- 教程完成（到达温室+使用交易所）
 }
 
 -- ============================================================
@@ -53,27 +51,6 @@ local function make_order_to_greenhouse()
     }
 end
 
---- 生成温室社区→北穹塔台的教程订单
-local function make_order_to_tower()
-    return {
-        order_id     = "tutorial_order_2",
-        from         = "greenhouse",
-        to           = "tower",
-        from_name    = Graph.get_node_name("greenhouse") or "温室社区",
-        to_name      = Graph.get_node_name("tower") or "北穹塔台",
-        goods_id     = "circuit",
-        goods_name   = "电路板",
-        count        = 3,
-        base_reward  = 80,
-        deadline_sec = 9999,
-        risk_level   = "normal",
-        status       = "available",
-        accepted_at  = nil,
-        description  = "运送电路板 ×3 到北穹塔台",
-        is_tutorial  = true,
-    }
-end
-
 -- ============================================================
 -- 阶段推导
 -- ============================================================
@@ -87,29 +64,15 @@ function M.get_phase(state)
         return M.Phase.NONE
     end
 
-    -- 教程完成
-    if Flags.has(state, "tutorial_explore_guided") then
+    -- 教程完成：到达温室社区且已使用交易所
+    if Flags.has(state, "tutorial_arrived_greenhouse")
+        and Flags.has(state, "tutorial_shop_intro") then
         return M.Phase.COMPLETE
     end
 
-    -- 已到达温室社区且完成介绍
+    -- 抵达温室社区，引导使用交易所
     if Flags.has(state, "tutorial_arrived_greenhouse") then
-        -- 篝火引导完成 且 已在温室交互过 → 进入探索阶段
-        -- 注意：tutorial_campfire_done 可能由序章篝火提前设置，
-        --       需额外确认玩家已在温室自由探索后才跳过 GREENHOUSE_FREE
-        if Flags.has(state, "tutorial_campfire_done")
-            and Flags.has(state, "tutorial_shop_intro") then
-            return M.Phase.EXPLORE
-        end
-        -- 检查是否已接教程订单去北穹
-        local book = state.economy and state.economy.order_book or {}
-        for _, o in ipairs(book) do
-            if o.is_tutorial and o.to == "tower"
-                and (o.status == "accepted" or o.status == "loaded") then
-                return M.Phase.EXPLORE
-            end
-        end
-        return M.Phase.GREENHOUSE_FREE
+        return M.Phase.AT_GREENHOUSE
     end
 
     -- 检查是否在旅途中（有已接教程订单去温室社区）
@@ -150,19 +113,6 @@ function M.get_tutorial_orders(state, node_id)
         return { make_order_to_greenhouse() }
     end
 
-    -- Phase GREENHOUSE_FREE / EXPLORE：在温室社区，生成去北穹塔台的订单
-    if (phase == M.Phase.GREENHOUSE_FREE or phase == M.Phase.EXPLORE)
-        and node_id == "greenhouse" then
-        -- 检查是否已有此订单
-        local book = state.economy and state.economy.order_book or {}
-        for _, o in ipairs(book) do
-            if o.order_id == "tutorial_order_2" then
-                return nil  -- 已有，不重复生成
-            end
-        end
-        return { make_order_to_tower() }
-    end
-
     return nil
 end
 
@@ -189,14 +139,42 @@ function M.on_arrival(state, node_id)
         end
     end
 
-    -- 抵达北穹塔台：首次到达触发介绍对话
-    if node_id == "tower"
-        and Flags.has(state, "tutorial_explore_guided")
-        and not Flags.has(state, "tutorial_arrived_tower")
-    then
-        local dialogue = DialoguePool.get("SD_TUTORIAL_TOWER_ARRIVAL")
-        if dialogue then
-            return { type = "dialogue", dialogue = dialogue }
+    return nil
+end
+
+-- ============================================================
+-- 气泡配置
+-- ============================================================
+
+--- 获取当前应显示的引导气泡配置
+--- 返回 nil 表示不显示气泡
+---@param state table
+---@param screen string  当前屏幕名 ("home" | "map")
+---@return table|nil config  { portrait, speaker, text, position }
+function M.get_bubble_config(state, screen)
+    local phase = M.get_phase(state)
+
+    if screen == "home" then
+        -- Phase SPAWN：引导接单
+        if phase == M.Phase.SPAWN then
+            return {
+                portrait = M.AVATAR_LINLI,
+                speaker  = "林砾",
+                text     = "这里是外围农场。我们先接个单，去温室社区看看吧。",
+                position = { x = "50%", y = "65%" },
+                autoHide = 0,
+            }
+        end
+
+        -- Phase AT_GREENHOUSE：引导使用交易所
+        if phase == M.Phase.AT_GREENHOUSE then
+            return {
+                portrait = M.AVATAR_TAOXIA,
+                speaker  = "陶夏",
+                text     = "先去交易所看看吧——看看有什么货和单子！",
+                position = { x = "50%", y = "65%" },
+                autoHide = 0,
+            }
         end
     end
 
@@ -204,7 +182,7 @@ function M.on_arrival(state, node_id)
 end
 
 -- ============================================================
--- 气泡配置
+-- 交易所教程对话序列（多步气泡）
 -- ============================================================
 
 --- 获取交易所教程对话序列（多步气泡）
@@ -247,71 +225,6 @@ function M.get_shop_tutorial_steps(state)
             text     = "……你敢卖试试。",
         },
     }
-end
-
---- 获取当前应显示的引导气泡配置
---- 返回 nil 表示不显示气泡
----@param state table
----@param screen string  当前屏幕名 ("home" | "map")
----@return table|nil config  { portrait, speaker, text, position }
-function M.get_bubble_config(state, screen)
-    local phase = M.get_phase(state)
-
-    if screen == "home" then
-        -- Phase SPAWN：引导接单
-        if phase == M.Phase.SPAWN then
-            return {
-                portrait = M.AVATAR_LINLI,
-                speaker  = "林砾",
-                text     = "这里是外围农场。我们先接个单，去温室社区看看吧。",
-                position = { x = "50%", y = "65%" },
-                autoHide = 0,
-            }
-        end
-
-        -- Phase GREENHOUSE_FREE：引导接单（此阶段=到达温室但未接北穹订单）
-        if phase == M.Phase.GREENHOUSE_FREE then
-            return {
-                portrait = M.AVATAR_TAOXIA,
-                speaker  = "陶夏",
-                text     = "先去接取委托吧——看看有什么新单子！",
-                position = { x = "50%", y = "65%" },
-                autoHide = 0,
-            }
-        end
-
-        -- 探索引导：完整对话结束后回到主界面时提示（仅一次）
-        if (phase == M.Phase.EXPLORE or phase == M.Phase.COMPLETE)
-            and Flags.has(state, "tutorial_explore_guided")
-            and not Flags.has(state, "tutorial_explore_home_shown") then
-            Flags.set(state, "tutorial_explore_home_shown")
-            return {
-                portrait = M.AVATAR_TAOXIA,
-                speaker  = "陶夏",
-                text     = "去地图界面，探索通往北穹的路吧！",
-                position = { x = "50%", y = "65%" },
-                autoHide = 0,
-            }
-        end
-    end
-
-    if screen == "map" then
-        -- 探索引导：完整对话结束后首次进入地图时提示操作（仅一次）
-        if (phase == M.Phase.EXPLORE or phase == M.Phase.COMPLETE)
-            and Flags.has(state, "tutorial_explore_guided")
-            and not Flags.has(state, "tutorial_map_explore_shown") then
-            Flags.set(state, "tutorial_map_explore_shown")
-            return {
-                portrait = M.AVATAR_LINLI,
-                speaker  = "林砾",
-                text     = "选一个相邻的未知区域，点击「探索」打通道路。",
-                position = { x = "50%", y = "20%" },
-                autoHide = 8,
-            }
-        end
-    end
-
-    return nil
 end
 
 -- ============================================================
@@ -455,6 +368,46 @@ function M.get_auto_plan_intro_steps(state)
             portrait = M.AVATAR_LINLI,
             speaker  = "林砾",
             text     = "……把事情安排得整整齐齐的，有什么不好。",
+        },
+    }
+end
+
+-- ============================================================
+-- 路线探索教程气泡（首次尝试探索未知区域时触发）
+-- ============================================================
+
+--- 获取路线探索教程气泡步骤
+--- 返回 nil 表示不需要
+---@param state table
+---@return table[]|nil steps
+function M.get_route_explore_intro_steps(state)
+    if Flags.has(state, "tutorial_route_explore") then return nil end
+
+    return {
+        {
+            portrait = M.AVATAR_LINLI,
+            speaker  = "林砾",
+            text     = "……这条路没有标记。得先探索才能通过。",
+        },
+        {
+            portrait = M.AVATAR_TAOXIA,
+            speaker  = "陶夏",
+            text     = "探索？怎么探索？",
+        },
+        {
+            portrait = M.AVATAR_LINLI,
+            speaker  = "林砾",
+            text     = "在地图上选相邻的未知区域，点击「探索」打通道路。",
+        },
+        {
+            portrait = M.AVATAR_TAOXIA,
+            speaker  = "陶夏",
+            text     = "听起来不难嘛！",
+        },
+        {
+            portrait = M.AVATAR_LINLI,
+            speaker  = "林砾",
+            text     = "……别大意。有些废墟下面是空的。",
         },
     }
 end

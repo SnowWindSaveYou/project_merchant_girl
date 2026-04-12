@@ -152,13 +152,8 @@ function M.create(state, params, r)
     else
         -- 教程阶段：确保教程订单已生成
         -- SPAWN：序章对话设置 tutorial_started 后回到 home，需要重新生成
-        -- GREENHOUSE_FREE：到达温室社区时 generate_on_arrival 在对话前调用，
-        --   此时 phase 还是 TRAVEL_TO_GREENHOUSE，教程订单2 不会生成。
-        --   对话完成后 flag 切换为 GREENHOUSE_FREE，需重新生成以产出北穹塔台订单。
         local tutPhase = Tutorial.get_phase(state)
-        if tutPhase == Tutorial.Phase.SPAWN
-            or tutPhase == Tutorial.Phase.GREENHOUSE_FREE
-            or tutPhase == Tutorial.Phase.EXPLORE then
+        if tutPhase == Tutorial.Phase.SPAWN then
             local loc = state.map.current_location
             -- 检查教程订单是否已在 order_book 中（已接则不需要重新生成）
             local needRegen = true
@@ -223,8 +218,7 @@ function M.update(state, dt, r)
     -- ── 教程：路面拾取提示（首次出现掉落物时触发一次）──
     if not Flags.has(state, "tutorial_loot_hint_shown") then
         local tutPhase = Tutorial.get_phase(state)
-        if tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE
-            or tutPhase == Tutorial.Phase.EXPLORE then
+        if tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE then
             local drops = RoadLoot.get_active_drops(state)
             if drops and #drops > 0 then
                 Flags.set(state, "tutorial_loot_hint_shown")
@@ -409,8 +403,8 @@ function createSettlementView(state, curNode)
         })
         -- 跳过后续所有按钮，直接进入下方 UI 组装
 
-    elseif tutPhase == Tutorial.Phase.GREENHOUSE_FREE then
-        -- GREENHOUSE_FREE = 到达温室但未接北穹订单
+    elseif tutPhase == Tutorial.Phase.AT_GREENHOUSE then
+        -- AT_GREENHOUSE = 到达温室社区，引导使用交易所
         -- 允许：NPC 对话 + 接单（高亮）+ 篝火；阻止：出发
 
         -- NPC 拜访

@@ -1,0 +1,77 @@
+{
+  "dialogues": [
+    {
+      "id": "SD_TUTORIAL_FIRST_DEPARTURE",
+      "title": "麻薯号，出发",
+      "type": "tutorial",
+      "audioScene": "travel",
+      "chapter": 0,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 999,
+      "cooldown": 99,
+      "required_flags": ["tutorial_started"],
+      "forbidden_flags": ["tutorial_first_departure_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "第一笔订单到手了。目的地：温室社区。" },
+        { "speaker": "taoxia", "text": "出发前……我有件事一直想说。", "expression": "thinking" },
+        { "speaker": "linli", "text": "……什么？" },
+        { "speaker": "taoxia", "text": "我们的车应该有个名字！天天一起走，没有名字多没礼貌。", "expression": "happy" },
+        { "speaker": "linli", "text": "……给车起名字？" },
+        { "speaker": "taoxia", "text": "叫麻薯号！你看它，外面全是焊疤和铁板，硬邦邦的——但车厢里被我们收拾得多舒服！", "expression": "happy" },
+        { "speaker": "linli", "text": "……俗。" },
+        { "speaker": "taoxia", "text": "哪里俗了！麻薯多可爱！", "expression": "angry" },
+        { "speaker": "linli", "text": "……随便你。开了。" },
+        { "speaker": "narrator", "text": "引擎发动。麻薯号带着两个年轻行商，驶向第一个目的地。" }
+      ],
+      "choices": [
+        {
+          "text": "麻薯号，出发！",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:2"],
+          "result_text": "陶夏趴在车窗上朝外面挥了挥手。林砾看了她一眼，没说话——但换挡的动作比平时轻了一点。",
+          "set_flags": ["tutorial_first_departure_done"],
+          "memory": {
+            "id": "mem_mashu_naming",
+            "title": "麻薯号",
+            "desc": "货车有了名字。陶夏取的，林砾嫌俗。但后来谁先习惯了，说不好。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "SD_TUTORIAL_GREENHOUSE_ARRIVAL",
+      "title": "温室社区",
+      "type": "tutorial",
+      "audioScene": "settlement",
+      "arrival_only": true,
+      "chapter": 0,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 999,
+      "cooldown": 99,
+      "required_flags": ["tutorial_started"],
+      "forbidden_flags": ["tutorial_arrived_greenhouse"],
+      "steps": [
+        { "speaker": "narrator", "text": "货车驶入一片翠绿的穹顶建筑群。空气忽然变了——潮湿的、带着泥土和叶子的味道。" },
+        { "speaker": "taoxia", "text": "好绿……外面明明灰蒙蒙的，这里面居然在种菜！", "expression": "happy" },
+        { "speaker": "narrator", "text": "一个短发女人从穹顶入口走出来，目光平静地打量着她们的货车。" },
+        { "speaker": "shen_he", "text": "是行商？从哪边过来的？" },
+        { "speaker": "taoxia", "text": "从农场那边！我们带了一批物资——", "expression": "happy" },
+        { "speaker": "shen_he", "text": "先停好车。我是沈禾，管这里的日常运转。" },
+        { "speaker": "linli", "text": "……林砾。这是陶夏。" },
+        { "speaker": "shen_he", "text": "路上辛苦了。市场在右手边，需要修车去找老甘。先把货卸了，其他的慢慢来。" },
+        { "speaker": "narrator", "text": "远处穹顶的裂缝里透进一道光。有人正踩着梯子在修补，嘴里哼着什么歌。" },
+        { "speaker": "taoxia", "text": "居然有人在修房顶……还在唱歌。", "expression": "surprised" },
+        { "speaker": "linli", "text": "……有活干、有歌唱。这地方还行。" }
+      ],
+      "choices": [
+        {
+          "text": "先去交货",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1", "add_goodwill:greenhouse:3"],
+          "result_text": "沈禾点了点头，转身走回穹顶里面。两个人把货从车上搬下来，第一趟生意算是落地了。",
+          "set_flags": ["tutorial_arrived_greenhouse", "npc_shen_he_intro"]
+        }
+      ]
+    }
+  ]
+}

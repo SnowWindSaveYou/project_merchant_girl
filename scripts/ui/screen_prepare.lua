@@ -258,8 +258,7 @@ function M.create(state, params, r)
         local tutPhase = Tutorial.get_phase(state)
         if tutPhase == Tutorial.Phase.SPAWN then
             showTutorialSequence("spawn_enter")
-        elseif tutPhase == Tutorial.Phase.GREENHOUSE_FREE
-            or tutPhase == Tutorial.Phase.EXPLORE then
+        elseif tutPhase == Tutorial.Phase.AT_GREENHOUSE then
             showTutorialSequence("greenhouse_enter")
         end
     end
