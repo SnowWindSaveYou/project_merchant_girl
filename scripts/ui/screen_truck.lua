@@ -9,7 +9,7 @@ local Goods        = require("economy/goods")
 local Graph        = require("map/world_graph")
 local Skills       = require("character/skills")
 local Flow         = require("core/flow")
-local DrivingScene = require("travel/driving_scene")
+local DrivingScene = require("travel/chibi_scene")
 local Tutorial     = require("narrative/tutorial")
 local SpeechBubble = require("ui/speech_bubble")
 local Flags        = require("core/flags")
@@ -45,6 +45,7 @@ function M.create(state, params, r)
 
     -- ── 货车视图（行驶场景 / 静态展示）──
     local isTravelling = (Flow.get_phase(state) == Flow.Phase.TRAVELLING)
+    DrivingScene.setMode("driving")
     DrivingScene.setState(state)
     DrivingScene.setDriving(isTravelling)
     drivingSceneInited_ = true

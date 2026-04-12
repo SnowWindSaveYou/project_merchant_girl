@@ -22,7 +22,7 @@ local QuestLog            = require("narrative/quest_log")
 local Chatter             = require("travel/chatter")
 local Radio               = require("travel/radio")
 local Scenery             = require("travel/scenery")
-local DrivingScene        = require("travel/driving_scene")
+local DrivingScene        = require("travel/chibi_scene")
 local Environment         = require("travel/environment")
 local RoadLoot            = require("travel/road_loot")
 local Archives            = require("settlement/archives")
@@ -114,6 +114,7 @@ function M.create(state, params, r)
             DrivingScene.setEnvironment(Environment.get_current(state.flow.environment))
         end
         -- 传入 state 供纸娃娃/装备渲染使用
+        DrivingScene.setMode("driving")
         DrivingScene.setState(state)
         DrivingScene.setDriving(true)
         -- 设置掉落物点击回调
@@ -134,6 +135,7 @@ function M.create(state, params, r)
         DrivingScene.clearSettlement()
     else
         -- 停泊：设置 DrivingScene 为停泊模式 + 聚落专属中景
+        DrivingScene.setMode("driving")
         DrivingScene.setState(state)
         DrivingScene.setDriving(false)
         local nodeId = curNode and curNode.id or ""

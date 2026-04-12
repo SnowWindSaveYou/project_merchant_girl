@@ -1,21 +1,20 @@
 --- 资源点探索 UI
---- 显示房间描述、搜刮点列表、战斗交互、撤离
-local UI           = require("urhox-libs/UI")
-local Theme        = require("ui/theme")
-local F            = require("ui/ui_factory")
-local Explore      = require("combat/explore")
-local CombatResult = require("combat/combat_result")
-local Tutorial     = require("narrative/tutorial")
-local SpeechBubble = require("ui/speech_bubble")
-local Flags        = require("core/flags")
-
---- 地形 → 路途背景映射（探索发生在行驶途中）
-local REGION_BG = {
-    urban  = "image/bg_generic_ruins_industrial_20260409080003.png",
-    wild   = "image/bg_generic_road_20260409075956.png",
-    canyon = "image/bg_generic_wilderness_20260409080002.png",
-    forest = "image/bg_generic_wilderness_20260409080002.png",
-}
+--- 顶部：chibi_scene widget（探索模式纸娃娃场景）
+--- 底部：房间描述、搜刮点列表、战斗交互、撤离
+local UI            = require("urhox-libs/UI")
+local Theme         = require("ui/theme")
+local F             = require("ui/ui_factory")
+local Explore       = require("combat/explore")
+local CombatResult  = require("combat/combat_result")
+local Tutorial      = require("narrative/tutorial")
+local SpeechBubble  = require("ui/speech_bubble")
+local Flags         = require("core/flags")
+local SketchBorder  = require("ui/sketch_border")
+local ChibiScene    = require("travel/chibi_scene")
+local CombatRenderer = require("travel/combat_renderer")
+local Environment   = require("travel/environment")
+local AudioMgr      = require("ui/audio_manager")
+                      require("travel/explore_mode")   -- 注册 explore 模式到 ChibiScene
 
 local M = {}
 ---@type table
@@ -27,7 +26,9 @@ local lastNarration = ""
 ---@type table|nil
 local state_ = nil
 ---@type string|nil
-local bgImage_ = nil
+local prevAudioScene_ = nil
+--- 是否有战斗渲染器处于激活状态
+local combatActive_ = false
 
 -- ============================================================
 -- 气泡教程辅助
@@ -52,6 +53,100 @@ local function showExploreTutorialStep(parent, state, steps, index, onComplete)
 end
 
 -- ============================================================
+-- 场景初始化 / 清理
+-- ============================================================
+
+local function initScene(state)
+    -- 先把角色 zone 重置为行驶默认，然后 setMode 会通过 zoneMap 映射到 explore zone
+    local chibis = ChibiScene.getChibis()
+    if chibis[1] then
+        chibis[1].zone = "cabin"
+        chibis[1].x = 0.5; chibis[1].targetX = 0.5
+        chibis[1].state = "idle"; chibis[1].stateTimer = 1
+    end
+    if chibis[2] then
+        chibis[2].zone = "table"
+        chibis[2].x = 0.5; chibis[2].targetX = 0.5
+        chibis[2].state = "idle"; chibis[2].stateTimer = 2
+    end
+
+    ChibiScene.setMode("explore")
+    ChibiScene.setState(state)
+    -- 注意：不调用 setDriving(true)！
+    -- setDriving 会强制把角色塞回 cabin/container（行驶 zone），
+    -- 这些 zone 在 explore 模式中不存在，导致角色不渲染。
+    -- 改用 setScrolling(true) 仅启用缓慢背景滚动。
+    ChibiScene.setScrolling(true)
+    if state.flow and state.flow.environment then
+        ChibiScene.setEnvironment(Environment.get_current(state.flow.environment))
+    end
+end
+
+--- 根据 explore.crates 设置场景中的箱子可视化
+local function syncExploreItems()
+    if not explore then return end
+    local CRATE_IMAGE = "image/chibi_box.png"
+    local items = {}
+    -- 将箱子均匀分布在 ground_center ~ ground_right 区域 (x: 0.35 ~ 0.85)
+    local count = #explore.crates
+    for i, crate in ipairs(explore.crates) do
+        local xNorm = 0.35 + (i - 1) * 0.50 / math.max(1, count - 1)
+        if count == 1 then xNorm = 0.55 end  -- 单个箱子居中偏右
+        items[i] = {
+            id    = "crate_" .. i,
+            image = CRATE_IMAGE,
+            xNorm = xNorm,
+        }
+    end
+    ChibiScene.setExploreItems(items)
+    -- 同步已搜刮状态
+    for i, crate in ipairs(explore.crates) do
+        if crate.looted then
+            ChibiScene.markExploreItemLooted("crate_" .. i)
+        end
+    end
+end
+
+local function activateCombat(enemyName)
+    if combatActive_ then return end
+    CombatRenderer.activate(enemyName, { ground = true })
+    ChibiScene.setCombatRenderer(CombatRenderer)
+    combatActive_ = true
+    -- 战斗 BGM
+    prevAudioScene_ = AudioMgr.getScene()
+    AudioMgr.setScene("combat", { fadeTime = 0.15 })
+end
+
+local function deactivateCombat()
+    if not combatActive_ then return end
+    CombatRenderer.deactivate()
+    ChibiScene.clearCombatRenderer()
+    combatActive_ = false
+    AudioMgr.setScene(prevAudioScene_ or "travel")
+end
+
+-- ============================================================
+-- 场景 widget 构建辅助
+-- ============================================================
+
+--- 创建顶部纸娃娃场景面板（与 screen_truck 统一：260px + SketchBorder + 水平内边距）
+local function buildScenePanel()
+    local sceneWidget = ChibiScene.createWidget({
+        height = 260,
+        borderRadius = Theme.sizes.radius,
+    })
+    SketchBorder.register(sceneWidget, "card")
+    -- 用 padding 容器约束宽度，避免 width=100% + margin 溢出屏幕
+    return UI.Panel {
+        width = "100%",
+        paddingLeft = Theme.sizes.padding,
+        paddingRight = Theme.sizes.padding,
+        paddingTop = Theme.sizes.padding,
+        children = { sceneWidget },
+    }
+end
+
+-- ============================================================
 -- 页面创建
 -- ============================================================
 
@@ -60,12 +155,13 @@ function M.create(state, params, r)
     state_ = state
     local room_id = params and params.room_id or nil
 
-    -- 解析路途背景
-    local region = state.flow and state.flow.environment and state.flow.environment.region or "wild"
-    bgImage_ = REGION_BG[region] or REGION_BG.wild
-
     explore = Explore.create(state, room_id)
     lastNarration = ""
+    combatActive_ = false
+
+    -- 初始化纸娃娃探索场景
+    initScene(state)
+    syncExploreItems()
 
     return M._build_intro_view(state)
 end
@@ -77,76 +173,88 @@ end
 function M._build_intro_view(state)
     local room = explore.room
 
-    return F.overlay {
+    return UI.Panel {
         id = "exploreScreen",
-        backgroundImage = bgImage_,
-        contentWidth = "90%",
+        width = "100%", height = "100%",
+        backgroundColor = { 18, 20, 15, 255 },
         children = {
-            F.card {
-                maxWidth = 420,
-                padding = Theme.sizes.padding_large,
-                borderWidth = 2, borderColor = Theme.colors.warning,
-                gap = 16, alignItems = "center",
-                enterAnim = true,
+            -- 顶部纸娃娃场景
+            buildScenePanel(),
+            -- 底部内容卡片
+            UI.Panel {
+                width = "100%", flexGrow = 1,
+                padding = Theme.sizes.padding,
+                justifyContent = "center", alignItems = "center",
                 children = {
-                    UI.Label {
-                        text = "🔍 发现资源点",
-                        fontSize = Theme.sizes.font_title,
-                        fontColor = Theme.colors.warning,
-                    },
-                    UI.Label {
-                        text = room.name,
-                        fontSize = Theme.sizes.font_large,
-                        fontColor = Theme.colors.text_primary,
-                    },
-                    UI.Label {
-                        text = room.desc,
-                        fontSize = Theme.sizes.font_normal,
-                        fontColor = Theme.colors.text_secondary,
-                        textAlign = "center", lineHeight = 1.5,
-                    },
-                    UI.Panel {
-                        width = "100%", height = 1,
-                        backgroundColor = Theme.colors.divider,
-                    },
-                    -- 搜刮点预告
-                    UI.Panel {
-                        width = "100%", flexDirection = "row",
-                        justifyContent = "space-around",
+                    F.card {
+                        maxWidth = 420, width = "100%",
+                        padding = Theme.sizes.padding_large,
+                        borderWidth = 2, borderColor = Theme.colors.warning,
+                        gap = 16, alignItems = "center",
+                        enterAnim = true,
                         children = {
-                            M._info_chip("📦", "搜刮点", tostring(#explore.crates)),
-                            M._info_chip("⚠️", "危险度", M._danger_text()),
-                            M._info_chip("🔫", "弹药", tostring(explore.ammo_available)),
-                        },
-                    },
-                    UI.Panel {
-                        width = "100%", flexDirection = "row", gap = 10,
-                        children = {
-                            F.actionBtn {
-                                text = "进入探索",
-                                variant = "primary",
-                                flexGrow = 1, height = 48,
-                                onClick = function(self)
-                                    Explore.start_explore(explore)
-                                    M._refresh(state)
-
-                                    -- 首次搜刮教程气泡
-                                    local introSteps = Tutorial.get_explore_intro_steps(state)
-                                    if introSteps then
-                                        local root = UI.GetRoot()
-                                        if root then
-                                            showExploreTutorialStep(root, state, introSteps, 1)
-                                        end
-                                    end
-                                end,
+                            UI.Label {
+                                text = "🔍 发现资源点",
+                                fontSize = Theme.sizes.font_title,
+                                fontColor = Theme.colors.warning,
                             },
-                            F.actionBtn {
-                                text = "离开",
-                                variant = "outline",
-                                width = 80, height = 48,
-                                onClick = function(self)
-                                    router.navigate("home")
-                                end,
+                            UI.Label {
+                                text = room.name,
+                                fontSize = Theme.sizes.font_large,
+                                fontColor = Theme.colors.text_primary,
+                            },
+                            UI.Label {
+                                text = room.desc,
+                                fontSize = Theme.sizes.font_normal,
+                                fontColor = Theme.colors.text_secondary,
+                                textAlign = "center", lineHeight = 1.5,
+                            },
+                            UI.Panel {
+                                width = "100%", height = 1,
+                                backgroundColor = Theme.colors.divider,
+                            },
+                            -- 搜刮点预告
+                            UI.Panel {
+                                width = "100%", flexDirection = "row",
+                                justifyContent = "space-around",
+                                children = {
+                                    M._info_chip("📦", "搜刮点", tostring(#explore.crates)),
+                                    M._info_chip("⚠️", "危险度", M._danger_text()),
+                                    M._info_chip("🔫", "弹药", tostring(explore.ammo_available)),
+                                },
+                            },
+                            UI.Panel {
+                                width = "100%", flexDirection = "row", gap = 10,
+                                children = {
+                                    F.actionBtn {
+                                        text = "进入探索",
+                                        variant = "primary",
+                                        flexGrow = 1, height = 48,
+                                        onClick = function(self)
+                                            Explore.start_explore(explore)
+                                            M._refresh(state)
+
+                                            -- 首次搜刮教程气泡
+                                            local introSteps = Tutorial.get_explore_intro_steps(state)
+                                            if introSteps then
+                                                local root = UI.GetRoot()
+                                                if root then
+                                                    showExploreTutorialStep(root, state, introSteps, 1)
+                                                end
+                                            end
+                                        end,
+                                    },
+                                    F.actionBtn {
+                                        text = "离开",
+                                        variant = "outline",
+                                        width = 80, height = 48,
+                                        onClick = function(self)
+                                            deactivateCombat()
+                                            ChibiScene.clearExploreItems()
+                                            router.navigate("home")
+                                        end,
+                                    },
+                                },
                             },
                         },
                     },
@@ -161,9 +269,28 @@ end
 -- ============================================================
 
 function M._refresh(state)
+    -- 同步箱子搜刮状态到场景可视化
+    syncExploreItems()
+
     if explore.phase == Explore.Phase.RESULT then
+        deactivateCombat()
+        ChibiScene.clearExploreItems()
         M._show_result_view(state)
         return
+    end
+
+    -- 遭遇敌人 → 激活战斗渲染
+    if (explore.phase == Explore.Phase.ENCOUNTER or explore.phase == Explore.Phase.FIGHTING)
+        and not combatActive_ then
+        local enemy = explore.enemies[explore.active_enemy]
+        if enemy then
+            activateCombat(enemy.name)
+        end
+    end
+
+    -- 脱离战斗 → 关闭战斗渲染
+    if explore.phase == Explore.Phase.EXPLORING and combatActive_ then
+        deactivateCombat()
     end
 
     local root = M._build_explore_view(state)
@@ -171,39 +298,46 @@ function M._refresh(state)
 end
 
 function M._build_explore_view(state)
-    local children = {}
-
-    -- 标题
-    table.insert(children, UI.Panel {
-        width = "100%", flexDirection = "row",
-        justifyContent = "space-between", alignItems = "center",
-        children = {
-            UI.Label {
-                text = "🔍 " .. explore.room.name,
-                fontSize = Theme.sizes.font_large,
-                fontColor = Theme.colors.warning,
-            },
-            UI.Label {
-                text = "体力 " .. math.max(0, explore.player_hp) .. "/" .. explore.player_hp_max,
-                fontSize = Theme.sizes.font_small,
-                fontColor = explore.player_hp > 20 and Theme.colors.success or Theme.colors.danger,
-            },
-        },
-    })
-
-    -- 体力条
+    -- ── 顶栏标题 + 体力（场景上方独立行）──
     local hpPct = math.max(0, explore.player_hp / explore.player_hp_max)
-    table.insert(children, UI.Panel {
-        width = "100%", height = 6,
-        backgroundColor = Theme.colors.progress_bg, borderRadius = 3,
+    local titleBar = UI.Panel {
+        width = "100%",
+        paddingLeft = Theme.sizes.padding, paddingRight = Theme.sizes.padding,
+        paddingTop = 6, paddingBottom = 4,
+        gap = 4,
         children = {
             UI.Panel {
-                width = math.floor(hpPct * 100) .. "%", height = "100%",
-                backgroundColor = hpPct > 0.4 and Theme.colors.success or Theme.colors.danger,
-                borderRadius = 3,
+                width = "100%", flexDirection = "row",
+                justifyContent = "space-between", alignItems = "center",
+                children = {
+                    UI.Label {
+                        text = "🔍 " .. explore.room.name,
+                        fontSize = Theme.sizes.font_large,
+                        fontColor = Theme.colors.warning,
+                    },
+                    UI.Label {
+                        text = "体力 " .. math.max(0, explore.player_hp) .. "/" .. explore.player_hp_max,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = explore.player_hp > 20 and Theme.colors.success or Theme.colors.danger,
+                    },
+                },
+            },
+            UI.Panel {
+                width = "100%", height = 6,
+                backgroundColor = Theme.colors.progress_bg, borderRadius = 3,
+                children = {
+                    UI.Panel {
+                        width = math.floor(hpPct * 100) .. "%", height = "100%",
+                        backgroundColor = hpPct > 0.4 and Theme.colors.success or Theme.colors.danger,
+                        borderRadius = 3,
+                    },
+                },
             },
         },
-    })
+    }
+
+    -- ── 底部卡片内容 ──
+    local children = {}
 
     -- 搜刮点状态
     table.insert(children, UI.Label {
@@ -273,9 +407,18 @@ function M._build_explore_view(state)
             disabled = not act.available,
             onClick = function(self)
                 if not act.available then return end
-                local result = Explore.execute_action(state, explore, act.id)
-                lastNarration = result.narration or ""
-                M._refresh(state)
+                -- 触发战斗视觉效果
+                if combatActive_ and (act.id == "fight" or act.id == "flee") then
+                    local result = Explore.execute_action(state, explore, act.id)
+                    CombatRenderer.triggerEffect(act.id, result)
+                    lastNarration = result.narration or ""
+                    -- 打败敌人后 combat_renderer 自动过渡
+                    M._refresh(state)
+                else
+                    local result = Explore.execute_action(state, explore, act.id)
+                    lastNarration = result.narration or ""
+                    M._refresh(state)
+                end
             end,
         })
     end
@@ -298,34 +441,31 @@ function M._build_explore_view(state)
         },
     })
 
-    -- 背景图 + 遮罩 + 内容的三层结构
-    local layers = {}
-    if bgImage_ then
-        table.insert(layers, UI.Panel {
-            width = "100%", height = "100%",
-            position = "absolute", left = 0, top = 0,
-            backgroundImage = bgImage_,
-            backgroundFit = "cover",
-        })
-        table.insert(layers, UI.Panel {
-            width = "100%", height = "100%",
-            position = "absolute", left = 0, top = 0,
-            backgroundColor = { 0, 0, 0, 160 },
-        })
-    end
-    table.insert(layers, UI.Panel {
-        width = "100%", height = "100%",
-        padding = Theme.sizes.padding,
-        gap = 8,
-        overflow = "scroll",
-        children = children,
-    })
-
     return UI.Panel {
         id = "exploreScreen",
         width = "100%", height = "100%",
-        backgroundColor = bgImage_ and { 0, 0, 0, 255 } or { 18, 20, 15, 255 },
-        children = layers,
+        backgroundColor = { 18, 20, 15, 255 },
+        children = {
+            -- 标题行（场景上方）
+            titleBar,
+            -- 纸娃娃场景
+            buildScenePanel(),
+            -- 底部可滚动卡片
+            UI.Panel {
+                width = "100%", flexGrow = 1, flexShrink = 1,
+                padding = Theme.sizes.padding,
+                children = {
+                    F.card {
+                        width = "100%",
+                        padding = Theme.sizes.padding,
+                        gap = 8,
+                        flexGrow = 1, flexShrink = 1,
+                        overflow = "scroll",
+                        children = children,
+                    },
+                },
+            },
+        },
     }
 end
 
@@ -350,34 +490,44 @@ function M._show_result_view(state)
         })
     end
 
-    local root = F.overlay {
+    local root = UI.Panel {
         id = "exploreScreen",
-        backgroundImage = bgImage_,
-        contentWidth = "90%",
+        width = "100%", height = "100%",
+        backgroundColor = { 18, 20, 15, 255 },
         children = {
-            F.card {
-                maxWidth = 420,
-                padding = Theme.sizes.padding_large,
-                borderWidth = 2, borderColor = resultColor,
-                gap = 12, alignItems = "center",
-                enterAnim = true,
+            -- 顶部场景（和平状态）
+            buildScenePanel(),
+            -- 结果卡片
+            UI.Panel {
+                width = "100%", flexGrow = 1,
+                padding = Theme.sizes.padding,
+                justifyContent = "center", alignItems = "center",
                 children = {
-                    UI.Label {
-                        text = summary.title,
-                        fontSize = Theme.sizes.font_title,
-                        fontColor = resultColor,
-                    },
-                    UI.Panel {
-                        width = "100%", gap = 6,
-                        children = lineWidgets,
-                    },
-                    F.actionBtn {
-                        text = "继续",
-                        variant = "primary",
-                        height = 48, marginTop = 8,
-                        onClick = function(self)
-                            router.navigate("home")
-                        end,
+                    F.card {
+                        maxWidth = 420, width = "100%",
+                        padding = Theme.sizes.padding_large,
+                        borderWidth = 2, borderColor = resultColor,
+                        gap = 12, alignItems = "center",
+                        enterAnim = true,
+                        children = {
+                            UI.Label {
+                                text = summary.title,
+                                fontSize = Theme.sizes.font_title,
+                                fontColor = resultColor,
+                            },
+                            UI.Panel {
+                                width = "100%", gap = 6,
+                                children = lineWidgets,
+                            },
+                            F.actionBtn {
+                                text = "继续",
+                                variant = "primary",
+                                height = 48, marginTop = 8,
+                                onClick = function(self)
+                                    router.navigate("home")
+                                end,
+                            },
+                        },
                     },
                 },
             },
@@ -409,6 +559,7 @@ function M._danger_text()
 end
 
 function M.update(state, dt, r)
+    ChibiScene.update(dt)
     SpeechBubble.update(dt)
 end
 
