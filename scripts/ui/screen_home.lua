@@ -428,18 +428,29 @@ function createSettlementView(state, curNode)
             })
         end
 
-        -- 接取委托（高亮引导）
+        -- 交易所（高亮引导：教程要求玩家访问交易所才能推进）
         table.insert(lowerChildren, F.actionBtn {
-            text = "📋 接取委托",
+            text = "🏪 交易所",
             variant = "primary",
             height = 48,
             fontSize = Theme.sizes.font_normal,
             highlight = true,
             onClick = function(self)
+                router.navigate("shop")
+            end,
+        })
+
+        -- 接取委托
+        table.insert(lowerChildren, F.actionBtn {
+            text = "📋 接取委托",
+            variant = "secondary",
+            fontSize = Theme.sizes.font_normal,
+            onClick = function(self)
                 Flow.enter_prepare(state)
                 router.navigate("orders")
             end,
         })
+
         -- 篝火仍可用
         local canCamp, campReason = Campfire.can_start(state)
         local hasStoryTopic = canCamp and Campfire.has_story_topic(state)

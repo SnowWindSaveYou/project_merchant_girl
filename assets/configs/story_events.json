@@ -383,7 +383,7 @@
       {
         "result_key": "RES_SEVT_001_B",
         "ops": ["add_relation_taoxia:2"],
-        "reward_desc": "林砾看了陶夏一眼。陶夏笑了笑。麻薯号继续往前开，驶入更远的灰。",
+        "reward_desc": "林砾看了陶夏一眼。陶夏笑了笑。货车继续往前开，驶入更远的灰。",
         "risk_desc": "",
         "set_flags": ["tutorial_started", "chose_go_forward"],
         "clear_flags": []
