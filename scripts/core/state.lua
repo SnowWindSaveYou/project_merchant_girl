@@ -28,16 +28,12 @@ function M.new()
             fuel_max       = 100,
             cargo_slots    = 8,
             cargo          = {}, -- { [goods_id] = count }
+            committed      = {}, -- { [goods_id] = count } 委托货物追踪
             modules = {
                 engine       = 1,
-                cargo        = 0,
-                suspension   = 0,
-                repair_kit   = 0,
+                cargo_bay    = 0,
                 radar        = 0,
                 cold_storage = 0,
-                camouflage   = 0,
-                antenna      = 0,
-                solar_panel  = 0,
                 turret       = 0,
             },
         },
@@ -50,25 +46,31 @@ function M.new()
 
         -- 聚落
         settlements = {
-            tower      = { goodwill = 0,  visited = false, reputation = 100 },
-            greenhouse = { goodwill = 10, visited = true,  reputation = 100 },
-            ruins_camp = { goodwill = 0,  visited = false, reputation = 100 },
-            bell_tower = { goodwill = 0,  visited = false, reputation = 100 },
+            tower            = { goodwill = 0,  visited = false, reputation = 100 },
+            greenhouse       = { goodwill = 0,  visited = false, reputation = 100 },
+            ruins_camp       = { goodwill = 0,  visited = false, reputation = 100 },
+            bell_tower       = { goodwill = 0,  visited = false, reputation = 100 },
+            -- 前哨站（Phase 11）
+            greenhouse_farm  = { goodwill = 5,  visited = true,  reputation = 100 },
+            dome_outpost     = { goodwill = 0,  visited = false, reputation = 100 },
+            metro_camp       = { goodwill = 0,  visited = false, reputation = 100 },
+            old_church       = { goodwill = 0,  visited = false, reputation = 100 },
+            -- 隐藏聚落（通过 unlock_route 解锁后才可到达）
+            underground_market = { goodwill = 0, visited = false, reputation = 100 },
         },
 
         -- 角色
         character = {
-            linli  = { relation = 0 },
-            taoxia = { relation = 0 },
+            linli  = { relation = 0, status = {}, skills = {} },
+            taoxia = { relation = 0, status = {}, skills = {} },
+            synergy_skills = {},  -- { synergy_repair = true, ... }
         },
 
         -- 地图
         map = {
-            current_location = "greenhouse",
+            current_location = "greenhouse_farm",
             known_nodes = {
-                greenhouse = true,
-                tower      = true,
-                crossroads = true,
+                greenhouse_farm = true,
             },
             -- 当前聚落可接订单缓存（到达时生成，接完即空，同次停留不刷新）
             available_orders = {},
@@ -77,8 +79,24 @@ function M.new()
 
         -- 叙事
         narrative = {
-            story_flags = {},
-            memories    = {},
+            chapter            = 0,   -- 主线章节 (0=序章 ~ 7=终章)
+            chapter_flags      = {},  -- 章节专属旗标 { prologue_done = true, ... }
+            story_flags        = {},
+            memories           = {},
+            campfire_cooldowns = {},  -- { ["CF_001"] = 2 }
+            campfire_count     = 0,   -- 累计篝火次数
+            npc_cooldowns      = {},  -- { ["NPC_001"] = 2 }
+            npc_visit_count    = {},  -- { ["shen_he"] = 3 }
+            -- 信件系统
+            letters_pending    = {},  -- 待领取信件ID列表 { "letter_ch1_01", ... }
+            letters_read       = {},  -- 已读信件ID集合 { ["letter_ch1_01"] = true }
+            letters_delivered  = {},  -- 已触发过的信件（防止重复入队）{ ["letter_ch1_01"] = true }
+        },
+
+        -- 自动计划设置
+        auto_plan = {
+            refuel_threshold = 30,   -- 油量低于此百分比时经过聚落自动补充（0=关闭）
+            auto_accept_orders = false, -- 经过聚落是否自动接取顺路单
         },
 
         -- 全局旗标
@@ -94,6 +112,14 @@ function M.new()
             total_distance      = 0,
             play_time           = 0,
             consecutive_expires = 0,  -- 连续超时订单计数（交付成功时重置）
+            -- 埋点计数器
+            trades_completed    = 0,  -- 完成交易（交付订单）次数
+            combats_fought      = 0,  -- 战斗次数
+            combats_repelled    = 0,  -- 击退追兵次数
+            explorations_done   = 0,  -- 探索次数
+            modules_upgraded    = 0,  -- 模块升级次数
+            events_triggered    = 0,  -- 随机事件触发次数
+            goods_traded_volume = 0,  -- 货物交易总量（件）
         },
     }
 end

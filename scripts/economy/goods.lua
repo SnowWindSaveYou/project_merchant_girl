@@ -10,16 +10,16 @@ M.CATEGORIES = {
 }
 
 M.ALL = {
-    { id = "food_can",    name = "罐头食品", category = "survival",   base_price = 15, stack_limit = 20 },
-    { id = "water",       name = "净水",     category = "survival",   base_price = 10, stack_limit = 30 },
-    { id = "medicine",    name = "医疗包",   category = "survival",   base_price = 35, stack_limit = 10 },
-    { id = "circuit",     name = "电路板",   category = "industrial", base_price = 40, stack_limit = 10 },
-    { id = "fuel_cell",   name = "燃料芯",   category = "industrial", base_price = 50, stack_limit = 8  },
-    { id = "metal_scrap", name = "废金属",   category = "industrial", base_price = 12, stack_limit = 25 },
-    { id = "old_book",    name = "旧书",     category = "cultural",   base_price = 25, stack_limit = 15 },
-    { id = "music_disc",  name = "唱片",     category = "cultural",   base_price = 30, stack_limit = 10 },
-    { id = "ammo",        name = "弹药链",   category = "military",   base_price = 45, stack_limit = 8  },
-    { id = "smoke_bomb",  name = "烟雾弹",   category = "military",   base_price = 35, stack_limit = 5  },
+    { id = "food_can",    name = "罐头食品", category = "survival",   base_price = 15, stack_limit = 20, icon = "image/loot_food_can_20260409034634.png" },
+    { id = "water",       name = "净水",     category = "survival",   base_price = 10, stack_limit = 30, icon = "image/loot_water_20260409043754.png" },
+    { id = "medicine",    name = "医疗包",   category = "survival",   base_price = 35, stack_limit = 10, icon = "image/loot_medicine_20260409034642.png" },
+    { id = "circuit",     name = "电路板",   category = "industrial", base_price = 40, stack_limit = 10, icon = "image/loot_circuit_20260409034640.png" },
+    { id = "fuel_cell",   name = "燃料芯",   category = "industrial", base_price = 50, stack_limit = 8,  icon = "image/loot_fuel_cell_20260409043704.png" },
+    { id = "metal_scrap", name = "废金属",   category = "industrial", base_price = 12, stack_limit = 25, icon = "image/loot_metal_scrap_20260409034650.png" },
+    { id = "old_book",    name = "旧书",     category = "cultural",   base_price = 25, stack_limit = 15, icon = "image/loot_old_book_20260409040404.png" },
+    { id = "music_disc",  name = "唱片",     category = "cultural",   base_price = 30, stack_limit = 10, icon = "image/loot_music_disc_20260409043710.png" },
+    { id = "ammo",        name = "弹药链",   category = "military",   base_price = 45, stack_limit = 8,  icon = "image/loot_ammo_20260409034711.png" },
+    { id = "smoke_bomb",  name = "烟雾弹",   category = "military",   base_price = 35, stack_limit = 5,  icon = "image/loot_smoke_bomb_20260409043709.png" },
 }
 
 M.BY_ID = {}

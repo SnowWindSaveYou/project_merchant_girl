@@ -7,10 +7,11 @@
   "entry": "main.lua",
   "version": "1.0.0",
   "taptap_publish": {
+    "developer_id": 394873,
     "title": "<game title, required>",
     "description": "<game description>",
     "category": "<game category: rpg, casual, action, strategy, simulation, trivia, arcade, adventure, card, sports, racing, puzzle, educational, music, word, board>",
-    "screen_orientation": "landscape",
+    "screen_orientation": "portrait",
     "collection_type": "sce",
     "trial_note": "<developer's note>",
     "app_platforms": "1,2"

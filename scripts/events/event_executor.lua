@@ -1,8 +1,16 @@
 --- 事件执行器
 --- 将 "add_credit:20" 格式的指令统一应用到 state
 --- 支持设计文档定义的全部 16 种 ops
-local Flags   = require("core/flags")
-local ItemUse = require("economy/item_use")
+local Flags    = require("core/flags")
+local ItemUse  = require("economy/item_use")
+local Goodwill = require("settlement/goodwill")
+
+--- demoralized 好感衰减倍率
+local function goodwill_mult(state)
+    local demoralized = ItemUse.has_status(state, "linli", "demoralized")
+        or ItemUse.has_status(state, "taoxia", "demoralized")
+    return demoralized and 0.8 or 1.0
+end
 
 local M = {}
 
@@ -35,7 +43,7 @@ function M.apply_one(state, op)
 
     -- ====== 经济 ======
 
-    if action == "add_credit" then
+    if action == "add_credit" or action == "add_credits" then
         state.economy.credits = math.max(0, state.economy.credits + (num or 0))
 
     elseif action == "add_fuel" then
@@ -62,14 +70,23 @@ function M.apply_one(state, op)
         -- 支持两种格式:
         -- "add_goodwill:5"              → 对当前聚落加好感
         -- "add_goodwill:greenhouse:10"  → 对指定聚落加好感
-        local faction, amt = value:match("^(.+):([%d%-]+)$")
-        if faction and state.settlements[faction] then
-            state.settlements[faction].goodwill = state.settlements[faction].goodwill + (tonumber(amt) or 0)
+        -- demoralized 状态：好感获取 -20%
+        -- 势力溢出：同势力其他聚落获得 50% 好感
+        local gw_mult = goodwill_mult(state)
+        local target_sid, amt = value:match("^(.+):([%d%-]+)$")
+        if target_sid and state.settlements[target_sid] then
+            local raw = tonumber(amt) or 0
+            local final = (raw > 0) and math.floor(raw * gw_mult + 0.5) or raw
+            state.settlements[target_sid].goodwill = state.settlements[target_sid].goodwill + final
+            Goodwill.apply_faction_spillover(state, target_sid, final)
         else
-            -- 无 faction 参数，对当前聚落操作
+            -- 无 settlement 参数，对当前聚落操作
             local loc = state.flow.travel and state.flow.travel.to or state.map.current_location
             if state.settlements[loc] then
-                state.settlements[loc].goodwill = state.settlements[loc].goodwill + (num or 0)
+                local raw = num or 0
+                local final = (raw > 0) and math.floor(raw * gw_mult + 0.5) or raw
+                state.settlements[loc].goodwill = state.settlements[loc].goodwill + final
+                Goodwill.apply_faction_spillover(state, loc, final)
             end
         end
 
@@ -144,12 +161,40 @@ function M.apply_one(state, op)
         -- "unlock_event:EVT_023" → 将特定事件解锁（通过设置对应旗标）
         Flags.set(state, "event_unlocked_" .. value)
 
-    -- ====== 战斗/订单（桩，后续阶段实现具体逻辑） ======
+    -- ====== 角色状态 ======
+
+    elseif action == "add_status" then
+        -- "add_status:linli:fatigued" 或 "add_status:fatigued"（默认双角色）
+        local char_id, sid = value:match("^(.+):(.+)$")
+        if char_id and (char_id == "linli" or char_id == "taoxia") then
+            ItemUse.add_status(state, char_id, sid)
+        else
+            -- 无角色指定，随机施加给一个角色
+            local target = math.random() < 0.5 and "linli" or "taoxia"
+            ItemUse.add_status(state, target, value)
+        end
+
+    elseif action == "clear_status" then
+        -- "clear_status:linli:fatigued" 或 "clear_status:fatigued"（清除所有角色的）
+        local char_id, sid = value:match("^(.+):(.+)$")
+        if char_id and (char_id == "linli" or char_id == "taoxia") then
+            ItemUse.clear_status(state, char_id, sid)
+        else
+            ItemUse.clear_status(state, "linli", value)
+            ItemUse.clear_status(state, "taoxia", value)
+        end
+
+    -- ====== 战斗/订单 ======
 
     elseif action == "start_combat" then
         -- "start_combat:ambush_light" → 标记待处理战斗
         state.flow.pending_combat = value
         print("[EventExec] Combat queued: " .. value)
+
+    elseif action == "start_explore" then
+        -- "start_explore:abandoned_warehouse" → 标记待处理探索
+        state.flow.pending_explore = value
+        print("[EventExec] Explore queued: " .. value)
 
     elseif action == "spawn_order" then
         -- "spawn_order:urgent_medicine" → 在当前聚落注入一个特殊订单
@@ -162,6 +207,38 @@ function M.apply_one(state, op)
     end
 
     return action .. ":" .. value
+end
+
+-- ============================================================
+-- 前置检查：选项的 ops 是否满足执行条件
+-- ============================================================
+local Goods = require("economy/goods")
+
+--- 检查一组 ops 中的消耗操作是否全部满足
+--- 返回 (ok, reason)
+---   ok=true  表示所有消耗均可满足
+---   ok=false 时 reason 是第一条不满足的提示文本
+---@param state table
+---@param ops string[]
+---@return boolean, string|nil
+function M.check_requirements(state, ops)
+    if not ops then return true, nil end
+    for _, op in ipairs(ops) do
+        local action, value = op:match("^([^:]+):(.+)$")
+        if action == "consume_goods" or action == "lose_goods" then
+            local gid, cnt = value:match("^(.+):(%d+)$")
+            if gid then
+                local need = tonumber(cnt) or 1
+                local held = state.truck.cargo[gid] or 0
+                if held < need then
+                    local g = Goods.get(gid)
+                    local name = g and g.name or gid
+                    return false, name .. " 不足（需要" .. need .. "，持有" .. held .. "）"
+                end
+            end
+        end
+    end
+    return true, nil
 end
 
 return M

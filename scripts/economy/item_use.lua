@@ -1,17 +1,105 @@
 --- 物品使用系统
 --- 定义可消耗物品的使用效果，并提供统一的使用接口
+--- 同时包含角色负面状态管理
 local Goods = require("economy/goods")
 
 local M = {}
 
---- 可使用物品定义
---- effect(state) 返回 true 表示使用成功，false 表示条件不满足
+--- 物品变化回调（由外部设置，如 FloatingText）
+--- 签名: function(goods_id, delta)  delta>0=获得, <0=消耗
+M._on_item_change = nil
+
+-- ============================================================
+-- 角色负面状态定义与辅助
+-- ============================================================
+
+M.STATUS_DEFS = {
+    fatigued    = { name = "疲劳",   desc = "行驶速度 -10%，事件判定略差" },
+    wounded     = { name = "受伤",   desc = "对应角色技能暂时失效" },
+    poisoned    = { name = "中毒",   desc = "每段行程额外消耗耐久 -5" },
+    demoralized = { name = "士气低落", desc = "好感获取 -20%，交易价格略差" },
+}
+
+--- 为角色施加负面状态（同一状态不叠加）
+---@param state table
+---@param char_id string "linli" | "taoxia"
+---@param status_id string
+function M.add_status(state, char_id, status_id)
+    local char = state.character[char_id]
+    if not char then return end
+    if not char.status then char.status = {} end
+    for _, s in ipairs(char.status) do
+        if s == status_id then return end
+    end
+    table.insert(char.status, status_id)
+end
+
+--- 清除角色的指定负面状态
+---@param state table
+---@param char_id string
+---@param status_id string
+function M.clear_status(state, char_id, status_id)
+    local char = state.character[char_id]
+    if not char or not char.status then return end
+    for i, s in ipairs(char.status) do
+        if s == status_id then
+            table.remove(char.status, i)
+            return
+        end
+    end
+end
+
+--- 清除角色全部负面状态（据点休整）
+---@param state table
+---@param char_id string
+function M.clear_all_status(state, char_id)
+    local char = state.character[char_id]
+    if not char then return end
+    char.status = {}
+end
+
+--- 检查角色是否有指定状态
+---@param state table
+---@param char_id string
+---@param status_id string
+---@return boolean
+function M.has_status(state, char_id, status_id)
+    local char = state.character[char_id]
+    if not char or not char.status then return false end
+    for _, s in ipairs(char.status) do
+        if s == status_id then return true end
+    end
+    return false
+end
+
+--- 获取所有角色的负面状态摘要
+---@param state table
+---@return table[] { char_id, char_name, statuses }
+function M.get_all_statuses(state)
+    local result = {}
+    for _, cid in ipairs({ "linli", "taoxia" }) do
+        local char = state.character[cid]
+        if char and char.status and #char.status > 0 then
+            table.insert(result, {
+                char_id   = cid,
+                char_name = cid == "linli" and "林砾" or "陶夏",
+                statuses  = char.status,
+            })
+        end
+    end
+    return result
+end
+
+-- ============================================================
+-- 可使用物品定义
+-- ============================================================
+
 M.USABLE = {
     fuel_cell = {
         action_name = "补充燃料",
         desc        = "恢复 25 点燃料",
         ---@param state table
-        ---@return boolean
+        ---@return boolean, string
         effect = function(state)
             if state.truck.fuel >= state.truck.fuel_max then
                 return false, "燃料已满"
@@ -24,7 +112,7 @@ M.USABLE = {
         action_name = "应急修补",
         desc        = "恢复 15 点耐久",
         ---@param state table
-        ---@return boolean
+        ---@return boolean, string
         effect = function(state)
             if state.truck.durability >= state.truck.durability_max then
                 return false, "耐久已满"
@@ -33,13 +121,30 @@ M.USABLE = {
             return true, "耐久 +15"
         end,
     },
-    -- medicine 暂时只定义，负面状态系统实现后再生效
-    -- medicine = {
-    --     action_name = "使用医疗包",
-    --     desc        = "清除一个负面状态",
-    --     effect = function(state) ... end,
-    -- },
+    medicine = {
+        action_name = "使用医疗包",
+        desc        = "清除一个角色负面状态",
+        ---@param state table
+        ---@return boolean, string
+        effect = function(state)
+            for _, name in ipairs({ "linli", "taoxia" }) do
+                local char = state.character[name]
+                if char and char.status and #char.status > 0 then
+                    local removed = table.remove(char.status, 1)
+                    local charName = name == "linli" and "林砾" or "陶夏"
+                    local statusDef = M.STATUS_DEFS[removed]
+                    local statusName = statusDef and statusDef.name or removed
+                    return true, charName .. " 清除了「" .. statusName .. "」"
+                end
+            end
+            return false, "没有需要治疗的状态"
+        end,
+    },
 }
+
+-- ============================================================
+-- 公共接口
+-- ============================================================
 
 --- 检查物品是否可使用
 ---@param goods_id string
@@ -76,12 +181,12 @@ function M.use(state, goods_id)
         return false, msg
     end
 
-    -- 消耗 1 个
     state.truck.cargo[goods_id] = held - 1
     if state.truck.cargo[goods_id] <= 0 then
         state.truck.cargo[goods_id] = nil
     end
 
+    if M._on_item_change then M._on_item_change(goods_id, -1) end
     return true, msg
 end
 
@@ -99,6 +204,7 @@ function M.consume(state, goods_id, count)
     if state.truck.cargo[goods_id] <= 0 then
         state.truck.cargo[goods_id] = nil
     end
+    if M._on_item_change then M._on_item_change(goods_id, -count) end
     return true
 end
 
@@ -111,7 +217,10 @@ function M.add(state, goods_id, count)
     local g = Goods.get(goods_id)
     if not g then return false end
     local held = state.truck.cargo[goods_id] or 0
-    state.truck.cargo[goods_id] = math.min(held + count, g.stack_limit)
+    local newVal = math.min(held + count, g.stack_limit)
+    state.truck.cargo[goods_id] = newVal
+    local actual = newVal - held
+    if actual > 0 and M._on_item_change then M._on_item_change(goods_id, actual) end
     return true
 end
 

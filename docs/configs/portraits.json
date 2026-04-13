@@ -1,0 +1,164 @@
+{
+    "protagonists": {
+        "linli": {
+            "name": "林砾",
+            "color": [142, 178, 210, 255],
+            "bgColor": [42, 52, 58, 240],
+            "portrait": "image/linli_portrait_20260405231808.png",
+            "expressions": {
+                "normal":    "image/linli_portrait_20260405231808.png",
+                "happy":     "image/linli_happy_v2_20260409082011.png",
+                "sad":       "image/linli_sad_20260409080555.png",
+                "surprised": "image/linli_surprised_20260409080550.png",
+                "angry":     "image/linli_angry_v2_20260409082114.png",
+                "thinking":  "image/linli_thinking_20260409080553.png"
+            }
+        },
+        "taoxia": {
+            "name": "陶夏",
+            "color": [218, 168, 102, 255],
+            "bgColor": [58, 48, 36, 240],
+            "portrait": "image/taoxia_portrait_v3.png",
+            "expressions": {
+                "normal":    "image/taoxia_portrait_v3.png",
+                "happy":     "image/taoxia_happy_20260409080542.png",
+                "sad":       "image/taoxia_sad_20260409080556.png",
+                "surprised": "image/taoxia_surprised_20260409080548.png",
+                "angry":     "image/taoxia_angry_20260409080551.png",
+                "thinking":  "image/taoxia_thinking_20260409080547.png"
+            }
+        }
+    },
+
+    "npc_portraits": {
+        "shen_he":  "image/portrait_shen_he_20260406000120.png",
+        "han_ce":   "image/portrait_han_ce_20260406000106.png",
+        "wu_shiqi": "image/portrait_wu_shiqi_20260406000058.png",
+        "bai_shu":  "image/portrait_bai_shu_20260406000056.png",
+        "meng_hui": "image/portrait_meng_hui_20260406000106.png",
+        "ming_sha": "image/portrait_ming_sha_20260406000227.png",
+        "dao_yu":   "image/portrait_dao_yu_20260408072957.png",
+        "xie_ling": "image/portrait_xie_ling_20260408073029.png",
+        "ji_wei":   "image/portrait_ji_wei_20260408124639.png",
+        "old_gan":  "image/portrait_old_gan_20260408124632.png",
+        "a_xiu":    "image/portrait_a_xiu_20260409120249.png",
+        "cheng_yuan": "image/portrait_cheng_yuan_20260409120343.png",
+        "su_mo":    "image/portrait_su_mo_20260409120418.png"
+    },
+
+    "faction_portraits": {
+        "farm":    "image/portrait_faction_farm_20260406000212.png",
+        "tech":    "image/portrait_faction_tech_20260406000259.png",
+        "scav":    "image/portrait_faction_scav_20260406000214.png",
+        "scholar": "image/portrait_faction_scholar_20260406000214.png"
+    },
+
+    "_portrait_catalog": {
+        "_description": "所有立绘文件清单及用途说明，包含已替换的旧版本（保留备用）",
+
+        "linli_主立绘": {
+            "file": "image/linli_portrait_20260405231808.png",
+            "usage": "林砾默认立绘 / normal 表情，用于对话系统默认显示"
+        },
+        "linli_happy_v2": {
+            "file": "image/linli_happy_v2_20260409082011.png",
+            "usage": "林砾 happy 表情（当前使用），淡淡微笑、嘴角微扬、眼神柔和，通用喜悦表情"
+        },
+        "linli_happy_v2b_备用": {
+            "file": "image/linli_happy_v2_20260409082126.png",
+            "usage": "【备用】林砾 happy 另一版本"
+        },
+        "linli_happy_v1_特殊CG": {
+            "file": "image/linli_happy_20260409080608.png",
+            "usage": "林砾满脸污泥微笑的特殊CG，用于篝火回忆剧情 CF_011「命运的相遇」的背景图"
+        },
+        "linli_sad": {
+            "file": "image/linli_sad_20260409080555.png",
+            "usage": "林砾 sad 表情，悲伤/难过的神情"
+        },
+        "linli_surprised": {
+            "file": "image/linli_surprised_20260409080550.png",
+            "usage": "林砾 surprised 表情，惊讶的神情"
+        },
+        "linli_angry_v2": {
+            "file": "image/linli_angry_v2_20260409082114.png",
+            "usage": "林砾 angry 表情（当前使用），微微皱眉、冷淡不悦、克制的不满，适度愤怒"
+        },
+        "linli_angry_v1_备用": {
+            "file": "image/linli_angry_20260409080546.png",
+            "usage": "【已替换，保留备用】林砾暴怒表情，情绪强度较高，适合极端愤怒场景"
+        },
+        "linli_thinking": {
+            "file": "image/linli_thinking_20260409080553.png",
+            "usage": "林砾 thinking 表情，沉思/分析的神情，林砾最常用的表情"
+        },
+
+        "taoxia_主立绘_v3": {
+            "file": "image/taoxia_portrait_v3.png",
+            "usage": "陶夏默认立绘 / normal 表情，用于对话系统默认显示"
+        },
+        "taoxia_主立绘_v2_备用": {
+            "file": "image/taoxia_portrait_v2_20260407120520.png",
+            "usage": "【旧版本，保留备用】陶夏 v2 默认立绘"
+        },
+        "taoxia_happy": {
+            "file": "image/taoxia_happy_20260409080542.png",
+            "usage": "陶夏 happy 表情，开朗欢快的笑容"
+        },
+        "taoxia_sad": {
+            "file": "image/taoxia_sad_20260409080556.png",
+            "usage": "陶夏 sad 表情，悲伤/难过的神情"
+        },
+        "taoxia_surprised": {
+            "file": "image/taoxia_surprised_20260409080548.png",
+            "usage": "陶夏 surprised 表情，惊讶/好奇的神情"
+        },
+        "taoxia_angry": {
+            "file": "image/taoxia_angry_20260409080551.png",
+            "usage": "陶夏 angry 表情（当前使用），娇嗔式生气、可爱嘟嘴，符合陶夏活泼性格"
+        },
+        "taoxia_angry_v2_备用": {
+            "file": "image/taoxia_angry_v2_20260409082128.png",
+            "usage": "【备用】陶夏严肃愤怒版，皱眉认真不满、眼神锐利，适合重大冲突场景"
+        },
+        "taoxia_thinking": {
+            "file": "image/taoxia_thinking_20260409080547.png",
+            "usage": "陶夏 thinking 表情，思考的神情"
+        },
+
+        "chibi_linli": {
+            "files": [
+                "image/chibi_linli_20260409053037.png",
+                "image/chibi_linli_20260409053601.png"
+            ],
+            "usage": "林砾 Q版/chibi 形象，用于挂机旅行画面等轻松场景"
+        },
+        "chibi_taoxia": {
+            "files": [
+                "image/chibi_taoxia_20260409053031.png",
+                "image/chibi_taoxia_20260409053853.png"
+            ],
+            "usage": "陶夏 Q版/chibi 形象，用于挂机旅行画面等轻松场景"
+        },
+        "chibi_动作_linli": {
+            "files": [
+                "image/chibi_linli_cook_20260409070159.png",
+                "image/chibi_linli_drive_20260409070207.png",
+                "image/chibi_linli_eat_20260409070212.png",
+                "image/chibi_linli_window_20260409070149.png",
+                "image/chibi_linli_sleep_20260409073014.png"
+            ],
+            "usage": "林砾 Q版动作差分（做饭/驾驶/吃饭/看窗/睡觉），用于房车内部场景"
+        },
+        "chibi_动作_taoxia": {
+            "files": [
+                "image/chibi_taoxia_cook_20260409070214.png",
+                "image/chibi_taoxia_drive_20260409070148.png",
+                "image/chibi_taoxia_eat_20260409070156.png",
+                "image/chibi_taoxia_window_20260409070202.png",
+                "image/chibi_taoxia_sleep_20260409073033.png"
+            ],
+            "usage": "陶夏 Q版动作差分（做饭/驾驶/吃饭/看窗/睡觉），用于房车内部场景"
+        }
+    }
+}

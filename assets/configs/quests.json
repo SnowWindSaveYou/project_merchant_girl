@@ -1,0 +1,104 @@
+{
+  "quests": [
+    {
+      "id": "Q_SHEN_HE_SEEDS",
+      "title": "基因库的种子",
+      "desc": "帮沈禾找到旧农学院的培育手册，以便培育灾前最后一批基因库备份种子。",
+      "npc_id": "shen_he",
+      "trigger_flag": "mem_shen_he_seeds",
+      "complete_flag": "quest_seeds_done",
+      "hint": "白述的钟楼书院也许有相关资料",
+      "reward_ops": ["add_goodwill:greenhouse:10", "add_credits:50"]
+    },
+    {
+      "id": "Q_HAN_CE_SIGNAL",
+      "title": "西南方的坐标",
+      "desc": "韩策解码了一组指向西南方高辐射区的坐标，需要调查该区域。",
+      "npc_id": "han_ce",
+      "trigger_flag": "mem_han_ce_signal",
+      "complete_flag": "quest_signal_done",
+      "hint": "坐标指向西南方向约三天车程处",
+      "reward_ops": ["add_goodwill:tower:10", "add_credits:50"]
+    },
+    {
+      "id": "Q_WU_SHIQI_HIGHWAY",
+      "title": "废墟下的高速",
+      "desc": "伍拾七透露了废墟下保存完好的旧物流高速。入口附近有失联的拾荒队需要救援。",
+      "npc_id": "wu_shiqi",
+      "trigger_flag": "mem_wu_shiqi_highway",
+      "complete_flag": "quest_highway_done",
+      "hint": "先找到失联的拾荒队",
+      "reward_ops": ["add_goodwill:ruins_camp:10", "add_credits:50"]
+    },
+    {
+      "id": "Q_BAI_SHU_MAP",
+      "title": "云海高塔",
+      "desc": "白述手中有指向'云海高塔'通讯枢纽的残图。如果能重启，聚落间的通讯将不再依赖行商。",
+      "npc_id": "bai_shu",
+      "trigger_flag": "mem_bai_shu_map",
+      "complete_flag": "quest_tower_done",
+      "hint": "残图指向一个很远也很危险的方向",
+      "reward_ops": ["add_goodwill:bell_tower:10", "add_credits:50"]
+    },
+    {
+      "id": "Q_ZHAO_MIAO_WATER",
+      "title": "地下水脉",
+      "desc": "赵苗在外围农场挖到了一条干净的地下水脉。需要谨慎处理这个消息，避免引发争端。",
+      "npc_id": "zhao_miao",
+      "trigger_flag": "mem_zhao_miao_water",
+      "complete_flag": "quest_water_done",
+      "hint": "先与沈禾商量对策",
+      "reward_ops": ["add_goodwill:greenhouse_farm:10", "add_credits:30"]
+    },
+    {
+      "id": "Q_CHENG_YUAN_CRACK",
+      "title": "穹顶的裂缝",
+      "desc": "穹顶哨站的防护罩出现微裂纹，半年内需要找到特种玻璃修复，否则哨站将报废。",
+      "npc_id": "cheng_yuan",
+      "trigger_flag": "mem_cheng_yuan_crack",
+      "complete_flag": "quest_crack_done",
+      "hint": "灾前的建材仓库可能有特种玻璃",
+      "reward_ops": ["add_goodwill:dome_outpost:10", "add_credits:30"]
+    },
+    {
+      "id": "Q_A_XIU_SOUND",
+      "title": "隧道深处的声音",
+      "desc": "地铁隧道深处每晚有规律的金属敲击声，疑似灾前的自动化设备仍在运转。",
+      "npc_id": "a_xiu",
+      "trigger_flag": "mem_a_xiu_sound",
+      "complete_flag": "quest_sound_done",
+      "hint": "需要人手一起去隧道深处调查",
+      "reward_ops": ["add_goodwill:metro_camp:10", "add_credits:30"]
+    },
+    {
+      "id": "Q_SU_MO_CRYPT",
+      "title": "名字之墙",
+      "desc": "旧教堂地下密室有一面刻满避难者名字的墙壁，这段历史应该被记录保存。",
+      "npc_id": "su_mo",
+      "trigger_flag": "mem_su_mo_crypt",
+      "complete_flag": "quest_crypt_done",
+      "hint": "告诉白述，让他来记录这些名字",
+      "reward_ops": ["add_goodwill:old_church:10", "add_credits:30"]
+    },
+    {
+      "id": "Q_MENG_HUI_PAST",
+      "title": "导师的药方",
+      "desc": "孟回的导师在灾难中留下了一本药方笔记，部分被水损毁。需要找到医学文献来补全。",
+      "npc_id": "meng_hui",
+      "trigger_flag": "mem_meng_hui_past",
+      "complete_flag": "quest_medicine_done",
+      "hint": "白述的书院也许有医学文献",
+      "reward_ops": ["add_relation_linli:5", "add_credits:30"]
+    },
+    {
+      "id": "Q_MING_SHA_DESERT",
+      "title": "沙漠彼端的盐湖城",
+      "desc": "鸣砂来自沙漠另一端的'盐湖城'贸易站。如果能打通这条三百公里的商路，将改变整个贸易格局。",
+      "npc_id": "ming_sha",
+      "trigger_flag": "mem_ming_sha_desert",
+      "complete_flag": "quest_desert_done",
+      "hint": "鸣砂承诺可以提供穿越无人区的路线",
+      "reward_ops": ["add_relation_linli:5", "add_credits:80"]
+    }
+  ]
+}

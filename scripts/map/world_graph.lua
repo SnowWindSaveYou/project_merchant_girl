@@ -1,6 +1,9 @@
 --- 大地图网状节点模型（Graph）
 --- Node + Edge 结构，支持多种节点类型和边类型
+--- 数据从 assets/configs/map_graph.json 加载
 local M = {}
+
+local Loader = require "data_loader.loader"
 
 -- ============================================================
 -- 节点类型
@@ -23,143 +26,18 @@ M.EdgeType = {
 }
 
 -- ============================================================
--- 首版节点定义（7 个节点）
+-- 从 JSON 配置加载节点和边数据
 -- ============================================================
-M.NODES = {
-    {
-        id   = "greenhouse",
-        name = "温室社区",
-        type = "settlement",
-        x = 100, y = 400, -- UI 布局坐标（逻辑坐标，非像素）
-        desc = "以旧生态穹顶为核心的农业聚落",
-    },
-    {
-        id   = "tower",
-        name = "北穹塔台",
-        type = "settlement",
-        x = 500, y = 100,
-        desc = "建在旧防空观测塔群上的技术聚落",
-    },
-    {
-        id   = "ruins_camp",
-        name = "废墟游民营地",
-        type = "settlement",
-        x = 500, y = 450,
-        desc = "塌陷商场周边的流动型拾荒聚落",
-    },
-    {
-        id   = "crossroads",
-        name = "旧公路交叉口",
-        type = "transit",
-        x = 300, y = 250,
-        desc = "一处半废弃的高速匝道，可补给和分道",
-    },
-    {
-        id   = "old_warehouse",
-        name = "废弃仓库",
-        type = "resource",
-        x = 350, y = 400,
-        desc = "锈蚀铁皮仓库群，可能有旧时代物资",
-    },
-    {
-        id   = "danger_pass",
-        name = "塌陷高架",
-        type = "hazard",
-        x = 200, y = 120,
-        desc = "断裂的高架桥段，通行风险极高",
-    },
-    {
-        id   = "signal_relay",
-        name = "信号中继站",
-        type = "story",
-        x = 450, y = 280,
-        desc = "废弃的通信中继站，偶有微弱信号",
-    },
-}
+local function load_graph_data()
+    local raw = Loader.load("configs/map_graph.json")
+    if not raw then
+        print("[WorldGraph] ERROR: Failed to load configs/map_graph.json")
+        return {}, {}
+    end
+    return raw.nodes or {}, raw.edges or {}
+end
 
--- ============================================================
--- 首版边定义
--- ============================================================
-M.EDGES = {
-    -- 主干道：温室 → 交叉口 → 塔台（安全但慢）
-    {
-        id = "edge_gh_cross",
-        from = "greenhouse", to = "crossroads",
-        type = "main_road",
-        travel_time_sec = 50,
-        fuel_cost = 8,
-        danger_level = "low",
-        bidirectional = true,
-    },
-    {
-        id = "edge_cross_tower",
-        from = "crossroads", to = "tower",
-        type = "main_road",
-        travel_time_sec = 55,
-        fuel_cost = 9,
-        danger_level = "low",
-        bidirectional = true,
-    },
-    -- 捷径：温室 → 塌陷高架 → 塔台（快但危险）
-    {
-        id = "edge_gh_danger",
-        from = "greenhouse", to = "danger_pass",
-        type = "shortcut",
-        travel_time_sec = 25,
-        fuel_cost = 6,
-        danger_level = "high",
-        bidirectional = true,
-    },
-    {
-        id = "edge_danger_tower",
-        from = "danger_pass", to = "tower",
-        type = "shortcut",
-        travel_time_sec = 20,
-        fuel_cost = 5,
-        danger_level = "high",
-        bidirectional = true,
-    },
-    -- 小径：交叉口 → 废弃仓库（探索）
-    {
-        id = "edge_cross_warehouse",
-        from = "crossroads", to = "old_warehouse",
-        type = "path",
-        travel_time_sec = 30,
-        fuel_cost = 5,
-        danger_level = "normal",
-        bidirectional = true,
-    },
-    -- 小径：交叉口 → 信号中继站
-    {
-        id = "edge_cross_signal",
-        from = "crossroads", to = "signal_relay",
-        type = "path",
-        travel_time_sec = 35,
-        fuel_cost = 6,
-        danger_level = "normal",
-        bidirectional = true,
-    },
-    -- 主干道：信号中继站 → 废墟游民营地
-    {
-        id = "edge_signal_ruins",
-        from = "signal_relay", to = "ruins_camp",
-        type = "main_road",
-        travel_time_sec = 40,
-        fuel_cost = 7,
-        danger_level = "normal",
-        bidirectional = true,
-    },
-    -- 小径：废弃仓库 → 废墟游民营地
-    {
-        id = "edge_warehouse_ruins",
-        from = "old_warehouse", to = "ruins_camp",
-        type = "path",
-        travel_time_sec = 35,
-        fuel_cost = 6,
-        danger_level = "normal",
-        bidirectional = true,
-    },
-}
+M.NODES, M.EDGES = load_graph_data()
 
 -- ============================================================
 -- 索引表（启动时构建）
@@ -213,6 +91,26 @@ function M.get_neighbors(node_id, state)
     return result
 end
 
+--- 获取从 node_id 出发的未探索邻居（未知节点）
+function M.get_unknown_neighbors(node_id, state)
+    local raw = M.ADJ[node_id] or {}
+    if not state then return {} end
+    local known = state.map.known_nodes or {}
+    local result = {}
+    for _, adj in ipairs(raw) do
+        if not known[adj.to] then
+            local node = M.BY_NODE_ID[adj.to]
+            -- 隐藏节点：除非已被 unlock_route 解锁，否则不显示在探索面板
+            if node and node.hidden then
+                -- skip hidden nodes
+            else
+                table.insert(result, adj)
+            end
+        end
+    end
+    return result
+end
+
 --- 获取两个节点间的边（如果直接相连）
 function M.get_edge(from_id, to_id)
     local adjs = M.ADJ[from_id] or {}
@@ -222,6 +120,11 @@ function M.get_edge(from_id, to_id)
         end
     end
     return nil
+end
+
+--- 获取所有节点
+function M.get_all_nodes()
+    return M.NODES
 end
 
 --- 获取所有聚落节点
@@ -275,11 +178,11 @@ function M.find_fastest_path(from_id, to_id, state)
     return M._dijkstra(from_id, to_id, state, "travel_time_sec")
 end
 
---- Dijkstra 最安全路径（danger_level 映射为权重）
-local DANGER_WEIGHT = { low = 1, normal = 3, high = 8 }
+--- Dijkstra 最安全路径（danger 映射为权重）
+local DANGER_WEIGHT = { safe = 1, normal = 3, danger = 8 }
 function M.find_safest_path(from_id, to_id, state)
     return M._dijkstra(from_id, to_id, state, nil, function(edge)
-        return (DANGER_WEIGHT[edge.danger_level] or 5) * edge.travel_time_sec
+        return (DANGER_WEIGHT[edge.danger] or 5) * edge.travel_time_sec
     end)
 end
 

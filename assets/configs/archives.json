@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "type": "archives",
+    "version": "0.1.0",
+    "description": "钟楼书院·档案馆内容。按好感等级解锁。"
+  },
+  "entries": [
+    {
+      "id": "ARC_PUB_001",
+      "title": "聚落分布概况",
+      "text": "灾变后，幸存者自发聚集形成了数个定居点。其中规模最大的四个被称为'聚落'：温室社区以农业为本，北穹塔台掌控通讯，废墟游民营地维持着松散的贸易秩序，而钟楼书院则致力于保存知识。",
+      "tier": "public",
+      "required_goodwill": 0,
+      "category": "geography"
+    },
+    {
+      "id": "ARC_PUB_002",
+      "title": "末世纪年法",
+      "text": "灾变后没有人再使用公历。各聚落以'灾变后第N年'纪年，简称'灾N'。温室的播种日、钟楼的敲钟日、营地的夜市——这些是如今仅存的节日。",
+      "tier": "public",
+      "required_goodwill": 0,
+      "category": "culture"
+    },
+    {
+      "id": "ARC_PUB_003",
+      "title": "行商制度的起源",
+      "text": "最早的行商是灾变后第二年出现的。三个人推着手推车，在温室和旧教堂之间来回运送种子和药品。他们没有报酬——因为那时候还没有'信用点'。信用点是塔台后来发明的。",
+      "tier": "public",
+      "required_goodwill": 0,
+      "category": "history"
+    },
+    {
+      "id": "ARC_PUB_004",
+      "title": "信用点体系",
+      "text": "信用点不是货币，而是'记账单位'。韩策设计这套系统时，理念是'让贡献可被量化'。每一次成功配送都会在塔台的网络中留下记录。你的信用点就是你对这片废土的贡献证明。",
+      "tier": "public",
+      "required_goodwill": 0,
+      "category": "economy"
+    },
+    {
+      "id": "ARC_PUB_005",
+      "title": "主要道路现状",
+      "text": "灾前的省道和国道大多还能通行，但路面破损严重。聚落之间的小径多为灾后居民踩出来的捷径，危险但距离短。行商会根据货物价值和天气选择不同路线。",
+      "tier": "public",
+      "required_goodwill": 0,
+      "category": "geography"
+    },
+    {
+      "id": "ARC_INT_001",
+      "title": "灾变原因（推测）",
+      "text": "关于灾变的原因众说纷纭。白述整理的档案中记载了三种主流推测：地磁异常、人为实验失控、以及'来自外部的干扰'。第三种说法来源最少，但最令人不安，因为提到它的几份文件都被刻意销毁过。",
+      "tier": "internal",
+      "required_goodwill": 30,
+      "category": "history"
+    },
+    {
+      "id": "ARC_INT_002",
+      "title": "消失的第五聚落",
+      "text": "在钟楼的最早期记录中，提到过一个叫'河口站'的定居点。它在灾变后第三年突然失去联系，派去查看的人再也没回来。白述在地图上把那个位置画了一个问号。",
+      "tier": "internal",
+      "required_goodwill": 30,
+      "category": "history"
+    },
+    {
+      "id": "ARC_INT_003",
+      "title": "静潮社早期活动",
+      "text": "静潮社的前身是一群拒绝使用信用点的流浪者。他们认为'连接意味着控制'，拒绝加入任何聚落网络。创始人叫什么名字已经没人记得了——或者说，他们故意让人忘记。",
+      "tier": "internal",
+      "required_goodwill": 35,
+      "category": "faction"
+    },
+    {
+      "id": "ARC_INT_004",
+      "title": "铁锁商队的扩张",
+      "text": "铁锁商队的前身是一个军用物资倒卖团伙。在灾变后第五年，他们的首领'铁锁'开始有组织地垄断长距离贸易路线。到了第八年，他们控制了所有超过两天路程的商路。",
+      "tier": "internal",
+      "required_goodwill": 40,
+      "category": "faction"
+    },
+    {
+      "id": "ARC_INT_005",
+      "title": "旧时代的通讯网络",
+      "text": "灾前有一种叫'互联网'的通讯系统，据说可以在一瞬间把消息传到世界任何地方。白述说他见过残存的服务器机房——巨大的黑色柜子，里面塞满了比手掌还小的绿色板子。它们全都不亮了。",
+      "tier": "internal",
+      "required_goodwill": 45,
+      "category": "technology"
+    },
+    {
+      "id": "ARC_SEC_001",
+      "title": "云海高塔的真实用途",
+      "text": "云海高塔不是灾后建造的——它是灾前'天枢工程'的产物。白述在一份残缺的工程文件中发现：高塔内部有一套独立于所有已知网络的通讯系统。它在监听什么，或者等待什么，至今没人知道。",
+      "tier": "sealed",
+      "required_goodwill": 60,
+      "category": "mystery"
+    },
+    {
+      "id": "ARC_SEC_002",
+      "title": "祁岚的身份",
+      "text": "祁岚不是普通的守塔人。谢令在一份旧档案的夹页中找到的信件暗示，她是'天枢工程'最后一批技术人员之一。她留在高塔，不是因为没有别的地方可去，而是因为她在等一个信号。",
+      "tier": "sealed",
+      "required_goodwill": 70,
+      "category": "mystery"
+    },
+    {
+      "id": "ARC_SEC_003",
+      "title": "灾前通讯网络设计图",
+      "text": "白述从密封柜中取出了一张泛黄的蓝图。上面画的不是建筑——是一张网络拓扑图。数百个节点，用细线连接，像一张巨大的蜘蛛网。图的角落写着一行字：'在最坏的情况下，只要任意两个节点存活，网络就不会中断。'",
+      "tier": "sealed",
+      "required_goodwill": 80,
+      "category": "mystery"
+    }
+  ]
+}

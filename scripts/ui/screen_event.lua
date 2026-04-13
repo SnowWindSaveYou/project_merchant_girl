@@ -2,9 +2,12 @@
 --- 显示随机事件描述和选项
 local UI = require("urhox-libs/UI")
 local Theme = require("ui/theme")
+local F = require("ui/ui_factory")
 local Flags = require("core/flags")
 local EventExecutor = require("events/event_executor")
 local EventPool = require("events/event_pool")
+local SoundMgr = require("ui/sound_manager")
+local Graph = require("map/world_graph")
 
 local M = {}
 ---@type table
@@ -24,12 +27,18 @@ function M.create(state, params, r)
     -- 构建选项按钮列表
     local choiceChildren = {}
     for i, choice in ipairs(visible_choices) do
-        table.insert(choiceChildren, UI.Button {
-            text = choice.text,
-            variant = i == 1 and "primary" or "secondary",
-            width = "100%",
-            height = 44,
+        -- 前置检查：资源是否够用
+        local canDo, lackReason = EventExecutor.check_requirements(state, choice.ops)
+        local label = choice.text
+        if not canDo then
+            label = choice.text .. "（" .. lackReason .. "）"
+        end
+        table.insert(choiceChildren, F.actionBtn {
+            text = label,
+            variant = canDo and (i == 1 and "primary" or "secondary") or "secondary",
+            disabled = not canDo,
             onClick = function(self)
+                if not canDo then return end
                 EventExecutor.apply(state, choice.ops)
                 -- 处理选项附带的旗标变更
                 if choice.set_flags then
@@ -77,20 +86,40 @@ function M.create(state, params, r)
         table.insert(cardChildren, btn)
     end
 
-    return UI.Panel {
+    -- 解析背景图：事件自身 > 行驶中按地形 > 聚落 CG
+    local REGION_BG = {
+        urban  = "image/bg_generic_ruins_industrial_20260409080003.png",
+        wild   = "image/bg_generic_road_20260409075956.png",
+        canyon = "image/bg_generic_wilderness_20260409080002.png",
+        forest = "image/bg_generic_wilderness_20260409080002.png",
+    }
+    local bgImage = event.background or nil
+    if not bgImage then
+        if state.flow and state.flow.phase == "travelling" then
+            -- 行驶中：按当前地形区域选择路途背景
+            local region = state.flow.environment and state.flow.environment.region or "wild"
+            bgImage = REGION_BG[region] or REGION_BG.wild
+        else
+            -- 在聚落：使用聚落 CG
+            local loc = state.map and state.map.current_location
+            if loc then
+                local node = Graph.get_node(loc)
+                bgImage = node and node.bg or nil
+            end
+        end
+    end
+
+    return F.overlay {
         id = "eventScreen",
-        width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_overlay,
-        justifyContent = "center", alignItems = "center",
+        backgroundImage = bgImage,
         children = {
-            UI.Panel {
+            F.card {
                 width = "90%", maxWidth = 420,
                 padding = Theme.sizes.padding_large,
-                backgroundColor = Theme.colors.bg_card,
-                borderRadius = Theme.sizes.radius_large,
                 borderWidth = Theme.sizes.border,
                 borderColor = Theme.colors.info,
                 gap = 14,
+                enterAnim = true,
                 children = cardChildren,
             },
         },

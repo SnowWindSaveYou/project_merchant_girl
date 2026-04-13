@@ -37,10 +37,10 @@ local function build_plan_from_path(path, strategy)
     local segments = {}
     local total_time = 0
     local total_fuel = 0
-    local max_danger = "low"
+    local max_danger = "safe"
 
-    local DANGER_RANK = { low = 1, normal = 2, high = 3 }
-    local RANK_DANGER = { [1] = "low", [2] = "normal", [3] = "high" }
+    local DANGER_RANK = { safe = 1, normal = 2, danger = 3 }
+    local RANK_DANGER = { [1] = "safe", [2] = "normal", [3] = "danger" }
 
     for i = 1, #path - 1 do
         local edge = Graph.get_edge(path[i], path[i + 1])
@@ -56,11 +56,11 @@ local function build_plan_from_path(path, strategy)
             edge_type  = edge.type,
             time_sec   = edge.travel_time_sec,
             fuel_cost  = edge.fuel_cost,
-            danger     = edge.danger_level,
+            danger     = edge.danger,
         })
         total_time = total_time + edge.travel_time_sec
         total_fuel = total_fuel + edge.fuel_cost
-        local dr = DANGER_RANK[edge.danger_level] or 2
+        local dr = DANGER_RANK[edge.danger] or 2
         if dr > (DANGER_RANK[max_danger] or 1) then
             max_danger = RANK_DANGER[dr]
         end
@@ -108,7 +108,7 @@ function M.auto_plan(state, to_id, strategy)
             local sp = build_plan_from_path(safe, "safest")
             if fp and sp then
                 -- 综合评分：时间 + 风险惩罚
-                local DANGER_PENALTY = { low = 0, normal = 30, high = 80 }
+                local DANGER_PENALTY = { safe = 0, normal = 30, danger = 80 }
                 local fs = fp.total_time + (DANGER_PENALTY[fp.max_danger] or 0)
                 local ss = sp.total_time + (DANGER_PENALTY[sp.max_danger] or 0)
                 path = fs <= ss and fast or safe
@@ -170,13 +170,15 @@ end
 --- 手动规划路线（自动填充非相邻节点间的路径）
 ---@param state table
 ---@param waypoints string[] 用户手选的途经点列表（含起点，可以不相邻）
+---@param from_override string|nil 可选，覆盖起点验证（旅行中使用下一到达节点）
 ---@return table|nil plan
 ---@return string|nil error_msg
-function M.manual_plan_with_fill(state, waypoints)
+function M.manual_plan_with_fill(state, waypoints, from_override)
     if not waypoints or #waypoints < 2 then
         return nil, "至少需要起点和一个目的地"
     end
-    if waypoints[1] ~= state.map.current_location then
+    local expected_origin = from_override or state.map.current_location
+    if waypoints[1] ~= expected_origin then
         return nil, "起点必须是当前位置"
     end
 
@@ -336,6 +338,131 @@ end
 function M.is_finished(plan)
     if not plan or not plan.segments then return true end
     return plan.segment_index > #plan.segments
+end
+
+-- ============================================================
+-- 旅行中重新规划
+-- ============================================================
+
+--- 从指定起点规划路线（用于旅行中重新规划，起点为下一个到达节点）
+---@param state table
+---@param from_id string 起点节点（不一定是 current_location）
+---@param to_id string 目标节点
+---@param strategy string "fastest"|"safest"|"balanced"
+---@return table|nil plan
+function M.auto_plan_from(state, from_id, to_id, strategy)
+    if from_id == to_id then return nil end
+
+    strategy = strategy or M.Strategy.FASTEST
+    local path
+
+    if strategy == M.Strategy.FASTEST then
+        path = Graph.find_fastest_path(from_id, to_id, state)
+    elseif strategy == M.Strategy.SAFEST then
+        path = Graph.find_safest_path(from_id, to_id, state)
+    elseif strategy == M.Strategy.BALANCED then
+        local fast = Graph.find_fastest_path(from_id, to_id, state)
+        local safe = Graph.find_safest_path(from_id, to_id, state)
+        if fast and safe then
+            local fp = build_plan_from_path(fast, "fastest")
+            local sp = build_plan_from_path(safe, "safest")
+            if fp and sp then
+                local DANGER_PENALTY = { safe = 0, normal = 30, danger = 80 }
+                local fs = fp.total_time + (DANGER_PENALTY[fp.max_danger] or 0)
+                local ss = sp.total_time + (DANGER_PENALTY[sp.max_danger] or 0)
+                path = fs <= ss and fast or safe
+            else
+                path = fast or safe
+            end
+        else
+            path = fast or safe
+        end
+    end
+
+    if not path then return nil end
+    return build_plan_from_path(path, strategy)
+end
+
+--- 一次性计算三种策略的路线（指定起点版本）
+---@param state table
+---@param from_id string 起点节点
+---@param to_id string 目标节点
+---@return table { fastest, safest, balanced }
+function M.auto_plan_all_strategies_from(state, from_id, to_id)
+    return {
+        fastest  = M.auto_plan_from(state, from_id, to_id, M.Strategy.FASTEST),
+        safest   = M.auto_plan_from(state, from_id, to_id, M.Strategy.SAFEST),
+        balanced = M.auto_plan_from(state, from_id, to_id, M.Strategy.BALANCED),
+    }
+end
+
+--- 合并当前行驶计划与新计划：保留当前段，替换后续段
+--- 返回合并后的新 plan（直接替换 state.flow.route_plan）
+---@param current_plan table 当前正在执行的 route_plan
+---@param new_plan table 从下一个到达节点开始的新 plan
+---@return table merged_plan
+function M.merge_plan(current_plan, new_plan)
+    if not current_plan or not new_plan then return new_plan end
+
+    local segIdx = current_plan.segment_index or 0
+    if segIdx == 0 then segIdx = 1 end
+
+    local DANGER_RANK = { safe = 1, normal = 2, danger = 3 }
+    local RANK_DANGER = { [1] = "safe", [2] = "normal", [3] = "danger" }
+
+    -- 保留已走过的段 + 当前段
+    local merged_segments = {}
+    local merged_path = {}
+    local total_time = 0
+    local total_fuel = 0
+    local max_danger_rank = 1
+
+    for i = 1, math.min(segIdx, #current_plan.segments) do
+        local seg = current_plan.segments[i]
+        table.insert(merged_segments, seg)
+        total_time = total_time + seg.time_sec
+        total_fuel = total_fuel + seg.fuel_cost
+        local dr = DANGER_RANK[seg.danger] or 2
+        if dr > max_danger_rank then max_danger_rank = dr end
+        if i == 1 then
+            table.insert(merged_path, seg.from)
+        end
+        table.insert(merged_path, seg.to)
+    end
+
+    -- 追加新计划的段（新计划的起点 = 当前段的终点，跳过重复）
+    for i = 1, #new_plan.segments do
+        local seg = new_plan.segments[i]
+        table.insert(merged_segments, seg)
+        total_time = total_time + seg.time_sec
+        total_fuel = total_fuel + seg.fuel_cost
+        local dr = DANGER_RANK[seg.danger] or 2
+        if dr > max_danger_rank then max_danger_rank = dr end
+        table.insert(merged_path, seg.to)
+    end
+
+    return {
+        route_plan_id   = next_plan_id(),
+        strategy        = new_plan.strategy,
+        path            = merged_path,
+        segments        = merged_segments,
+        total_time      = total_time,
+        total_fuel      = total_fuel,
+        max_danger      = RANK_DANGER[max_danger_rank],
+        segment_index   = current_plan.segment_index,
+        segment_elapsed = current_plan.segment_elapsed,
+    }
+end
+
+--- 获取旅行中的"有效起点"（当前段的目标节点）
+---@param plan table 当前 route_plan
+---@return string|nil node_id 下一个到达节点的 id
+function M.get_next_arrival_node(plan)
+    if not plan or not plan.segments then return nil end
+    local segIdx = plan.segment_index or 0
+    if segIdx == 0 then segIdx = 1 end
+    local seg = plan.segments[segIdx]
+    return seg and seg.to or nil
 end
 
 return M
