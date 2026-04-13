@@ -541,6 +541,87 @@
       "required_flags": ["prologue_done"],
       "forbidden_flags": [],
       "response": null
+    },
+    {
+      "id": "CHAT_CH1_011",
+      "speaker": "taoxia",
+      "text": "今天温室那边的赵苗说，她们培育的新品种土豆快要收了。到时候运去废墟肯定好卖！",
+      "weight": 40,
+      "duration": 10,
+      "edge_types": [],
+      "progress_range": [0, 0.5],
+      "required_flags": ["prologue_done"],
+      "forbidden_flags": ["sd_ch1_01_done"],
+      "response": null
+    },
+    {
+      "id": "CHAT_CH1_012",
+      "speaker": "linli",
+      "text": "……废墟那边有个商路传闻。说往北走，有个技术据点。但我还没查证过。",
+      "weight": 35,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0.3, 0.8],
+      "required_flags": ["sd_ch1_01_done"],
+      "forbidden_flags": ["ruins_market_intro"],
+      "response": {
+        "text": "那我们去问问废墟的人？",
+        "effect": { "relation_taoxia": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_013",
+      "speaker": "taoxia",
+      "text": "刚在那边看到一个小姑娘蹲在角落翻东西，好像在找一个发光的盒子。她没注意到我。",
+      "weight": 35,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0, 1],
+      "required_flags": ["ruins_market_intro"],
+      "forbidden_flags": ["sd_ch1_03_done"],
+      "response": null
+    },
+    {
+      "id": "CHAT_CH1_014",
+      "speaker": "linli",
+      "text": "……上次那个小姑娘，刀鱼。她今天又躲在角落了。",
+      "weight": 30,
+      "duration": 8,
+      "edge_types": [],
+      "progress_range": [0.2, 0.7],
+      "required_flags": ["sd_ch1_03_done"],
+      "forbidden_flags": ["ch1_done"],
+      "response": null
+    },
+    {
+      "id": "CHAT_CH1_015",
+      "speaker": "taoxia",
+      "text": "沈禾说东边那条岔路的路标被人动过了……谁会做这种事？",
+      "weight": 30,
+      "duration": 9,
+      "edge_types": [],
+      "progress_range": [0.3, 0.8],
+      "required_flags": ["sd_ch1_03_done"],
+      "forbidden_flags": ["ch1_done"],
+      "response": {
+        "text": "……记一下。",
+        "effect": { "relation_linli": 1 }
+      }
+    },
+    {
+      "id": "CHAT_CH1_016",
+      "speaker": "taoxia",
+      "text": "你说，这个世界还能恢复到以前的样子吗？像画册里那样。",
+      "weight": 30,
+      "duration": 10,
+      "edge_types": [],
+      "progress_range": [0.4, 0.9],
+      "required_flags": ["sd_ch1_03_done"],
+      "forbidden_flags": ["ch1_done"],
+      "response": {
+        "text": "不知道。但我们还在路上。",
+        "effect": { "relation_taoxia": 1, "relation_linli": 1 }
+      }
     }
   ]
 }

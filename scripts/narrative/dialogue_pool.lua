@@ -112,12 +112,14 @@ end
 --- 按当前状态筛选可用对话
 ---@param state table
 ---@param node_type string|nil 当前节点类型（nil 时不做节点过滤）
+---@param opts table|nil 可选参数 { include_arrival_only = bool }
 ---@return table[]
-function M.filter(state, node_type)
+function M.filter(state, node_type, opts)
     M._load()
 
     local stage = M.get_relation_stage(state)
     local cooldowns = state.narrative and state.narrative.campfire_cooldowns or {}
+    local include_arrival = opts and opts.include_arrival_only
     local available = {}
 
     for _, d in ipairs(M._dialogues) do
@@ -162,8 +164,9 @@ function M.filter(state, node_type)
             end
         end
 
-        -- 6. arrival_only：仅供到达拦截使用，不进入篝火对话池
-        if ok and d.arrival_only then
+        -- 6. arrival_only：仅供到达拦截使用，不进入常规对话池
+        -- 除非调用方显式请求包含（如 StoryDirector 到达检查）
+        if ok and d.arrival_only and not include_arrival then
             ok = false
         end
 

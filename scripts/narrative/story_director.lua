@@ -37,8 +37,9 @@ end
 ---   - 不依赖 audioScene="campfire"（任何场景都可触发）
 ---   - 玩家看完主线后仍可正常使用篝火
 ---@param state table
+---@param include_arrival_only boolean|nil 到达时为 true，包含 arrival_only 对话
 ---@return table|nil dialogue  应自动触发的主线对话，nil 表示无
-function M.check_pending_story_dialogue(state)
+function M.check_pending_story_dialogue(state, include_arrival_only)
     local loc = state.map.current_location
     if not loc then return nil end
 
@@ -46,7 +47,7 @@ function M.check_pending_story_dialogue(state)
     if not node then return nil end
 
     -- 从对话池中筛选，找第一个 is_story 且 type=main_story 的
-    local pool = DialoguePool.filter(state, node.type)
+    local pool = DialoguePool.filter(state, node.type, { include_arrival_only = include_arrival_only })
     for _, d in ipairs(pool) do
         if d.is_story and d.type == "main_story" then
             return d
@@ -120,8 +121,8 @@ function M.on_node_arrival(state)
     -- 1. 检查剧情事件入队
     M.check_and_queue_story_events(state)
 
-    -- 2. 检查主线对话自动触发（直接弹出，不经过篝火系统）
-    local story_d = M.check_pending_story_dialogue(state)
+    -- 2. 检查主线对话自动触发（到达时包含 arrival_only 对话）
+    local story_d = M.check_pending_story_dialogue(state, true)
     if story_d then
         -- 设置冷却，防止重复触发
         DialoguePool.set_cooldown(state, story_d.id, story_d.cooldown or 4)
@@ -151,8 +152,8 @@ function M.check_home_auto_trigger(state)
 
     -- 已使用过篝火不影响主线触发（主线独立于篝火）
 
-    -- 检查主线对话自动触发
-    local story_d = M.check_pending_story_dialogue(state)
+    -- 检查主线对话自动触发（主页不包含 arrival_only 对话）
+    local story_d = M.check_pending_story_dialogue(state, false)
     if story_d then
         DialoguePool.set_cooldown(state, story_d.id, story_d.cooldown or 4)
         return { type = "story_dialogue", dialogue = story_d }

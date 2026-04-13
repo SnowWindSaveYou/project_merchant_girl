@@ -445,11 +445,13 @@ function handleNodeArrival(arrivalInfo)
         if directorAction and directorAction.type == "story_dialogue" then
             print("[Main] StoryDirector: auto-triggering story dialogue: "
                 .. (directorAction.dialogue and directorAction.dialogue.id or "?"))
+            -- 标记延迟结算：订单已交付但行程尚未结算，对话结束后再执行 handleTripFinish
+            gameState.flow._deferred_trip_finish = true
             Router.navigate("campfire", {
                 dialogue = directorAction.dialogue,
                 consumed = false,
             })
-            return  -- 跳过 handleTripFinish，等对话结束后走延迟到达逻辑
+            return
         end
     end
 
@@ -479,6 +481,15 @@ function HandleUpdate(eventType, eventData)
 
     -- 1. 推进时间
     Ticker.advance(gameState, dt)
+
+    -- 页面分类（需在行驶/非行驶分支之前声明，两个分支都用）
+    local curPage = Router.current()
+    local truck_stopped = curPage == "ambush"
+        or curPage == "explore"
+    local in_event = curPage == "event"
+        or curPage == "event_result"
+    local on_regular_page = not truck_stopped and not in_event
+        and curPage ~= "summary"
 
     -- 2. 行驶中逻辑
     if Flow.get_phase(gameState) == Flow.Phase.TRAVELLING then
@@ -538,18 +549,6 @@ function HandleUpdate(eventType, eventData)
             end
         end
 
-        -- 页面分类（挂机游戏：旅行在所有常规页面后台继续）
-        local curPage = Router.current()
-        -- 特殊流程页面：战斗/探索期间停车，事件期间行驶但延迟到达
-        local truck_stopped = curPage == "ambush"
-            or curPage == "explore"
-        -- 事件流程中：行驶继续但到达延迟处理
-        local in_event = curPage == "event"
-            or curPage == "event_result"
-        -- 常规页面（home/map/orders/cargo 等）：一切正常后台运行
-        local on_regular_page = not truck_stopped and not in_event
-            and curPage ~= "summary"
-
         -- 2a. 行驶推进 + 到达处理（所有非停车页面都推进）
         if not truck_stopped then
             local arrival = Flow.update_travel(gameState, dt)
@@ -576,6 +575,15 @@ function HandleUpdate(eventType, eventData)
             gameState.flow._deferred_arrival = nil
             print("[Main] Processing deferred arrival: " .. arrival.arrived_node)
             handleNodeArrival(arrival)
+        end
+
+        -- 2a3. 处理延迟行程结算（StoryDirector 到达触发对话后，对话结束再执行）
+        if on_regular_page
+            and curPage ~= "campfire" and curPage ~= "npc"
+            and gameState.flow._deferred_trip_finish then
+            gameState.flow._deferred_trip_finish = nil
+            print("[Main] Processing deferred trip finish")
+            handleTripFinish()
         end
 
         -- 2b. 检查待处理战斗（仅在首页跳转，避免打断其他页面操作）
@@ -620,11 +628,17 @@ function HandleUpdate(eventType, eventData)
             end
         end
 
-    -- 2d. 非行驶中：叙事导演在 home 页检查主线内容自动触发
-    -- 主线对话直接弹出，不经过篝火系统
+    -- 2d. 非行驶中：处理延迟行程结算 + 叙事导演检查
     elseif on_regular_page then
-        local curPage2 = Router.current()
-        if curPage2 == "home" then
+        -- 2d1. 延迟行程结算（StoryDirector 对话结束后）
+        if curPage ~= "campfire" and curPage ~= "npc"
+            and gameState.flow._deferred_trip_finish then
+            gameState.flow._deferred_trip_finish = nil
+            print("[Main] Processing deferred trip finish (non-travelling)")
+            handleTripFinish()
+        end
+        -- 2d2. 叙事导演：home 页主线对话自动触发
+        if curPage == "home" then
             local directorAction = StoryDirector.check_home_auto_trigger(gameState)
             if directorAction and directorAction.type == "story_dialogue" then
                 print("[Main] StoryDirector: auto-triggering story dialogue on home: "

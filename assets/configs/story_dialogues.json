@@ -100,7 +100,7 @@
       "cooldown": 99,
       "required_flags": ["prologue_done"],
       "forbidden_flags": ["sd_ch1_01_done"],
-      "min_trips": 3,
+      "min_trips": 2,
       "steps": [
         { "speaker": "narrator", "text": "路开始变熟了。每个弯道，每块路标，林砾都记得住。" },
         { "speaker": "taoxia", "text": "我发现一个规律——温室的人买什么都砍价，但买完会说谢谢。", "expression": "happy" },
@@ -140,7 +140,7 @@
       "cooldown": 99,
       "required_flags": ["sd_ch1_01_done"],
       "forbidden_flags": ["sd_ch1_02_done"],
-      "min_trips": 5,
+      "min_trips": 4,
       "steps": [
         { "speaker": "narrator", "text": "第一次走进废墟营地的市场。四面是拼凑的铁皮棚，空气里有铁锈和烤肉的味道。" },
         { "speaker": "narrator", "text": "伍拾七靠在一个货箱上，看了她们一眼。" },
@@ -179,7 +179,7 @@
       "cooldown": 99,
       "required_flags": ["ruins_market_intro"],
       "forbidden_flags": ["sd_ch1_03_done"],
-      "min_trips": 7,
+      "min_trips": 5,
       "steps": [
         { "speaker": "narrator", "text": "帮营地做了几次生意后，那个叫刀鱼的小姑娘偷偷拉住陶夏的袖子。" },
         { "speaker": "dao_yu", "text": "姐姐，你们跑过很多地方吧？" },
@@ -229,7 +229,7 @@
       "cooldown": 99,
       "required_flags": ["sd_ch1_03_done"],
       "forbidden_flags": ["sd_ch1_04_done"],
-      "min_trips": 9,
+      "min_trips": 7,
       "steps": [
         { "speaker": "narrator", "text": "夜里。温室社区外的空地，篝火烧得很低。" },
         { "speaker": "narrator", "text": "陶夏坐在货车后斗边上，腿悬着晃。林砾靠着轮胎，翻记录本。" },
