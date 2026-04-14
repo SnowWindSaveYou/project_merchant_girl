@@ -572,16 +572,7 @@ function M.create(state, curNode)
                 fontSize = Theme.sizes.font_normal,
                 highlight = true,
                 onClick = function(self)
-                    local letters = LetterSystem.collect_all(state)
-                    if letters and #letters > 0 then
-                        router_.navigate("letter", {
-                            letters = letters,
-                            state = state,
-                            onFinish = function()
-                                router_.navigate("home")
-                            end,
-                        })
-                    end
+                    router_.navigate("letter_pickup")
                 end,
             })
         end
@@ -740,17 +731,7 @@ function M.create(state, curNode)
             end,
         })
 
-        -- 信箱（已读信件回顾）
-        if LetterSystem.read_count(state) > 0 then
-            table.insert(lowerChildren, F.actionBtn {
-                text = "📬 信箱（" .. LetterSystem.read_count(state) .. " 封）",
-                variant = "secondary",
-                fontSize = Theme.sizes.font_normal,
-                onClick = function(self)
-                    router_.navigate("mailbox")
-                end,
-            })
-        end
+        -- 信箱已迁移到货仓 tab（随时可查看）
 
         -- 篝火（有主线话题且可用时高亮）
         local canCamp, campReason, isCampFree = Campfire.can_start(state)

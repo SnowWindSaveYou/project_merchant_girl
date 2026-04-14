@@ -63,7 +63,7 @@ function M._build(state)
                 variant = "outline",
                 onClick = function()
                     SoundMgr.play("close")
-                    router.navigate("home")
+                    router.navigate("cargo")
                 end,
             },
         },

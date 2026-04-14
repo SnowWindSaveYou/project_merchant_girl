@@ -14,6 +14,83 @@ local Flags        = require("core/flags")
 local SpeechBubble = require("ui/speech_bubble")
 local F            = require("ui/ui_factory")
 local SoundMgr     = require("ui/sound_manager")
+local NpcManager   = require("narrative/npc_manager")
+local SketchBorder = require("ui/sketch_border")
+
+-- NPC 立绘映射（与 gal_dialogue 保持一致）
+local NPC_PORTRAITS = {
+    shen_he    = "image/portrait_shen_he_20260406000120.png",
+    han_ce     = "image/portrait_han_ce_20260406000106.png",
+    wu_shiqi   = "image/portrait_wu_shiqi_20260406000058.png",
+    bai_shu    = "image/portrait_bai_shu_20260406000056.png",
+    meng_hui   = "image/portrait_meng_hui_20260406000106.png",
+    ming_sha   = "image/portrait_ming_sha_20260406000227.png",
+    dao_yu     = "image/portrait_dao_yu_20260408072957.png",
+    xie_ling   = "image/portrait_xie_ling_20260408073029.png",
+    ji_wei     = "image/portrait_ji_wei_20260408124639.png",
+    old_gan    = "image/portrait_old_gan_20260408124632.png",
+    a_xiu      = "image/portrait_a_xiu_20260409120249.png",
+    cheng_yuan = "image/portrait_cheng_yuan_20260409120343.png",
+    su_mo      = "image/portrait_su_mo_20260409120418.png",
+    xue_dong   = "image/portrait_xue_dong_20260412064247.png",
+}
+
+-- 势力通用立绘（NPC 无独立立绘时的 fallback）
+local FACTION_PORTRAITS = {
+    farm    = "image/portrait_faction_farm_20260406000212.png",
+    tech    = "image/portrait_faction_tech_20260406000259.png",
+    scav    = "image/portrait_faction_scav_20260406000214.png",
+    scholar = "image/portrait_faction_scholar_20260406000214.png",
+}
+
+-- 聚落 → 势力映射（用于 fallback 立绘）
+local SETTLEMENT_FACTION = {
+    greenhouse      = "farm",
+    greenhouse_farm = "farm",
+    tower           = "tech",
+    bell_tower      = "scholar",
+    ruins_camp      = "scav",
+    dome_outpost    = "tech",
+    metro_camp      = "scav",
+    old_church      = "scholar",
+}
+
+--- 获取 NPC 立绘路径（独立立绘 → 势力 fallback → nil）
+local function get_portrait(npc_id, settlement_id)
+    if npc_id and NPC_PORTRAITS[npc_id] then
+        return NPC_PORTRAITS[npc_id]
+    end
+    local faction = settlement_id and SETTLEMENT_FACTION[settlement_id]
+    if faction and FACTION_PORTRAITS[faction] then
+        return FACTION_PORTRAITS[faction]
+    end
+    return FACTION_PORTRAITS.farm  -- 最终 fallback
+end
+
+-- NPC 商店问候语（按 NPC 个性）
+local SHOP_GREETINGS = {
+    shen_he    = { "欢迎来温室补给，价格公道。", "需要什么尽管开口，我们量力供应。", "辛苦跑一趟，先看看货架吧。" },
+    han_ce     = { "塔台物资有限，但质量保证。", "来啦，今天带了什么好东西？", "交易讲信用，咱们痛快点。" },
+    wu_shiqi   = { "废墟的规矩——先验货，再谈价。", "别磨蹭，看上什么直接说。", "东西虽旧，但都管用。" },
+    bai_shu    = { "书院的库存都在这了，请过目。", "以物易物也行，学问无价嘛。", "别急，慢慢挑。" },
+    zhao_miao  = { "新鲜蔬果刚收的，便宜卖了。", "农场的东西实在，不掺假。", "多买点吧，路上好补给。" },
+    cheng_yuan = { "哨站资源紧张，别太挑了。", "能匀出来的都在这了。", "快进快出，别耽误巡逻。" },
+    a_xiu      = { "地铁营地啥都有，就是贵点~", "修车的零件也有，要不要看看？", "嘿嘿，今天有好东西到货。" },
+    su_mo      = { "旧教堂的存货……将就看吧。", "安静点交易，别惊动外面。", "东西不多，但都精挑细选过。" },
+}
+
+-- 通用问候（未匹配 NPC 时的后备）
+local GENERIC_GREETINGS = {
+    "欢迎光临，看看需要什么。",
+    "货架上的东西随便挑。",
+    "今天有新到的货，要看看吗？",
+}
+
+-- 模块级状态
+local _shopGreeting = nil
+local _shopNpc      = nil
+local _npcPortrait  = nil
+local _bgImage      = nil
 
 --- 据点服务定价
 local SERVICE = {
@@ -34,6 +111,25 @@ function M.create(state, params, r)
     local location = state.map.current_location
     local locName = Graph.get_node_name(location)
 
+    -- 查找当地 NPC（每次都执行，确保 NPC 信息可用）
+    local npc = NpcManager.get_npc_for_settlement(location)
+    _shopNpc = npc
+    _npcPortrait = get_portrait(npc and npc.id, location)
+
+    -- 聚落背景图
+    local node = Graph.get_node(location)
+    _bgImage = node and node.bg or nil
+
+    -- 首次进入时随机问候语（refresh 时保持不变）
+    if not _shopGreeting then
+        if npc then
+            local greetings = SHOP_GREETINGS[npc.id] or GENERIC_GREETINGS
+            _shopGreeting = greetings[math.random(#greetings)]
+        else
+            _shopGreeting = GENERIC_GREETINGS[math.random(#GENERIC_GREETINGS)]
+        end
+    end
+
     local fuelPct  = math.floor(state.truck.fuel / state.truck.fuel_max * 100 + 0.5)
     local duraPct  = math.floor(state.truck.durability / state.truck.durability_max * 100 + 0.5)
     local fuelFull = state.truck.fuel >= state.truck.fuel_max
@@ -43,135 +139,96 @@ function M.create(state, params, r)
     local cargoFree = CargoUtils.get_cargo_free(state)
     local cargoFull = cargoFree <= 0
 
-    -- 好感信息
+    -- 好感（仅用于判断休整站解锁）
     local sett = state.settlements[location]
     local gw = sett and sett.goodwill or 0
-    local gwInfo = Goodwill.get_info(gw)
 
-    local contentChildren = {
-        UI.Label {
-            text = locName .. " · 交易所",
-            fontSize = Theme.sizes.font_title,
-            fontColor = Theme.colors.text_primary,
-        },
-        UI.Panel {
-            width = "100%", flexDirection = "row",
-            justifyContent = "space-between", alignItems = "center",
-            marginBottom = 2,
-            children = {
-                UI.Label {
-                    text = "持有  $ " .. tostring(state.economy.credits),
-                    fontSize = Theme.sizes.font_normal,
-                    fontColor = Theme.colors.accent,
-                },
-                UI.Label {
-                    text = "仓位 " .. cargoUsed .. "/" .. state.truck.cargo_slots,
-                    fontSize = Theme.sizes.font_normal,
-                    fontColor = cargoFull and Theme.colors.danger or Theme.colors.text_secondary,
-                },
-            },
-        },
-        -- 好感度
-        UI.Panel {
-            width = "100%", flexDirection = "row",
-            justifyContent = "space-between", alignItems = "center",
-            marginBottom = 4,
-            children = {
-                UI.Label {
-                    text = "好感: " .. gwInfo.name .. " (Lv" .. gwInfo.level .. ")",
-                    fontSize = Theme.sizes.font_small,
-                    fontColor = gwInfo.level >= 2 and Theme.colors.success
-                        or gwInfo.level >= 1 and Theme.colors.info
-                        or Theme.colors.text_dim,
-                },
-                UI.Label {
-                    text = gwInfo.next_threshold
-                        and (math.floor(gw) .. " / " .. gwInfo.next_threshold)
-                        or (math.floor(gw) .. " (MAX)"),
-                    fontSize = Theme.sizes.font_small,
-                    fontColor = Theme.colors.text_secondary,
-                },
-            },
-        },
+    local contentChildren = {}
 
-        -- ── 补给站 ──
-        F.card {
-            padding = 12,
-            gap = 8,
-            children = {
-                UI.Label {
-                    text = "补给站",
-                    fontSize = Theme.sizes.font_normal,
-                    fontColor = Theme.colors.info,
-                },
-                -- 燃料状态 + 加油按钮
-                UI.Panel {
-                    width = "100%", flexDirection = "row",
-                    justifyContent = "space-between", alignItems = "center",
-                    children = {
-                        UI.Panel { gap = 2, children = {
-                            UI.Label {
-                                text = "燃料  " .. math.floor(state.truck.fuel) .. " / " .. state.truck.fuel_max,
-                                fontSize = Theme.sizes.font_small,
-                                fontColor = Theme.colors.text_primary,
-                            },
-                            UI.ProgressBar {
-                                value = state.truck.fuel / state.truck.fuel_max,
-                                width = 120, height = 6,
-                                variant = fuelPct < 25 and "danger" or fuelPct < 50 and "warning" or "success",
-                            },
-                        }},
-                        F.actionBtn {
-                            text = SERVICE.refuel.label .. "  $" .. SERVICE.refuel.cost,
-                            variant = "primary", height = 32, width = 110,
-                            disabled = fuelFull or state.economy.credits < SERVICE.refuel.cost,
-                            onClick = function(self)
-                                if not fuelFull and state.economy.credits >= SERVICE.refuel.cost then
-                                    state.economy.credits = state.economy.credits - SERVICE.refuel.cost
-                                    state.truck.fuel = math.min(state.truck.fuel_max, state.truck.fuel + SERVICE.refuel.unit)
-                                    router.refresh()
-                                end
-                            end,
+    -- NPC 信息
+    local npcName  = _shopNpc and _shopNpc.name or "店员"
+    local npcIcon  = _shopNpc and _shopNpc.icon or "🏪"
+    local npcColor = _shopNpc and _shopNpc.color or { 148, 148, 148, 255 }
+
+    -- 标题和气泡会放到背景层上（见下方 layerChildren），不放 contentChildren
+
+    -- ── 补给站 ──
+    table.insert(contentChildren, F.card {
+        padding = 12,
+        gap = 8,
+        children = {
+            UI.Label {
+                text = "补给站",
+                fontSize = Theme.sizes.font_normal,
+                fontColor = Theme.colors.info,
+            },
+            -- 燃料状态 + 加油按钮
+            UI.Panel {
+                width = "100%", flexDirection = "row",
+                justifyContent = "space-between", alignItems = "center",
+                children = {
+                    UI.Panel { gap = 2, children = {
+                        UI.Label {
+                            text = "燃料  " .. math.floor(state.truck.fuel) .. " / " .. state.truck.fuel_max,
+                            fontSize = Theme.sizes.font_small,
+                            fontColor = Theme.colors.text_primary,
                         },
+                        UI.ProgressBar {
+                            value = state.truck.fuel / state.truck.fuel_max,
+                            width = 120, height = 6,
+                            variant = fuelPct < 25 and "danger" or fuelPct < 50 and "warning" or "success",
+                        },
+                    }},
+                    F.actionBtn {
+                        text = SERVICE.refuel.label .. "  $" .. SERVICE.refuel.cost,
+                        variant = "primary", height = 32, width = 110,
+                        disabled = fuelFull or state.economy.credits < SERVICE.refuel.cost,
+                        onClick = function(self)
+                            if not fuelFull and state.economy.credits >= SERVICE.refuel.cost then
+                                state.economy.credits = state.economy.credits - SERVICE.refuel.cost
+                                state.truck.fuel = math.min(state.truck.fuel_max, state.truck.fuel + SERVICE.refuel.unit)
+                                router.refresh()
+                            end
+                        end,
                     },
                 },
-                -- 耐久状态 + 维修按钮
-                UI.Panel {
-                    width = "100%", flexDirection = "row",
-                    justifyContent = "space-between", alignItems = "center",
-                    children = {
-                        UI.Panel { gap = 2, children = {
-                            UI.Label {
-                                text = "耐久  " .. math.floor(state.truck.durability) .. " / " .. state.truck.durability_max,
-                                fontSize = Theme.sizes.font_small,
-                                fontColor = Theme.colors.text_primary,
-                            },
-                            UI.ProgressBar {
-                                value = state.truck.durability / state.truck.durability_max,
-                                width = 120, height = 6,
-                                variant = duraPct < 25 and "danger" or duraPct < 50 and "warning" or "success",
-                            },
-                        }},
-                        F.actionBtn {
-                            text = SERVICE.repair.label .. "  $" .. SERVICE.repair.cost,
-                            variant = "primary", height = 32, width = 110,
-                            disabled = duraFull or state.economy.credits < SERVICE.repair.cost,
-                            onClick = function(self)
-                                if not duraFull and state.economy.credits >= SERVICE.repair.cost then
-                                    state.economy.credits = state.economy.credits - SERVICE.repair.cost
-                                    state.truck.durability = math.min(state.truck.durability_max, state.truck.durability + SERVICE.repair.unit)
-                                    router.refresh()
-                                end
-                            end,
+            },
+            -- 耐久状态 + 维修按钮
+            UI.Panel {
+                width = "100%", flexDirection = "row",
+                justifyContent = "space-between", alignItems = "center",
+                children = {
+                    UI.Panel { gap = 2, children = {
+                        UI.Label {
+                            text = "耐久  " .. math.floor(state.truck.durability) .. " / " .. state.truck.durability_max,
+                            fontSize = Theme.sizes.font_small,
+                            fontColor = Theme.colors.text_primary,
                         },
+                        UI.ProgressBar {
+                            value = state.truck.durability / state.truck.durability_max,
+                            width = 120, height = 6,
+                            variant = duraPct < 25 and "danger" or duraPct < 50 and "warning" or "success",
+                        },
+                    }},
+                    F.actionBtn {
+                        text = SERVICE.repair.label .. "  $" .. SERVICE.repair.cost,
+                        variant = "primary", height = 32, width = 110,
+                        disabled = duraFull or state.economy.credits < SERVICE.repair.cost,
+                        onClick = function(self)
+                            if not duraFull and state.economy.credits >= SERVICE.repair.cost then
+                                state.economy.credits = state.economy.credits - SERVICE.repair.cost
+                                state.truck.durability = math.min(state.truck.durability_max, state.truck.durability + SERVICE.repair.unit)
+                                router.refresh()
+                            end
+                        end,
                     },
                 },
             },
         },
+    })
 
-        -- ── 分隔 ──
-        F.sectionTitle("商品交易"),
-    }
+    -- ── 商品交易 ──
+    table.insert(contentChildren, F.sectionTitle("商品交易"))
 
     for _, g in ipairs(Goods.ALL) do
         local buyP  = Pricing.get_buy_price(g.id, location, state)
@@ -469,13 +526,114 @@ function M.create(state, params, r)
         shopTutorialShown_ = true
     end
 
+    -- ═══════════════════════════════════════════════
+    -- 分层布局：底层 背景+立绘  |  上层 内容Panel
+    -- ═══════════════════════════════════════════════
+
+    local layerChildren = {}
+
+    -- 底层 1：背景图（全屏，与首页一致）
+    if _bgImage then
+        table.insert(layerChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundImage = _bgImage,
+            backgroundFit = "cover",
+        })
+        table.insert(layerChildren, UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundColor = { 0, 0, 0, 0 },
+            backgroundGradient = {
+                direction = "to-bottom",
+                colors = {
+                    { 0, 0, 0, 0 },
+                    { 0, 0, 0, 0 },
+                    Theme.colors.home_gradient_mid,
+                    Theme.colors.home_gradient_bot,
+                },
+            },
+        })
+    end
+
+    -- 底层 2：标题（在立绘后面，先插入）
+    local titlePanel = UI.Panel {
+        backgroundColor = Theme.colors.home_overlay,
+        borderRadius = Theme.sizes.radius,
+        padding = 10, gap = 4,
+        flexDirection = "row", alignItems = "center", gap = 6,
+        children = {
+            UI.Label { text = npcIcon, fontSize = 20 },
+            UI.Label {
+                text = npcName .. " · " .. locName .. " 交易所",
+                fontSize = Theme.sizes.font_large,
+                fontColor = Theme.colors.home_title,
+            },
+        },
+    }
+    SketchBorder.register(titlePanel, "card")
+    table.insert(layerChildren, UI.Panel {
+        position = "absolute", left = 12, top = 8, right = 12,
+        children = { titlePanel },
+    })
+
+    -- 底层 3+4：全屏容器（立绘+气泡，参考 gal_dialogue 布局）
+    table.insert(layerChildren, UI.Panel {
+        width = "100%", height = "100%",
+        position = "absolute", left = 0, top = 0,
+        children = {
+            -- 右侧立绘（left=27% 等效于 right=-22%，规避 UI 库负百分比解析问题）
+            _npcPortrait and UI.Panel {
+                width = "95%", height = "95%",
+                position = "absolute", left = "27%", top = "3%",
+                backgroundImage = _npcPortrait,
+                backgroundFit = "contain",
+            } or nil,
+            -- 左侧气泡
+            UI.Panel {
+                position = "absolute", left = "3%", top = "18%",
+                maxWidth = "40%",
+                backgroundColor = { 245, 240, 228, 230 },
+                padding = 10, paddingLeft = 14, paddingRight = 14,
+                borderRadius = Theme.sizes.radius,
+                boxShadow = {
+                    { x = 0, y = 2, blur = 10, spread = 2, color = { 0, 0, 0, 80 } },
+                },
+                children = {
+                    UI.Label {
+                        text = "「" .. (_shopGreeting or GENERIC_GREETINGS[1]) .. "」",
+                        fontSize = Theme.sizes.font_normal,
+                        fontColor = { 50, 45, 38, 230 },
+                        lineHeight = 1.4,
+                    },
+                },
+            },
+        },
+    })
+
+    -- 上层：内容 Panel（从中部偏下开始，半透明背景，可滚动）
+    local contentPanel = UI.Panel {
+        width = "100%", flexGrow = 1, flexShrink = 1,
+        backgroundColor = Theme.colors.home_lower_tint,
+        borderRadius = Theme.sizes.radius_large,
+        borderRadiusBottomLeft = 0, borderRadiusBottomRight = 0,
+        padding = Theme.sizes.padding, gap = 10,
+        paddingBottom = 40,
+        overflow = "scroll",
+        children = contentChildren,
+    }
+    SketchBorder.register(contentPanel, "card")
+
+    table.insert(layerChildren, UI.Panel {
+        width = "100%", height = "100%",
+        paddingTop = _bgImage and "38%" or 0,
+        children = { contentPanel },
+    })
+
     local rootPanel = UI.Panel {
         id = "shopScreen",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
-        padding = Theme.sizes.padding, gap = 10,
-        overflow = "scroll",
-        children = contentChildren,
+        children = layerChildren,
     }
 
     -- 教程气泡：在 create 阶段排入，由 update 首帧触发
