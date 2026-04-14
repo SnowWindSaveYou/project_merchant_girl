@@ -18,8 +18,8 @@ local _index     = 1    -- 当前阅读到第几封
 local _onFinish  = nil  -- 全部读完的回调
 local _bgImage   = nil  -- 背景图路径
 
--- 信纸配色
-local PAPER_BG       = { 248, 242, 228, 245 }
+-- 信纸贴图 & 配色
+local PAPER_IMAGE    = "image/letter_paper_bg_20260414111056.png"
 local PAPER_BORDER   = { 198, 186, 162, 180 }
 local TEXT_INK       = {  52,  48,  42, 255 }
 local TEXT_DIM       = { 128, 118, 102, 255 }
@@ -183,14 +183,27 @@ function M._buildLetter(state)
         paddingBottom = 8,
     }
 
-    -- 信纸卡片
-    local paperCard = F.card {
+    -- 信纸卡片（分层：贴图底层 + 内容滚动层）
+    local paperCard = UI.Panel {
         width = "100%",
-        maxHeight = "80%",
-        backgroundColor = PAPER_BG,
-        padding = 20,
-        overflow = "scroll",
-        children = contentChildren,
+        maxHeight = "88%",
+        children = {
+            -- 底层：信纸贴图（不拉伸）
+            UI.Panel {
+                width = "100%", height = "100%",
+                position = "absolute", left = 0, top = 0,
+                backgroundImage = PAPER_IMAGE,
+                backgroundFit = "cover",
+            },
+            -- 上层：可滚动内容
+            UI.Panel {
+                width = "100%", height = "100%",
+                padding = 40, paddingTop = 36, paddingBottom = 36,
+                gap = 6,
+                overflow = "scroll",
+                children = contentChildren,
+            },
+        },
     }
 
     -- 用 F.overlay 提供背景图 + 暗色遮罩
@@ -199,7 +212,7 @@ function M._buildLetter(state)
         backgroundImage = _bgImage,
         children = {
             UI.Panel {
-                width = "90%", maxWidth = 420,
+                width = "94%", maxWidth = 480,
                 alignItems = "center",
                 gap = 0,
                 children = {
