@@ -223,6 +223,75 @@ function F.overlay(props)
 end
 
 -- ============================================================
+-- 弹窗卡片 (popupCard)
+-- 外层固定装饰框 + 内层按需滚动
+-- 解决旧模式（ScrollView > Card）装饰框跟随滚动 + 高度始终触发滚动的问题
+-- ============================================================
+--- 创建弹窗卡片：外层带 SketchBorder 装饰框，内层 ScrollView 仅在内容溢出时滚动
+--- props.width / props.maxWidth: 弹窗宽度
+--- props.maxHeight: 弹窗最大高度（默认 "85%"）
+--- props.padding: 内容区内边距（默认 Theme.sizes.padding_large）
+--- props.gap: 内容区间距（默认 10）
+--- props.alignItems: 内容区对齐方式
+--- props.enterAnim: 入场动画
+--- props.enterDelay: 入场延迟
+--- props.borderWidth / props.borderColor: 额外边框属性
+--- props.sketchStyle / props.sketchOverrides: 手绘边框样式
+--- props.children: 内容子组件列表
+---@param props table
+---@return table widget
+function F.popupCard(props)
+    local p = props or {}
+
+    -- 外层壳：带背景色 + SketchBorder 装饰框，不滚动
+    -- 使用 flexShrink=1 让外层在内容少时收缩到内容高度，多时撑到 maxHeight 停住
+    local outerPanel = UI.Panel {
+        id            = p.id or nil,
+        width         = p.width or "90%",
+        maxWidth      = p.maxWidth or 420,
+        maxHeight     = p.maxHeight or "85%",
+        backgroundColor = p.backgroundColor or Theme.colors.bg_card,
+        borderWidth   = p.borderWidth or 0,
+        borderColor   = p.borderColor or nil,
+        borderRadius  = p.borderRadius or Theme.sizes.radius,
+        flexShrink    = 1,
+        children      = {
+            -- 内层 ScrollView：仅在内容超出 maxHeight 时才出现滚动
+            UI.ScrollView {
+                width    = "100%",
+                flexGrow = 1,
+                children = {
+                    -- 内容容器：承载真正的子组件
+                    UI.Panel {
+                        width         = "100%",
+                        padding       = p.padding or Theme.sizes.padding_large,
+                        gap           = p.gap or 10,
+                        alignItems    = p.alignItems or nil,
+                        flexDirection = p.flexDirection or nil,
+                        children      = p.children or {},
+                    },
+                },
+            },
+        },
+    }
+
+    -- 注册手绘边框到外层（装饰框固定在滚动区域外）
+    if p.sketch ~= false then
+        local skStyle = p.sketchStyle or "card"
+        SketchBorder.register(outerPanel, skStyle, p.sketchOverrides)
+    end
+
+    -- 入场动画
+    if p.enterAnim and not F.skipEnterAnim then
+        local delay = p.enterDelay or 0
+        F._pendingAnims = F._pendingAnims or {}
+        table.insert(F._pendingAnims, { widget = outerPanel, delay = delay })
+    end
+
+    return outerPanel
+end
+
+-- ============================================================
 -- 分割线 (divider)
 -- ============================================================
 function F.divider(props)

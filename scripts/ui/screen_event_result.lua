@@ -40,8 +40,7 @@ function M.create(state, params, r)
         id = "eventResultScreen",
         backgroundImage = bgImage,
         children = {
-            F.card {
-                width = "90%", maxWidth = 420,
+            F.popupCard {
                 padding = Theme.sizes.padding_large,
                 gap = 14, alignItems = "center",
                 enterAnim = true,

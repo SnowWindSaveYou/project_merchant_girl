@@ -126,70 +126,63 @@ function M.create(state, params, r)
         id = "summaryScreen",
         backgroundImage = bgImage,
         children = {
-            UI.ScrollView {
-                width = "90%", maxWidth = 420,
-                maxHeight = "85%",
+            F.popupCard {
+                id = "summaryCard",
+                padding = Theme.sizes.padding_large,
+                gap = 10, alignItems = "center",
+                enterAnim = true,
                 children = {
-                    F.card {
-                        id = "summaryScroll",
+                    UI.Label {
+                        text = "行程结算",
+                        fontSize = Theme.sizes.font_title, fontColor = Theme.colors.text_primary,
+                    },
+                    UI.Label {
+                        text = "抵达 " .. destName,
+                        fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.info,
+                    },
+                    F.divider(),
+                    -- 路线信息
+                    createResultRow("策略", STRATEGY_NAMES[strategy] or strategy),
+                    createResultRow("耗时", string.format("%d分%02d秒", mins, secs)),
+                    createResultRow("燃料消耗", tostring(totalFuel)),
+                    F.divider(),
+                    -- 交付订单
+                    UI.Label {
+                        text = "交付明细",
+                        fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.text_primary,
                         width = "100%",
-                        padding = Theme.sizes.padding_large,
-                        gap = 10, alignItems = "center",
-                        enterAnim = true,
-                        children = {
-                            UI.Label {
-                                text = "行程结算",
-                                fontSize = Theme.sizes.font_title, fontColor = Theme.colors.text_primary,
-                            },
-                            UI.Label {
-                                text = "抵达 " .. destName,
-                                fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.info,
-                            },
-                            F.divider(),
-                            -- 路线信息
-                            createResultRow("策略", STRATEGY_NAMES[strategy] or strategy),
-                            createResultRow("耗时", string.format("%d分%02d秒", mins, secs)),
-                            createResultRow("燃料消耗", tostring(totalFuel)),
-                            F.divider(),
-                            -- 交付订单
-                            UI.Label {
-                                text = "交付明细",
-                                fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.text_primary,
-                                width = "100%",
-                            },
-                            UI.Panel {
-                                width = "100%", gap = 4,
-                                children = deliveryCards,
-                            },
-                            F.divider(),
-                            -- 收入
-                            UI.Label {
-                                text = "+ $ " .. tostring(totalReward),
-                                fontSize = 28, fontColor = Theme.colors.success,
-                            },
-                            UI.Label {
-                                text = "当前信用点  $ " .. tostring(state.economy.credits),
-                                fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.accent,
-                            },
-                            -- 剩余订单
-                            #remaining > 0 and UI.Label {
-                                text = "剩余 " .. #remaining .. " 个活跃订单",
-                                fontSize = Theme.sizes.font_small, fontColor = Theme.colors.text_dim,
-                            } or UI.Panel { height = 0 },
-                            UI.Label {
-                                text = "累计行程 " .. tostring(state.stats.total_trips) .. " 趟",
-                                fontSize = Theme.sizes.font_small, fontColor = Theme.colors.text_dim,
-                            },
-                            -- 继续按钮
-                            F.actionBtn {
-                                text = "继续行商",
-                                variant = "primary", height = 48, marginTop = 8,
-                                onClick = function(self)
-                                    Flow.finish_summary(state)
-                                    router.navigate("home")
-                                end,
-                            },
-                        },
+                    },
+                    UI.Panel {
+                        width = "100%", gap = 4,
+                        children = deliveryCards,
+                    },
+                    F.divider(),
+                    -- 收入
+                    UI.Label {
+                        text = "+ $ " .. tostring(totalReward),
+                        fontSize = 28, fontColor = Theme.colors.success,
+                    },
+                    UI.Label {
+                        text = "当前信用点  $ " .. tostring(state.economy.credits),
+                        fontSize = Theme.sizes.font_normal, fontColor = Theme.colors.accent,
+                    },
+                    -- 剩余订单
+                    #remaining > 0 and UI.Label {
+                        text = "剩余 " .. #remaining .. " 个活跃订单",
+                        fontSize = Theme.sizes.font_small, fontColor = Theme.colors.text_dim,
+                    } or UI.Panel { height = 0 },
+                    UI.Label {
+                        text = "累计行程 " .. tostring(state.stats.total_trips) .. " 趟",
+                        fontSize = Theme.sizes.font_small, fontColor = Theme.colors.text_dim,
+                    },
+                    -- 继续按钮
+                    F.actionBtn {
+                        text = "继续行商",
+                        variant = "primary", height = 48, marginTop = 8,
+                        onClick = function(self)
+                            Flow.finish_summary(state)
+                            router.navigate("home")
+                        end,
                     },
                 },
             },

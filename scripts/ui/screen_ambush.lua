@@ -72,10 +72,8 @@ function M._build_intro_view(state)
     return F.overlay {
         id = "ambushScreen",
         backgroundImage = bgImage_,
-        contentWidth = "90%",
         children = {
-            F.card {
-                maxWidth = 420,
+            F.popupCard {
                 padding = Theme.sizes.padding_large,
                 borderWidth = 2, borderColor = Theme.colors.danger,
                 gap = 16, alignItems = "center",
@@ -389,10 +387,8 @@ function M._show_result_view(state)
     local root = F.overlay {
         id = "ambushScreen",
         backgroundImage = bgImage_,
-        contentWidth = "90%",
         children = {
-            F.card {
-                maxWidth = 420,
+            F.popupCard {
                 padding = Theme.sizes.padding_large,
                 borderWidth = 2, borderColor = resultColor,
                 gap = 12, alignItems = "center",
