@@ -121,11 +121,17 @@ function M._buildLetter(state)
             backgroundColor = { 168, 188, 208, 120 },
             marginTop = 16, marginBottom = 8,
         })
-        table.insert(contentChildren, UI.Label {
-            text = "📮 雪冬附言：",
-            fontSize = 12,
-            fontColor = TEXT_PS,
-            fontWeight = "bold",
+        table.insert(contentChildren, UI.Panel {
+            flexDirection = "row", alignItems = "center", gap = 4,
+            children = {
+                F.icon { icon = "letter", size = 14 },
+                UI.Label {
+                    text = "雪冬附言：",
+                    fontSize = 12,
+                    fontColor = TEXT_PS,
+                    fontWeight = "bold",
+                },
+            },
         })
         table.insert(contentChildren, UI.Label {
             text = letter.postscript,
@@ -136,29 +142,24 @@ function M._buildLetter(state)
         })
     end
 
-    -- 底部按钮
     local isLast = (_index >= #_letters)
-    local btnText = isLast and "收好信件" or ("下一封（" .. _index .. "/" .. #_letters .. "）")
 
-    table.insert(contentChildren, UI.Panel { width = "100%", height = 20 })
-
-    table.insert(contentChildren, F.actionBtn {
-        text = btnText,
-        variant = "primary",
-        height = 44,
-        fontSize = Theme.sizes.font_normal,
-        onClick = function(self)
-            SoundMgr.play("click_soft")
-            LetterSystem.apply_effects(state, letter)
-
-            if isLast then
-                M._finish(state)
-            else
+    -- 多封信件时底部"下一封"按钮
+    if not isLast then
+        table.insert(contentChildren, UI.Panel { width = "100%", height = 20 })
+        table.insert(contentChildren, F.actionBtn {
+            text = "下一封（" .. _index .. "/" .. #_letters .. "）",
+            variant = "primary",
+            height = 44,
+            fontSize = Theme.sizes.font_normal,
+            onClick = function(self)
+                SoundMgr.play("click_soft")
+                LetterSystem.apply_effects(state, letter)
                 _index = _index + 1
                 if router then router.refresh() end
-            end
-        end,
-    })
+            end,
+        })
+    end
 
     -- 信件计数（多封时显示）
     local counterLabel = nil
@@ -174,36 +175,71 @@ function M._buildLetter(state)
     end
 
     -- 来信提示
-    local fromLabel = UI.Label {
-        text = "📨 来自 " .. (letter.sender_name or "未知") .. " 的信",
+    local senderChibi = Theme.npc_chibis[letter.sender]
+    local fromChildren = {}
+    if senderChibi then
+        table.insert(fromChildren, F.icon { icon = senderChibi, size = 20, round = true })
+    else
+        table.insert(fromChildren, F.icon { icon = "letter", size = 16 })
+    end
+    table.insert(fromChildren, UI.Label {
+        text = "来自 " .. (letter.sender_name or "未知") .. " 的信",
         fontSize = 13,
         fontColor = { 220, 215, 205, 220 },
-        textAlign = "center",
+    })
+    local fromLabel = UI.Panel {
+        flexDirection = "row", alignItems = "center", gap = 6,
+        justifyContent = "center",
         width = "100%",
         paddingBottom = 8,
+        children = fromChildren,
     }
 
-    -- 信纸卡片（分层：贴图底层 + 内容滚动层）
+    -- 右上角关闭按钮（最后一封 / 单封时显示）
+    local closeBtn = nil
+    if isLast then
+        local letterForClose = letter
+        closeBtn = UI.Panel {
+            position = "absolute", right = 6, top = 6,
+            width = 36, height = 36,
+            justifyContent = "center", alignItems = "center",
+            onClick = function(self)
+                SoundMgr.play("close")
+                LetterSystem.apply_effects(state, letterForClose)
+                M._finish(state)
+            end,
+            children = {
+                F.icon { icon = "cross", size = 32 },
+            },
+        }
+    end
+
+    -- 信纸卡片（分层：贴图底层 + 内容滚动层 + 关闭按钮）
+    local paperCardChildren = {
+        -- 底层：信纸贴图（不拉伸）
+        UI.Panel {
+            width = "100%", height = "100%",
+            position = "absolute", left = 0, top = 0,
+            backgroundImage = PAPER_IMAGE,
+            backgroundFit = "cover",
+        },
+        -- 上层：可滚动内容
+        UI.Panel {
+            width = "100%", height = "100%",
+            padding = 40, paddingTop = 36, paddingBottom = 36,
+            gap = 6,
+            overflow = "scroll",
+            children = contentChildren,
+        },
+    }
+    if closeBtn then
+        table.insert(paperCardChildren, closeBtn)
+    end
+
     local paperCard = UI.Panel {
         width = "100%",
         maxHeight = "88%",
-        children = {
-            -- 底层：信纸贴图（不拉伸）
-            UI.Panel {
-                width = "100%", height = "100%",
-                position = "absolute", left = 0, top = 0,
-                backgroundImage = PAPER_IMAGE,
-                backgroundFit = "cover",
-            },
-            -- 上层：可滚动内容
-            UI.Panel {
-                width = "100%", height = "100%",
-                padding = 40, paddingTop = 36, paddingBottom = 36,
-                gap = 6,
-                overflow = "scroll",
-                children = contentChildren,
-            },
-        },
+        children = paperCardChildren,
     }
 
     -- 用 F.overlay 提供背景图 + 暗色遮罩

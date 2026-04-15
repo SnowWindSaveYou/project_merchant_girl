@@ -2,6 +2,7 @@
 --- 5 个固定 tab：首页 / 地图 / 委托 / 货舱 / 货车
 local UI       = require("urhox-libs/UI")
 local Theme    = require("ui/theme")
+local F        = require("ui/ui_factory")
 local Flow     = require("core/flow")
 local SoundMgr = require("ui/sound_manager")
 
@@ -82,13 +83,12 @@ function M.create(state, activeTab, screenName, router)
                 end
             end,
             children = {
-                -- 图标：用 Panel + backgroundImage 代替 emoji Label
-                UI.Panel {
-                    width = 22, height = 22,
-                    backgroundImage = Theme.icons[tab.iconKey],
-                    backgroundFit = "contain",
-                    imageTint = tint,
-                },
+                -- 图标：手绘风格，缩放 + 轻微透明度区分
+                (function()
+                    local ic = F.icon { icon = tab.iconKey, size = isActive and 38 or 28 }
+                    if not isActive then ic:SetStyle({ opacity = 0.7 }) end
+                    return ic
+                end)(),
                 UI.Label {
                     text = tab.label, fontSize = 10,
                     fontColor = tint,
@@ -103,6 +103,8 @@ function M.create(state, activeTab, screenName, router)
         width = "100%", height = 56,
         flexDirection = "row", alignItems = "center",
         backgroundColor = Theme.colors.bg_secondary,
+        backgroundImage = Theme.textures.topbar_flip,
+        backgroundFit = "cover",
         children = tabChildren,
     }
     SketchBorder.register(bar, "card")

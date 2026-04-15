@@ -10,6 +10,7 @@ local DrivingScene  = require("travel/chibi_scene")
 local DrivingCombat = require("travel/combat_renderer")
 local Environment   = require("travel/environment")
 local AudioMgr      = require("ui/audio_manager")
+local SketchBorder  = require("ui/sketch_border")
 
 --- 地形 → 路途背景映射（战斗发生在行驶中）
 local REGION_BG = {
@@ -79,10 +80,16 @@ function M._build_intro_view(state)
                 gap = 16, alignItems = "center",
                 enterAnim = true,
                 children = {
-                    UI.Label {
-                        text = "⚠️ 遭遇袭击",
-                        fontSize = Theme.sizes.font_title,
-                        fontColor = Theme.colors.danger,
+                    UI.Panel {
+                        flexDirection = "row", alignItems = "center", gap = 6,
+                        children = {
+                            F.icon { icon = "map_hazard", size = 28 },
+                            UI.Label {
+                                text = "遭遇袭击",
+                                fontSize = Theme.sizes.font_title,
+                                fontColor = Theme.colors.danger,
+                            },
+                        },
                     },
                     UI.Label {
                         text = enemy.name,
@@ -104,10 +111,10 @@ function M._build_intro_view(state)
                         width = "100%", flexDirection = "row",
                         justifyContent = "space-around",
                         children = {
-                            M._info_chip("🛡", "耐久", state.truck.durability .. "%"),
-                            M._info_chip("⛽", "燃料", state.truck.fuel .. "%"),
-                            M._info_chip("🔫", "弹药", tostring(combat.ammo_available)),
-                            M._info_chip("💨", "烟雾弹", tostring(combat.smoke_available)),
+                            M._info_chip("shield", "耐久", state.truck.durability .. "%"),
+                            M._info_chip("fuel", "燃料", state.truck.fuel .. "%"),
+                            M._info_chip("target", "弹药", tostring(combat.ammo_available)),
+                            M._info_chip("weather", "烟雾弹", tostring(combat.smoke_available)),
                         },
                     },
                     F.actionBtn {
@@ -139,14 +146,12 @@ function M._build_combat_view(state)
     local escapePct = math.min(1.0, combat.escape_progress / combat.escape_threshold)
     local threatPct = math.min(1.0, combat.threat / 100)
 
-    local children = {}
-
-    -- 纸娃娃行车场景（替代静态战斗画面）
+    -- ── 纸娃娃行车场景（顶部，独立于内容区） ──
     local sceneWidget = DrivingScene.createWidget({
         height = 260,
         borderRadius = Theme.sizes.radius_small,
     })
-    table.insert(children, UI.Panel {
+    local scenePanel = UI.Panel {
         width = "100%", height = 260,
         borderRadius = Theme.sizes.radius_small,
         overflow = "hidden",
@@ -169,10 +174,16 @@ function M._build_combat_view(state)
                 flexDirection = "row",
                 justifyContent = "space-between", alignItems = "center",
                 children = {
-                    UI.Label {
-                        text = "⚔️ " .. enemy.name,
-                        fontSize = Theme.sizes.font_large,
-                        fontColor = Theme.colors.text_primary,
+                    UI.Panel {
+                        flexDirection = "row", alignItems = "center", gap = 4,
+                        children = {
+                            F.icon { icon = "lightning", size = 22 },
+                            UI.Label {
+                                text = enemy.name,
+                                fontSize = Theme.sizes.font_large,
+                                fontColor = Theme.colors.text_primary,
+                            },
+                        },
                     },
                     UI.Label {
                         text = "回合 " .. combat.round_current .. "/" .. combat.rounds_total,
@@ -182,25 +193,29 @@ function M._build_combat_view(state)
                 },
             },
         },
-    })
+    }
+    SketchBorder.register(scenePanel, "card")
+
+    -- ── 下方内容子组件（状态条、叙事、战术按钮） ──
+    local contentItems = {}
 
     -- 威胁条
-    table.insert(children, M._status_bar("敌方威胁", threatPct,
+    table.insert(contentItems, M._status_bar("敌方威胁", threatPct,
         Theme.colors.danger, math.floor(combat.threat) .. "%"))
 
     -- 逃脱进度条
-    table.insert(children, M._status_bar("脱离进度", escapePct,
+    table.insert(contentItems, M._status_bar("脱离进度", escapePct,
         Theme.colors.success, math.floor(escapePct * 100) .. "%"))
 
     -- 货车耐久条
     local durPct = state.truck.durability / state.truck.durability_max
-    table.insert(children, M._status_bar("货车耐久", durPct,
+    table.insert(contentItems, M._status_bar("货车耐久", durPct,
         durPct > 0.3 and Theme.colors.info or Theme.colors.danger,
         state.truck.durability .. "/" .. state.truck.durability_max))
 
     -- 上一回合叙事
     if combat.last_round then
-        table.insert(children, UI.Panel {
+        table.insert(contentItems, UI.Panel {
             width = "100%", padding = 10,
             backgroundColor = Theme.colors.bg_inset,
             borderRadius = Theme.sizes.radius_small,
@@ -216,21 +231,22 @@ function M._build_combat_view(state)
     end
 
     -- 分隔
-    table.insert(children, UI.Panel {
+    table.insert(contentItems, UI.Panel {
         width = "100%", height = 1, backgroundColor = Theme.colors.divider,
     })
 
     -- 战术按钮
     local tactics = Ambush.get_available_tactics(combat)
     for _, t in ipairs(tactics) do
-        local label = t.tactic.icon .. " " .. t.tactic.name
+        local label = t.tactic.name
         if t.reason then
             label = label .. "（" .. t.reason .. "）"
         end
 
         local tacticId = t.id
-        table.insert(children, F.actionBtn {
+        table.insert(contentItems, F.actionBtn {
             text = label,
+            icon = t.tactic.icon, iconSize = 22,
             variant = t.available and "secondary" or "outline",
             height = 42,
             fontSize = Theme.sizes.font_normal,
@@ -258,17 +274,38 @@ function M._build_combat_view(state)
     end
 
     -- 资源提示
-    table.insert(children, UI.Panel {
+    table.insert(contentItems, UI.Panel {
         width = "100%", flexDirection = "row",
         justifyContent = "space-around", marginTop = 4,
         children = {
-            M._mini_chip("🔫 " .. combat.ammo_available),
-            M._mini_chip("💨 " .. combat.smoke_available),
-            M._mini_chip("⛽ " .. state.truck.fuel),
+            M._mini_chip("target", combat.ammo_available),
+            M._mini_chip("weather", combat.smoke_available),
+            M._mini_chip("fuel", state.truck.fuel),
         },
     })
 
-    -- 背景图 + 遮罩 + 内容的三层结构
+    -- ── 外层 Panel 承载纹理背景 + 素描边框，内层 ScrollView 负责滚动 ──
+    local contentPanel = UI.Panel {
+        width = "100%",
+        flexGrow = 1, flexShrink = 1,
+        overflow = "hidden",
+        backgroundColor = Theme.colors.home_lower_tint,
+        backgroundImage = Theme.textures.notebook_bg,
+        backgroundFit = "cover",
+        borderRadius = Theme.sizes.radius,
+        children = {
+            UI.ScrollView {
+                width = "100%",
+                flexGrow = 1, flexBasis = 0,
+                padding = Theme.sizes.padding, gap = 10,
+                paddingBottom = 20,
+                children = contentItems,
+            },
+        },
+    }
+    SketchBorder.register(contentPanel, "card")
+
+    -- ── 背景图 + 遮罩 + 场景 + 内容的分层结构 ──
     local layers = {}
     if bgImage_ then
         table.insert(layers, UI.Panel {
@@ -286,9 +323,11 @@ function M._build_combat_view(state)
     table.insert(layers, UI.Panel {
         width = "100%", height = "100%",
         padding = Theme.sizes.padding,
-        gap = 10,
-        overflow = "scroll",
-        children = children,
+        gap = 6,
+        children = {
+            scenePanel,
+            contentPanel,
+        },
     })
 
     return UI.Panel {
@@ -333,10 +372,16 @@ function M._show_result_view(state)
             width = "100%", height = 1,
             backgroundColor = Theme.colors.divider, marginTop = 4,
         })
-        table.insert(reviewWidgets, UI.Label {
-            text = "📋 战斗回顾",
-            fontSize = Theme.sizes.font_small,
-            fontColor = Theme.colors.text_dim,
+        table.insert(reviewWidgets, UI.Panel {
+            flexDirection = "row", alignItems = "center", gap = 4,
+            children = {
+                F.icon { icon = "scroll", size = 18 },
+                UI.Label {
+                    text = "战斗回顾",
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.text_dim,
+                },
+            },
         })
         for i, round in ipairs(combat.round_log) do
             table.insert(reviewWidgets, UI.Panel {
@@ -404,22 +449,28 @@ end
 -- 辅助 UI 组件
 -- ============================================================
 
-function M._info_chip(icon, label, value)
+function M._info_chip(iconKey, label, value)
     return UI.Panel {
         alignItems = "center", gap = 2,
         children = {
-            UI.Label { text = icon, fontSize = 18 },
+            F.icon { icon = iconKey, size = 24 },
             UI.Label { text = label, fontSize = Theme.sizes.font_tiny, fontColor = Theme.colors.text_dim },
             UI.Label { text = value, fontSize = Theme.sizes.font_small, fontColor = Theme.colors.text_primary },
         },
     }
 end
 
-function M._mini_chip(text)
-    return UI.Label {
-        text = text,
-        fontSize = Theme.sizes.font_tiny,
-        fontColor = Theme.colors.text_dim,
+function M._mini_chip(iconKey, value)
+    return UI.Panel {
+        flexDirection = "row", alignItems = "center", gap = 3,
+        children = {
+            F.icon { icon = iconKey, size = 16 },
+            UI.Label {
+                text = tostring(value),
+                fontSize = Theme.sizes.font_tiny,
+                fontColor = Theme.colors.text_dim,
+            },
+        },
     }
 end
 

@@ -19,11 +19,35 @@ local MapMode      = require("map/map_mode")
 local M = {}
 
 -- ============================================================
+-- 辅助：图标 + 文本 面板（替代 emoji 前缀）
+-- ============================================================
+local function iconLabel(iconKey, text, fontSize, fontColor, opts)
+    opts = opts or {}
+    local iconSize = opts.iconSize or (fontSize and math.floor(fontSize * 2) or 24)
+    return UI.Panel {
+        flexDirection = "row", alignItems = "center", gap = opts.gap or 4,
+        marginBottom = opts.marginBottom,
+        marginTop = opts.marginTop,
+        width = opts.width,
+        children = {
+            F.icon { icon = iconKey, size = iconSize },
+            UI.Label {
+                id = opts.id,
+                text = text,
+                fontSize = fontSize or Theme.sizes.font_small,
+                fontColor = fontColor or Theme.colors.text_secondary,
+                textAlign = opts.textAlign,
+            },
+        },
+    }
+end
+
+-- ============================================================
 -- 显示常量
 -- ============================================================
-local NODE_ICON = {
-    settlement = "🏘", resource = "📦", transit = "🔀",
-    hazard     = "⚠",  story    = "📡",
+local NODE_ICON_KEY = {
+    settlement = "map_settlement", resource = "map_resource", transit = "map_transit",
+    hazard     = "map_hazard",     story    = "map_story",
 }
 local EDGE_LABEL      = { main_road = "主干道", path = "小径", shortcut = "捷径" }
 local DANGER_STR      = { safe = "低", normal = "中", danger = "高" }
@@ -119,25 +143,18 @@ function M.openNodeModal(nodeId, cam)
     local isCur   = nodeId == current
     local isDest  = destSet[nodeId]
 
-    local icon = NODE_ICON[node.type] or "●"
-    modal_:SetTitle(icon .. "  " .. node.name)
+    local typeLabel = NODE_TYPE_LABEL[node.type]
+    local titleText = typeLabel and (typeLabel .. " · " .. node.name) or node.name
+    modal_:SetTitle(titleText)
     modal_:ClearContent()
 
     -- 状态角标
     if isCur then
-        modal_:AddContent(UI.Label {
-            text = "📍 当前位置",
-            fontSize = Theme.sizes.font_small,
-            fontColor = Theme.colors.map_current,
-            marginBottom = 4,
-        })
+        modal_:AddContent(iconLabel("location", "当前位置",
+            Theme.sizes.font_small, Theme.colors.map_current, { marginBottom = 4 }))
     elseif isDest then
-        modal_:AddContent(UI.Label {
-            text = "🎯 订单目标",
-            fontSize = Theme.sizes.font_small,
-            fontColor = Theme.colors.accent,
-            marginBottom = 4,
-        })
+        modal_:AddContent(iconLabel("target", "订单目标",
+            Theme.sizes.font_small, Theme.colors.accent, { marginBottom = 4 }))
     end
 
     -- 描述
@@ -181,7 +198,7 @@ function M.openNodeModal(nodeId, cam)
 
         modal_:AddContent(UI.Panel {
             width = "100%", padding = 10,
-            backgroundColor = Theme.colors.bg_secondary,
+            borderWidth = 1, borderColor = Theme.colors.border,
             borderRadius = Theme.sizes.radius_small,
             gap = 4,
             children = {
@@ -277,7 +294,7 @@ function M.openNodeModal(nodeId, cam)
         if path and #path > 1 then
             modal_:AddContent(UI.Panel {
                 width = "100%", padding = 10,
-                backgroundColor = Theme.colors.bg_secondary,
+                borderWidth = 1, borderColor = Theme.colors.border,
                 borderRadius = Theme.sizes.radius_small,
                 children = {
                     UI.Label {
@@ -328,7 +345,7 @@ function M.openNodeModal(nodeId, cam)
         else
             modal_:AddContent(UI.Panel {
                 width = "100%", padding = 10,
-                backgroundColor = Theme.colors.bg_secondary,
+                borderWidth = 1, borderColor = Theme.colors.border,
                 borderRadius = Theme.sizes.radius_small,
                 children = {
                     UI.Label {
@@ -379,7 +396,7 @@ function M.openUnknownNodeModal(nodeId)
         flagLocked = not flags[node.explore_flag]
     end
 
-    local title = flagLocked and ("🔒 " .. node.name) or "❓ 未知区域"
+    local title = flagLocked and node.name or "未知区域"
     modal_:SetTitle(title)
     modal_:ClearContent()
 
@@ -404,7 +421,7 @@ function M.openUnknownNodeModal(nodeId)
 
     modal_:AddContent(UI.Panel {
         width = "100%", padding = 10,
-        backgroundColor = Theme.colors.bg_secondary,
+        borderWidth = 1, borderColor = Theme.colors.border,
         borderRadius = Theme.sizes.radius_small,
         gap = 4,
         children = {
@@ -444,17 +461,14 @@ function M.openUnknownNodeModal(nodeId)
     })
 
     if not fuelOk then
-        modal_:AddContent(UI.Label {
-            text = "⛽ 当前燃料 " .. math.floor(state_.truck.fuel) .. "%，需要 " .. edge.fuel_cost .. "%",
-            fontSize = Theme.sizes.font_small,
-            fontColor = Theme.colors.danger,
-            marginTop = 4,
-        })
+        modal_:AddContent(iconLabel("fuel",
+            "当前燃料 " .. math.floor(state_.truck.fuel) .. "%，需要 " .. edge.fuel_cost .. "%",
+            Theme.sizes.font_small, Theme.colors.danger, { marginTop = 4 }))
     end
 
     local canExplore = fuelOk and not flagLocked
     modal_:AddContent(F.actionBtn {
-        text = flagLocked and "🔒 需要情报" or (fuelOk and "前往探索" or "燃料不足"),
+        text = flagLocked and "需要情报" or (fuelOk and "前往探索" or "燃料不足"),
         variant = canExplore and "primary" or "secondary",
         height = 40, marginTop = 8,
         disabled = not canExplore,
@@ -513,7 +527,7 @@ function M.openAutoPlanModal()
     local ap = state_.auto_plan
 
     modal_:SetSize("md")
-    modal_:SetTitle("⚙ 自动计划")
+    modal_:SetTitle("自动计划")
     modal_:ClearContent()
 
     modal_:AddContent(UI.Label {
@@ -534,15 +548,12 @@ function M.openAutoPlanModal()
 
     modal_:AddContent(UI.Panel {
         width = "100%", padding = 10,
-        backgroundColor = Theme.colors.bg_secondary,
         borderRadius = Theme.sizes.radius_small,
+        borderWidth = 1, borderColor = Theme.colors.border,
         gap = 6, marginBottom = 8,
         children = {
-            UI.Label {
-                text = "⛽ 自动补充燃料",
-                fontSize = Theme.sizes.font_normal,
-                fontColor = Theme.colors.text_primary,
-            },
+            iconLabel("fuel", "自动补充燃料",
+                Theme.sizes.font_normal, Theme.colors.text_primary),
             UI.Label {
                 text = "油量低于设定值时，经过聚落自动补满",
                 fontSize = Theme.sizes.font_small,
@@ -571,15 +582,12 @@ function M.openAutoPlanModal()
     -- 自动接单
     modal_:AddContent(UI.Panel {
         width = "100%", padding = 10,
-        backgroundColor = Theme.colors.bg_secondary,
         borderRadius = Theme.sizes.radius_small,
+        borderWidth = 1, borderColor = Theme.colors.border,
         gap = 6,
         children = {
-            UI.Label {
-                text = "📦 自动接取顺路单",
-                fontSize = Theme.sizes.font_normal,
-                fontColor = Theme.colors.text_primary,
-            },
+            iconLabel("tab_cargo", "自动接取顺路单",
+                Theme.sizes.font_normal, Theme.colors.text_primary),
             UI.Label {
                 text = "经过聚落时自动接取运力允许的顺路订单",
                 fontSize = Theme.sizes.font_small,
@@ -662,7 +670,7 @@ function M.rebuildPanel(cam)
             local targetNode = Graph.get_node(mm.target)
             local targetName = targetNode and targetNode.name or mm.target or "?"
             titleText = isTravelling
-                and ("🚚 改道 → " .. targetName)
+                and ("改道 → " .. targetName)
                 or ("目标: " .. targetName)
         end
         routePanel_:AddChild(UI.Panel {
@@ -709,27 +717,16 @@ function M.rebuildPanel(cam)
                 width = "100%", flexDirection = "row", gap = 12, marginTop = 6,
                 justifyContent = "space-around",
                 children = {
-                    UI.Label {
-                        text = "⏱ " .. formatTime(plan.total_time),
-                        fontSize = Theme.sizes.font_small,
-                        fontColor = Theme.colors.text_secondary,
-                    },
-                    UI.Label {
-                        text = "⛽ " .. plan.total_fuel,
-                        fontSize = Theme.sizes.font_small,
-                        fontColor = Theme.colors.text_secondary,
-                    },
-                    UI.Label {
-                        text = "⚠ " .. (DANGER_LABEL[plan.max_danger] or "?"),
-                        fontSize = Theme.sizes.font_small,
-                        fontColor = plan.max_danger == "danger" and Theme.colors.danger
-                            or Theme.colors.text_secondary,
-                    },
-                    UI.Label {
-                        text = "📍 " .. #plan.path .. "站",
-                        fontSize = Theme.sizes.font_small,
-                        fontColor = Theme.colors.text_secondary,
-                    },
+                    iconLabel("clock", formatTime(plan.total_time),
+                        Theme.sizes.font_small, Theme.colors.text_secondary),
+                    iconLabel("fuel", tostring(plan.total_fuel),
+                        Theme.sizes.font_small, Theme.colors.text_secondary),
+                    iconLabel("map_hazard", DANGER_LABEL[plan.max_danger] or "?",
+                        Theme.sizes.font_small,
+                        plan.max_danger == "danger" and Theme.colors.danger
+                            or Theme.colors.text_secondary),
+                    iconLabel("location", #plan.path .. "站",
+                        Theme.sizes.font_small, Theme.colors.text_secondary),
                 },
             })
 
@@ -833,22 +830,14 @@ function M.rebuildPanel(cam)
                 width = "100%", flexDirection = "row", gap = 12, marginTop = 6,
                 justifyContent = "space-around",
                 children = {
-                    UI.Label {
-                        text = "⏱ " .. formatTime(plan.total_time),
-                        fontSize = Theme.sizes.font_small,
-                        fontColor = Theme.colors.text_secondary,
-                    },
-                    UI.Label {
-                        text = "⛽ " .. plan.total_fuel,
-                        fontSize = Theme.sizes.font_small,
-                        fontColor = Theme.colors.text_secondary,
-                    },
-                    UI.Label {
-                        text = "⚠ " .. (DANGER_LABEL[plan.max_danger] or "?"),
-                        fontSize = Theme.sizes.font_small,
-                        fontColor = plan.max_danger == "danger" and Theme.colors.danger
-                            or Theme.colors.text_secondary,
-                    },
+                    iconLabel("clock", formatTime(plan.total_time),
+                        Theme.sizes.font_small, Theme.colors.text_secondary),
+                    iconLabel("fuel", tostring(plan.total_fuel),
+                        Theme.sizes.font_small, Theme.colors.text_secondary),
+                    iconLabel("map_hazard", DANGER_LABEL[plan.max_danger] or "?",
+                        Theme.sizes.font_small,
+                        plan.max_danger == "danger" and Theme.colors.danger
+                            or Theme.colors.text_secondary),
                 },
             })
         end
@@ -899,12 +888,9 @@ function M.rebuildPanel(cam)
             },
         })
 
-        routePanel_:AddChild(UI.Label {
-            text = "💡 点击地图上的节点添加途经点",
-            fontSize = Theme.sizes.font_tiny,
-            fontColor = Theme.colors.text_dim,
-            marginTop = 4, textAlign = "center", width = "100%",
-        })
+        routePanel_:AddChild(iconLabel("hint", "点击地图上的节点添加途经点",
+            Theme.sizes.font_tiny, Theme.colors.text_dim,
+            { marginTop = 4, width = "100%" }))
     end
 end
 
@@ -948,11 +934,8 @@ function M.rebuildExplorePanel()
                 M.rebuildExplorePanel()
             end,
             children = {
-                UI.Label {
-                    text = "🗺 未探索区域",
-                    fontSize = Theme.sizes.font_normal,
-                    fontColor = Theme.colors.text_secondary,
-                },
+                iconLabel("tab_map", "未探索区域",
+                    Theme.sizes.font_normal, Theme.colors.text_secondary),
                 UI.Label {
                     text = collapsed and "▶ " .. #unknowns or "▼ " .. #unknowns,
                     fontSize = Theme.sizes.font_small,
@@ -975,14 +958,15 @@ function M.rebuildExplorePanel()
                 end
 
                 local canExplore = fuelOk and not flagLocked
-                local btnText = flagLocked and "🔒 需要情报"
+                local btnText = flagLocked and "需要情报"
                     or (fuelOk and "探索" or "燃料不足")
-                local labelText = flagLocked and ("🔒 " .. (targetDef and targetDef.name or "未知区域"))
-                    or "❓ 未知区域"
+                local labelText = flagLocked and (targetDef and targetDef.name or "未知区域")
+                    or "未知区域"
+                local labelIcon = flagLocked and "lock" or "question"
 
                 local unknownCard = UI.Panel {
                     width = "100%", padding = 10,
-                    backgroundColor = Theme.colors.bg_card,
+                    borderWidth = 1, borderColor = Theme.colors.border,
                     borderRadius = Theme.sizes.radius_small,
                     flexDirection = "row", justifyContent = "space-between",
                     alignItems = "center",
@@ -990,12 +974,10 @@ function M.rebuildExplorePanel()
                         UI.Panel {
                             flexShrink = 1, gap = 2,
                             children = {
-                                UI.Label {
-                                    text = labelText,
-                                    fontSize = Theme.sizes.font_normal,
-                                    fontColor = flagLocked and Theme.colors.text_dim
-                                        or Theme.colors.text_primary,
-                                },
+                                iconLabel(labelIcon, labelText,
+                                    Theme.sizes.font_normal,
+                                    flagLocked and Theme.colors.text_dim
+                                        or Theme.colors.text_primary),
                                 UI.Panel {
                                     flexDirection = "row", gap = 8,
                                     children = {
@@ -1009,12 +991,11 @@ function M.rebuildExplorePanel()
                                             fontSize = Theme.sizes.font_tiny,
                                             fontColor = dColor,
                                         },
-                                        UI.Label {
-                                            text = "⛽" .. edge.fuel_cost,
-                                            fontSize = Theme.sizes.font_tiny,
-                                            fontColor = fuelOk and Theme.colors.text_dim
+                                        iconLabel("fuel", tostring(edge.fuel_cost),
+                                            Theme.sizes.font_tiny,
+                                            fuelOk and Theme.colors.text_dim
                                                 or Theme.colors.danger,
-                                        },
+                                            { iconSize = 12 }),
                                     },
                                 },
                             },
@@ -1062,11 +1043,7 @@ function M.rebuildExplorePanel()
                 M.rebuildExplorePanel()
             end,
             children = {
-                UI.Label {
-                    text = "🚶 前往已知区域",
-                    fontSize = Theme.sizes.font_normal,
-                    fontColor = Theme.colors.text_secondary,
-                },
+                iconLabel("walking", "前往已知区域", Theme.sizes.font_normal, Theme.colors.text_secondary),
                 UI.Label {
                     text = collapsed and "▶ " .. #knowns or "▼ " .. #knowns,
                     fontSize = Theme.sizes.font_small,
@@ -1085,7 +1062,7 @@ function M.rebuildExplorePanel()
 
                 local knownCard = UI.Panel {
                     width = "100%", padding = 10,
-                    backgroundColor = Theme.colors.bg_card,
+                    borderWidth = 1, borderColor = Theme.colors.border,
                     borderRadius = Theme.sizes.radius_small,
                     flexDirection = "row", justifyContent = "space-between",
                     alignItems = "center",
@@ -1106,12 +1083,9 @@ function M.rebuildExplorePanel()
                                             fontSize = Theme.sizes.font_tiny,
                                             fontColor = Theme.colors.text_dim,
                                         },
-                                        UI.Label {
-                                            text = "⛽" .. edge.fuel_cost,
-                                            fontSize = Theme.sizes.font_tiny,
-                                            fontColor = fuelOk and Theme.colors.text_dim
-                                                or Theme.colors.danger,
-                                        },
+                                        iconLabel("fuel", tostring(edge.fuel_cost), Theme.sizes.font_tiny,
+                                            fuelOk and Theme.colors.text_dim or Theme.colors.danger,
+                                            { iconSize = 12 }),
                                     },
                                 },
                             },

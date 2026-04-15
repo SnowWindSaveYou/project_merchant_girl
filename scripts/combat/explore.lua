@@ -130,7 +130,7 @@ function M.get_actions(state, explore)
                 table.insert(actions, {
                     id   = "loot_" .. i,
                     name = "搜索" .. crate.name,
-                    icon = "📦",
+                    icon = "tab_cargo",
                     desc = "搜刮这个容器",
                     available = true,
                 })
@@ -143,7 +143,7 @@ function M.get_actions(state, explore)
             table.insert(actions, {
                 id   = "use_medicine",
                 name = "使用医疗包",
-                icon = "💊",
+                icon = "cross",
                 desc = "恢复 20 点体力（剩余 " .. med_count .. " 个）",
                 available = true,
             })
@@ -153,7 +153,7 @@ function M.get_actions(state, explore)
         table.insert(actions, {
             id   = "extract",
             name = "撤离",
-            icon = "🚪",
+            icon = "walking",
             desc = "带着收获安全撤退",
             available = true,
         })
@@ -162,14 +162,14 @@ function M.get_actions(state, explore)
         table.insert(actions, {
             id   = "fight",
             name = "战斗",
-            icon = "⚔️",
+            icon = "lightning",
             desc = "与敌人交战",
             available = true,
         })
         table.insert(actions, {
             id   = "flee",
             name = "逃跑",
-            icon = "🏃",
+            icon = "walking",
             desc = "放弃搜刮，紧急撤离",
             available = true,
         })
@@ -227,7 +227,7 @@ function M._do_use_medicine(state, explore)
 
     table.insert(explore.log, "使用医疗包（+" .. actual_heal .. " HP）")
     return {
-        narration = "💊 使用了一个医疗包，恢复了 " .. actual_heal .. " 点体力。\n当前体力：" .. explore.player_hp .. "/" .. explore.player_hp_max,
+        narration = "使用了一个医疗包，恢复了 " .. actual_heal .. " 点体力。\n当前体力：" .. explore.player_hp .. "/" .. explore.player_hp_max,
         phase_changed = false,
         finished = false,
     }
@@ -285,7 +285,7 @@ function M._do_loot(state, explore, crate_idx)
             explore.encounters_had = explore.encounters_had + 1
             local enemy = explore.enemies[enemy_idx]
             table.insert(narration, "")
-            table.insert(narration, "⚠️ 惊动了" .. enemy.name .. "！")
+            table.insert(narration, "惊动了" .. enemy.name .. "！")
             table.insert(narration, enemy.desc)
             table.insert(explore.log, "遭遇：" .. enemy.name)
 

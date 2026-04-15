@@ -528,11 +528,11 @@ WATERCOLOR.btn_colors = {
 -- ============================================================
 local CONCRETE = {}
 CONCRETE.colors = {
-    -- 背景层次（混凝土冷灰系 —— 取自桥底/建筑/路面）
-    bg_primary   = { 38, 40, 42, 255 },    -- 深冷灰（桥底阴影）
-    bg_secondary = { 48, 50, 52, 255 },    -- 钢灰（混凝土暗面）
-    bg_card      = { 58, 60, 62, 218 },    -- 水泥灰（卡片）
-    bg_overlay   = { 22, 24, 26, 178 },    -- 深蓝灰遮罩
+    -- 背景层次（全透明，由 shellRoot 羊皮纸纹理统一承载底色）
+    bg_primary   = { 0, 0, 0, 0 },        -- 透明（shellRoot 纹理透出）
+    bg_secondary = { 0, 0, 0, 0 },        -- 透明
+    bg_card      = { 0, 0, 0, 0 },        -- 透明（卡片仅保留描边框）
+    bg_overlay   = { 120, 105, 80, 120 },   -- 暖褐半透明遮罩（弹窗用）
 
     -- 强调色（锈棕 + 军绿 + 天空蓝）
     accent     = { 178, 142, 82, 255 },    -- 锈铜棕（钢筋锈迹/栏杆）
@@ -542,21 +542,21 @@ CONCRETE.colors = {
     info       = { 118, 165, 205, 255 },   -- 天空蓝（云层间隙）
     warning    = { 185, 148, 65, 255 },    -- 暗锈金
 
-    -- 文字（冷灰白系，取自云朵/混凝土高光）
-    text_primary   = { 222, 225, 228, 255 },  -- 冷灰白（云朵/天空亮部）
-    text_secondary = { 162, 160, 155, 255 },  -- 混凝土灰（桥面色）
-    text_dim       = { 108, 105, 100, 255 },  -- 水泥暗灰
-    text_accent    = { 178, 142, 82, 255 },   -- 锈铜棕
+    -- 文字（黑色系，搭配羊皮纸贴图底）
+    text_primary   = { 35, 32, 28, 255 },     -- 近黑（主文字）
+    text_secondary = { 68, 65, 60, 255 },     -- 深灰（次文字）
+    text_dim       = { 120, 118, 115, 255 },  -- 中灰（辅助/禁用）
+    text_accent    = { 158, 118, 48, 255 },   -- 深铜褐（强调）
 
-    -- UI 元素
-    border       = { 82, 80, 75, 168 },    -- 冷铁灰边框
-    divider      = { 68, 66, 62, 138 },
-    progress_bg  = { 45, 46, 48, 255 },
-    progress_fill = { 78, 108, 62, 255 },  -- 橄榄绿
+    -- UI 元素（牛皮纸底适配）
+    border       = { 145, 132, 110, 160 },   -- 暖褐边线（铅笔色）
+    divider      = { 165, 152, 130, 120 },   -- 淡暖褐分割线
+    progress_bg  = { 185, 175, 155, 140 },   -- 浅旧纸色（进度条底）
+    progress_fill = { 78, 108, 62, 255 },    -- 橄榄绿（保持）
 
-    -- 按钮（军装绿 + 钢蓝）
-    btn_primary  = { 68, 82, 62, 255 },    -- 军装橄榄绿（角色衣服）
-    btn_danger   = { 148, 55, 45, 255 },   -- 铁锈红
+    -- 按钮（牛皮纸上可见的暖色调）
+    btn_primary  = { 108, 95, 68, 255 },     -- 暖棕褐（皮革色）
+    btn_danger   = { 168, 62, 48, 255 },     -- 砖锈红
 
     -- 地图专用（冷调废墟地图）
     map_bg        = { 35, 37, 40, 255 },
@@ -587,51 +587,51 @@ CONCRETE.colors = {
     intel_weather      = { 98, 162, 198, 198 },
     intel_price        = { 185, 148, 48, 198 },
     intel_tip          = { 188, 68, 48, 212 },
-    intel_toggle_bg    = { 55, 56, 52, 198 },
+    intel_toggle_bg    = { 195, 185, 165, 180 },   -- 旧纸色
     intel_toggle_active = { 82, 138, 98, 212 },
 
-    -- 对话系统（冷灰半透明底）
-    dialogue_bg      = { 22, 24, 28, 172 },    -- 深蓝灰半透明
-    dialogue_text    = { 228, 230, 232, 255 },  -- 冷白
-    dialogue_topbar  = { 30, 32, 35, 118 },     -- 深灰顶栏
-    dialogue_title   = { 192, 178, 138, 198 },  -- 锈金标题
-    dialogue_info    = { 152, 148, 138, 178 },  -- 灰调副信息
-    dialogue_root    = { 28, 30, 32, 255 },     -- 深冷灰根底
-    dialogue_dim     = { 78, 78, 75, 152 },     -- 暗化色
-    history_bubble_text = { 225, 225, 222, 255 },
+    -- 对话系统（暖色羊皮纸适配）
+    dialogue_bg      = { 235, 225, 205, 210 },  -- 暖纸半透明
+    dialogue_text    = { 45, 40, 32, 255 },     -- 深褐（亮底可读）
+    dialogue_topbar  = { 215, 205, 185, 160 },  -- 暖纸顶栏
+    dialogue_title   = { 140, 105, 55, 230 },   -- 深铜褐标题
+    dialogue_info    = { 120, 110, 90, 200 },   -- 暖灰副信息
+    dialogue_root    = { 225, 215, 195, 255 },  -- 暖纸不透明根底
+    dialogue_dim     = { 185, 175, 158, 140 },  -- 暖色柔和暗化
+    history_bubble_text = { 55, 48, 38, 255 },  -- 深褐气泡文字
 
-    -- 收音机（冷绿/冷灰底）
-    radio_on_bg     = { 32, 38, 35, 222 },
-    radio_off_bg    = { 40, 42, 42, 172 },
-    radio_on_border = { 62, 98, 65, 112 },
-    radio_off_border = { 58, 58, 55, 92 },
+    -- 收音机（牛皮纸底 · 透明融入）
+    radio_on_bg     = { 0, 0, 0, 0 },              -- 透明
+    radio_off_bg    = { 0, 0, 0, 0 },              -- 透明
+    radio_on_border = { 78, 118, 72, 120 },         -- 淡绿线
+    radio_off_border = { 155, 142, 120, 100 },      -- 暖灰线
 
-    -- 行驶中（天空蓝灰色调）
-    travel_strip_bg     = { 32, 42, 55, 232 },
-    travel_strip_border = { 62, 85, 108, 112 },
-    chatter_bubble_bg   = { 40, 45, 55, 222 },
-    chatter_linli_name  = { 75, 135, 195, 255 },   -- 闲聊：林砾名字色（冷蓝）
-    chatter_taoxia_name = { 195, 128, 75, 255 },    -- 闲聊：陶夏名字色（锈橙）
+    -- 行驶中（牛皮纸底 · 半透明暖色调）
+    travel_strip_bg     = { 180, 168, 145, 200 },   -- 旧纸底
+    travel_strip_border = { 145, 130, 108, 120 },    -- 暖褐边
+    chatter_bubble_bg   = { 195, 185, 165, 220 },   -- 浅旧纸泡
+    chatter_linli_name  = { 42, 98, 158, 255 },     -- 闲聊：林砾名字色（深蓝）
+    chatter_taoxia_name = { 168, 98, 42, 255 },      -- 闲聊：陶夏名字色（深橙）
 
-    -- 首页（工业废墟色调）
-    home_overlay       = { 0, 0, 0, 138 },
-    home_title         = { 242, 242, 238, 228 },
-    home_desc          = { 222, 222, 218, 158 },
-    home_label_dim     = { 195, 195, 188, 118 },
-    home_float_btn_bg  = { 42, 44, 48, 192 },
-    home_root_fallback = { 28, 30, 32, 255 },
-    home_lower_tint    = { 28, 30, 32, 192 },
-    home_gradient_mid  = { 0, 0, 0, 52 },
-    home_gradient_bot  = { 28, 30, 32, 138 },
-    home_popup_overlay = { 0, 0, 0, 158 },
-    home_travel_tint   = { 35, 42, 55, 232 },
-    home_backlog_danger  = { 78, 32, 28, 212 },
-    home_backlog_warning = { 72, 60, 25, 212 },
+    -- 首页（牛皮纸底适配）
+    home_overlay       = { 245, 238, 220, 160 },      -- 暖白半透明（亮色主题适配）
+    home_title         = { 55, 48, 38, 240 },          -- CG 上深褐字（亮底适配）
+    home_desc          = { 85, 75, 60, 200 },           -- CG 上描述（深暖灰）
+    home_label_dim     = { 120, 110, 95, 180 },         -- CG 上标签（中灰暖色）
+    home_float_btn_bg  = { 205, 195, 175, 210 },      -- 旧纸色浮钮
+    home_root_fallback = { 215, 205, 185, 255 },       -- 牛皮纸色 fallback
+    home_lower_tint    = { 0, 0, 0, 0 },               -- 透明（纹理穿透）
+    home_gradient_mid  = { 200, 190, 170, 60 },         -- 牛皮纸渐变中
+    home_gradient_bot  = { 195, 185, 165, 140 },        -- 牛皮纸渐变底
+    home_popup_overlay = { 120, 105, 80, 120 },          -- 暖褐弹窗遮罩
+    home_travel_tint   = { 190, 180, 160, 210 },        -- 旧纸色行驶卡
+    home_backlog_danger  = { 210, 160, 150, 210 },      -- 旧纸+锈红调
+    home_backlog_warning = { 210, 200, 160, 210 },      -- 旧纸+暗金调
 
     -- 扩展
-    text_header  = { 232, 232, 228, 255 },
-    glow_accent  = { 178, 142, 82, 52 },
-    card_border  = { 85, 82, 75, 132 },
+    text_header  = { 35, 32, 28, 255 },      -- 近黑（标题）
+    glow_accent  = { 178, 142, 82, 40 },
+    card_border  = { 155, 142, 120, 130 },   -- 暖褐卡片边
 
     -- 语义色
     radio_wave            = { 72, 155, 82, 255 },
@@ -640,17 +640,17 @@ CONCRETE.colors = {
     dialogue_linli_accent = { 118, 165, 205, 255 },
     dialogue_linli_bg     = { 35, 45, 52, 238 },
     dialogue_taoxia_bg    = { 52, 45, 35, 238 },
-    bg_inset              = { 45, 46, 42, 198 },
-    bg_intel_hint         = { 35, 42, 55, 218 },
-    bg_intel_active       = { 32, 48, 42, 218 },
+    bg_inset              = { 0, 0, 0, 0 },
+    bg_intel_hint         = { 195, 205, 218, 200 },   -- 旧纸+蓝调（淡蓝羊皮纸）
+    bg_intel_active       = { 195, 215, 200, 200 },   -- 旧纸+绿调（淡绿羊皮纸）
     border_rare           = { 178, 142, 82, 118 },
-    bg_error              = { 65, 32, 30, 198 },
+    bg_error              = { 218, 185, 180, 200 },   -- 旧纸+红调（淡红羊皮纸）
     sketch_glow           = { 215, 198, 155 },
 }
 CONCRETE.sketch = {
-    -- 墨线偏冷灰蓝，钢笔质感而非铅笔
-    ink_color     = { 155, 155, 148, 172 },
-    ink_color_dim = { 122, 120, 115, 98 },
+    -- 墨线改为灰黑色，搭配羊皮纸贴图
+    ink_color     = { 55, 52, 48, 200 },
+    ink_color_dim = { 75, 72, 68, 130 },
     ink_accent    = { 168, 135, 75, 178 },
     ink_danger    = { 165, 72, 55, 158 },
     baseWidth     = 1.5,
@@ -674,19 +674,19 @@ CONCRETE.sketch = {
 }
 CONCRETE.btn_colors = {
     primary = {
-        bg      = { 62, 78, 58, 255 },     -- 军装橄榄绿
-        pressed = { 48, 62, 45, 255 },
+        bg      = { 108, 95, 68, 255 },     -- 暖棕褐（皮革色，与 btn_primary 一致）
+        pressed = { 88, 78, 55, 255 },
     },
     secondary = {
-        bg      = { 65, 65, 62, 255 },     -- 冷灰
-        pressed = { 52, 52, 48, 255 },
+        bg      = { 175, 165, 145, 255 },   -- 暖灰旧纸（浅色底上可见）
+        pressed = { 155, 145, 128, 255 },
     },
     danger = {
-        bg      = { 145, 52, 42, 255 },    -- 铁锈红
-        pressed = { 122, 42, 32, 255 },
+        bg      = { 168, 62, 48, 255 },     -- 砖锈红（与 btn_danger 一致）
+        pressed = { 145, 52, 38, 255 },
     },
     disabled = {
-        bg      = { 50, 50, 48, 172 },
+        bg      = { 185, 178, 165, 150 },   -- 浅旧纸灰（半透明）
     },
 }
 
@@ -728,7 +728,12 @@ M.sizes = {
 -- 纹理贴图路径（卡片 9-slice 备用）
 -- ============================================================
 M.textures = {
-    card_slice = { 16, 16, 16, 16 },
+    card_slice  = { 16, 16, 16, 16 },
+    topbar      = "image/复古羊皮纸topbar.png",
+    topbar_flip = "image/复古羊皮纸topbar_flip.png",
+    notebook_bg = "image/复古羊皮本子背景2.png",
+    parchment   = "image/羊皮纸纹理.png",
+    parchment_red = "image/复古红色羊皮纸材质.png",
 }
 
 -- ============================================================
@@ -743,11 +748,66 @@ M.avatars = {
 -- Tab 导航图标路径
 -- ============================================================
 M.icons = {
-    tab_home   = "image/icon_tab_home.png",
-    tab_map    = "image/icon_tab_map.png",
-    tab_orders = "image/icon_tab_orders.png",
-    tab_cargo  = "image/icon_tab_cargo.png",
-    tab_truck  = "image/icon_tab_truck.png",
+    tab_home   = "image/手绘首页图标v2_20260414163723.png",
+    tab_map    = "image/手绘地图图标v2_20260414163729.png",
+    tab_orders = "image/手绘卷轴图标v2_20260415033637.png",
+    tab_cargo  = "image/手绘货仓图标v2_20260414163732.png",
+    tab_truck  = "image/手绘货车图标v2_20260414163733.png",
+    settings   = "image/手绘设置图标v2_20260414163742.png",
+    credits    = "image/手绘钱币图标v2_20260414163752.png",
+    fuel       = "image/手绘燃料图标v2_20260414163734.png",
+    durability = "image/手绘耐久图标v2_20260414163745.png",
+    radio      = "image/手绘收音机图标_20260414141316.png",
+    radio_on   = "image/edited_手绘收音机打开图标v2_20260415034033.png",
+    lock       = "image/手绘锁图标_20260414175223.png",
+    exchange   = "image/手绘交易所图标_20260414175211.png",
+    target     = "image/手绘目标图标_20260414175216.png",
+    question   = "image/手绘问号图标_20260414175220.png",
+    -- 地图节点类型
+    map_settlement = "image/手绘聚落图标_20260414175219.png",
+    map_resource   = "image/手绘资源点图标_20260414175226.png",
+    map_transit    = "image/手绘中转站图标_20260414175224.png",
+    map_hazard     = "image/手绘危险区图标_20260414175227.png",
+    map_story      = "image/手绘遗迹图标_20260414175301.png",
+    -- 通用图标
+    location   = "image/手绘位置图标_20260414180326.png",
+    walking    = "image/手绘步行图标_20260414180324.png",
+    hint       = "image/手绘提示图标_20260414180315.png",
+    shield     = "image/手绘盾牌图标_20260414180325.png",
+    weather    = "image/手绘天气图标_20260414180327.png",
+    clock      = "image/手绘时钟图标_20260414180332.png",
+    -- 通用操作图标
+    cross      = "image/手绘叉号图标_20260415034300.png",
+    check      = "image/手绘对勾图标_20260415034302.png",
+    -- 首页操作图标
+    scroll     = "image/手绘卷轴图标v2_20260415033637.png",
+    book       = "image/手绘书本图标v2_20260415033653.png",
+    campfire   = "image/手绘篝火图标v2_20260415033641.png",
+    lightning  = "image/手绘闪电图标v2_20260415033644.png",
+    letter     = "image/手绘信封图标v2_20260415033744.png",
+    tent       = "image/手绘帐篷图标v2_20260415033635.png",
+    search     = "image/手绘搜索图标v2_20260415033630.png",
+}
+
+-- ============================================================
+-- NPC Chibi 头像路径（拜访按钮 / 对话用）
+-- ============================================================
+M.npc_chibis = {
+    shen_he    = "image/chibi_npc_shen_he_20260409101614.png",
+    han_ce     = "image/chibi_npc_han_ce_20260409102702.png",
+    wu_shiqi   = "image/chibi_npc_wu_shiqi_20260409102746.png",
+    bai_shu    = "image/chibi_npc_bai_shu_20260409101846.png",
+    zhao_miao  = "image/chibi_npc_zhao_miao_20260409101609.png",
+    ji_wei     = "image/chibi_npc_ji_wei_20260409120514.png",
+    old_gan    = "image/chibi_npc_old_gan_20260409120642.png",
+    dao_yu     = "image/chibi_npc_dao_yu_20260409120745.png",
+    xie_ling   = "image/chibi_npc_xie_ling_20260409120841.png",
+    meng_hui   = "image/chibi_npc_meng_hui_20260409120916.png",
+    ming_sha   = "image/chibi_npc_ming_sha_20260409121030.png",
+    a_xiu      = "image/chibi_npc_a_xiu_20260409121138.png",
+    cheng_yuan = "image/chibi_npc_cheng_yuan_20260409121235.png",
+    su_mo      = "image/chibi_npc_su_mo_20260409121902.png",
+    xue_dong   = "image/chibi_npc_xue_dong_20260412064256.png",
 }
 
 -- ============================================================

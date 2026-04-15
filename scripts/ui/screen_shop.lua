@@ -611,22 +611,33 @@ function M.create(state, params, r)
         },
     })
 
-    -- 上层：内容 Panel（从中部偏下开始，半透明背景，可滚动）
+    -- 上层：外层 Panel 负责背景图（不滚动，保证 backgroundImage 生效）
+    -- overflow="scroll" 会将 Panel 升级为 ScrollView，而 ScrollView 不支持 backgroundImage
     local contentPanel = UI.Panel {
-        width = "100%", flexGrow = 1, flexShrink = 1,
+        width = "100%",
+        height = "65%",
+        overflow = "hidden",
         backgroundColor = Theme.colors.home_lower_tint,
+        backgroundImage = Theme.textures.notebook_bg,
+        backgroundFit = "cover",
         borderRadius = Theme.sizes.radius_large,
         borderRadiusBottomLeft = 0, borderRadiusBottomRight = 0,
-        padding = Theme.sizes.padding, gap = 10,
-        paddingBottom = 40,
-        overflow = "scroll",
-        children = contentChildren,
+        children = {
+            UI.ScrollView {
+                width = "100%",
+                flexGrow = 1, flexBasis = 0,
+                padding = Theme.sizes.padding, gap = 10,
+                paddingBottom = 40,
+                children = contentChildren,
+            },
+        },
     }
     SketchBorder.register(contentPanel, "card")
 
     table.insert(layerChildren, UI.Panel {
         width = "100%", height = "100%",
         paddingTop = _bgImage and "38%" or 0,
+        justifyContent = "flex-end",
         children = { contentPanel },
     })
 

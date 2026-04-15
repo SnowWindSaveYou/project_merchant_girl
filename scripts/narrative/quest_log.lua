@@ -94,12 +94,12 @@ function M.get_npc_name(npc_id)
     return npc and npc.name or npc_id
 end
 
---- 获取任务关联 NPC 图标
+--- 获取任务关联 NPC chibi 头像路径
 ---@param npc_id string
----@return string
-function M.get_npc_icon(npc_id)
+---@return string|nil
+function M.get_npc_chibi(npc_id)
     local npc = NpcManager.get_npc(npc_id)
-    return npc and npc.icon or "❓"
+    return npc and npc.chibi or nil
 end
 
 return M

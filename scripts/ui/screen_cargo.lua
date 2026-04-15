@@ -292,7 +292,6 @@ function M.create(state, params, r)
     return UI.Panel {
         id = "cargoScreen",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
         padding = Theme.sizes.padding, gap = 10,
         overflow = "scroll",
         children = children,

@@ -11,19 +11,7 @@ local M = {}
 ---@type table
 local router = nil
 
--- NPC 图标映射
-local SENDER_ICONS = {
-    shen_he    = "🌿",
-    bai_shu    = "📖",
-    zhao_miao  = "🌱",
-    meng_hui   = "💊",
-    xue_dong   = "📮",
-    han_ce     = "🔧",
-    wu_shiqi   = "⚙",
-    ming_sha   = "📻",
-    cheng_yuan = "🔩",
-    su_mo      = "📋",
-}
+-- NPC chibi 头像（从 Theme 获取）
 
 function M.create(state, params, r)
     router = r
@@ -38,49 +26,18 @@ function M._build(state)
 
     -- 标题栏
     table.insert(sections, UI.Panel {
-        width = "100%", flexDirection = "row",
-        justifyContent = "space-between", alignItems = "center",
+        width = "100%",
+        flexDirection = "row", alignItems = "center", gap = 6,
         paddingBottom = 8,
         children = {
-            UI.Panel {
-                flexDirection = "row", alignItems = "center", gap = 6,
-                children = {
-                    UI.Label {
-                        text = "📬",
-                        fontSize = 20,
-                    },
-                    UI.Label {
-                        text = "信箱",
-                        fontSize = Theme.sizes.font_title,
-                        fontColor = Theme.colors.text_primary,
-                        fontWeight = "bold",
-                    },
-                },
-            },
-            UI.Button {
-                text = "返回", width = 64, height = 32,
-                fontSize = Theme.sizes.font_small,
-                variant = "outline",
-                onClick = function()
-                    SoundMgr.play("close")
-                    router.navigate("cargo")
-                end,
+            F.icon { icon = "letter", size = 22 },
+            UI.Label {
+                text = "信箱",
+                fontSize = Theme.sizes.font_title,
+                fontColor = Theme.colors.text_primary,
+                fontWeight = "bold",
             },
         },
-    })
-
-    -- 统计行
-    local pendingCount = LetterSystem.pending_count(state)
-    local readCount    = LetterSystem.read_count(state)
-    local statText = "已收 " .. readCount .. " 封"
-    if pendingCount > 0 then
-        statText = statText .. "　待领 " .. pendingCount .. " 封"
-    end
-    table.insert(sections, UI.Label {
-        text = statText,
-        fontSize = Theme.sizes.font_small,
-        fontColor = Theme.colors.text_dim,
-        paddingBottom = 4,
     })
 
     -- 信件列表
@@ -102,7 +59,7 @@ function M._build(state)
         -- 倒序显示（最新的在前）
         for i = #readLetters, 1, -1 do
             local letter = readLetters[i]
-            local icon = SENDER_ICONS[letter.sender] or "✉"
+            local chibiPath = Theme.npc_chibis[letter.sender]
             local letterCapture = letter
 
             local cardWidget = F.card {
@@ -122,10 +79,9 @@ function M._build(state)
                         width = "100%", flexDirection = "row",
                         alignItems = "center", gap = 10,
                         children = {
-                            UI.Label {
-                                text = icon,
-                                fontSize = 22,
-                            },
+                            chibiPath
+                                and F.icon { icon = chibiPath, size = 32, round = true }
+                                or  F.icon { icon = "letter", size = 24 },
                             UI.Panel {
                                 flexGrow = 1, flexShrink = 1,
                                 gap = 2,
@@ -159,19 +115,16 @@ function M._build(state)
         id = "mailboxScreen",
         width = "100%", height = "100%",
         backgroundColor = Theme.colors.bg_primary,
+        backgroundImage = Theme.textures.notebook_bg,
+        backgroundFit = "cover",
         children = {
-            UI.SafeAreaView {
-                width = "100%", height = "100%",
+            UI.ScrollView {
+                width = "100%", flexGrow = 1, flexShrink = 1,
                 children = {
-                    UI.ScrollView {
-                        width = "100%", flexGrow = 1, flexShrink = 1,
-                        children = {
-                            UI.Panel {
-                                width = "100%", padding = Theme.sizes.padding,
-                                gap = 8,
-                                children = sections,
-                            },
-                        },
+                    UI.Panel {
+                        width = "100%", padding = Theme.sizes.padding,
+                        gap = 8,
+                        children = sections,
                     },
                 },
             },

@@ -59,17 +59,17 @@ local NODE_EXPLORE_ROOM = {
 
 -- 据点主题色（插画背景渐变底色）
 local SETTLEMENT_THEMES = {
-    greenhouse      = { bg = { 38, 52, 38, 255 }, accent = { 108, 148,  96, 255 }, icon = "🌿" },
-    tower           = { bg = { 32, 40, 54, 255 }, accent = { 112, 142, 168, 255 }, icon = "🗼" },
-    ruins_camp      = { bg = { 48, 38, 30, 255 }, accent = { 168, 128,  82, 255 }, icon = "🏚" },
-    bell_tower      = { bg = { 42, 36, 46, 255 }, accent = { 148, 128, 168, 255 }, icon = "🔔" },
+    greenhouse      = { bg = { 38, 52, 38, 255 }, accent = { 108, 148,  96, 255 }, icon = "map_settlement" },
+    tower           = { bg = { 32, 40, 54, 255 }, accent = { 112, 142, 168, 255 }, icon = "map_settlement" },
+    ruins_camp      = { bg = { 48, 38, 30, 255 }, accent = { 168, 128,  82, 255 }, icon = "map_hazard" },
+    bell_tower      = { bg = { 42, 36, 46, 255 }, accent = { 148, 128, 168, 255 }, icon = "map_settlement" },
     -- 前哨站
-    greenhouse_farm = { bg = { 34, 48, 32, 255 }, accent = {  96, 138,  80, 255 }, icon = "🌱" },
-    dome_outpost    = { bg = { 30, 36, 48, 255 }, accent = {  96, 126, 152, 255 }, icon = "📡" },
-    metro_camp      = { bg = { 44, 36, 28, 255 }, accent = { 152, 112,  72, 255 }, icon = "🚇" },
-    old_church      = { bg = { 38, 32, 42, 255 }, accent = { 132, 112, 148, 255 }, icon = "🕯" },
+    greenhouse_farm = { bg = { 34, 48, 32, 255 }, accent = {  96, 138,  80, 255 }, icon = "map_resource" },
+    dome_outpost    = { bg = { 30, 36, 48, 255 }, accent = {  96, 126, 152, 255 }, icon = "map_story" },
+    metro_camp      = { bg = { 44, 36, 28, 255 }, accent = { 152, 112,  72, 255 }, icon = "map_transit" },
+    old_church      = { bg = { 38, 32, 42, 255 }, accent = { 132, 112, 148, 255 }, icon = "map_settlement" },
 }
-local DEFAULT_THEME = { bg = { 40, 38, 36, 255 }, accent = Theme.colors.accent, icon = "📍" }
+local DEFAULT_THEME = { bg = { 40, 38, 36, 255 }, accent = Theme.colors.accent, icon = "location" }
 
 -- ============================================================
 -- 模块级状态
@@ -301,10 +301,16 @@ local function createProgressCard(state)
                 router_.navigate("quest_log")
             end,
             children = {
-                UI.Label {
-                    text = "📜 任务线索",
-                    fontSize = Theme.sizes.font_small,
-                    fontColor = Theme.colors.text_secondary,
+                UI.Panel {
+                    flexDirection = "row", alignItems = "center", gap = 4,
+                    children = {
+                        F.icon { icon = "scroll", size = 20 },
+                        UI.Label {
+                            text = "任务线索",
+                            fontSize = Theme.sizes.font_small,
+                            fontColor = Theme.colors.text_secondary,
+                        },
+                    },
                 },
                 UI.Label {
                     text = activeQuests .. " 进行中  " .. completedQuests .. " 已完成  ›",
@@ -351,10 +357,16 @@ local function createProgressCard(state)
         width = "100%", flexDirection = "row",
         justifyContent = "space-between", alignItems = "center",
         children = {
-            UI.Label {
-                text = "📖 " .. chName,
-                fontSize = Theme.sizes.font_small,
-                fontColor = Theme.colors.accent,
+            UI.Panel {
+                flexDirection = "row", alignItems = "center", gap = 4,
+                children = {
+                    F.icon { icon = "book", size = 20 },
+                    UI.Label {
+                        text = chName,
+                        fontSize = Theme.sizes.font_small,
+                        fontColor = Theme.colors.accent,
+                    },
+                },
             },
             UI.Panel {
                 flexDirection = "row", gap = 4, alignItems = "center",
@@ -384,6 +396,7 @@ local function createProgressCard(state)
     return UI.Panel {
         width = "100%", padding = 10,
         backgroundColor = Theme.colors.bg_card, borderRadius = Theme.sizes.radius,
+        backgroundImage = Theme.textures.parchment, backgroundFit = "cover",
         borderWidth = 1, borderColor = Theme.colors.border,
         gap = 4,
         children = items,
@@ -416,7 +429,8 @@ function M.create(state, curNode)
     -- ── 教程 SPAWN 阶段：锁定操作，只允许接取委托 ──
     if tutPhase == Tutorial.Phase.SPAWN then
         table.insert(lowerChildren, F.actionBtn {
-            text = "📋 接取委托",
+            icon = "tab_orders",
+            text = "接取委托",
             variant = "primary",
             height = 48,
             fontSize = Theme.sizes.font_normal,
@@ -437,9 +451,12 @@ function M.create(state, curNode)
         for _, npc in ipairs(settlementNpcs) do
             local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
             table.insert(lowerChildren, F.actionBtn {
+                icon = npc.chibi,
+                iconSize = 24,
+                iconRound = true,
                 text = canVisit
-                    and (npc.icon .. " 拜访 " .. npc.name)
-                    or  (npc.icon .. " " .. npc.name .. "（" .. (visitReason or "不可用") .. "）"),
+                    and ("拜访 " .. npc.name)
+                    or  (npc.name .. "（" .. (visitReason or "不可用") .. "）"),
                 variant = "secondary",
                 fontSize = Theme.sizes.font_normal,
                 disabled = not canVisit,
@@ -455,7 +472,8 @@ function M.create(state, curNode)
 
         -- 接取委托（高亮引导）
         table.insert(lowerChildren, F.actionBtn {
-            text = "📋 接取委托",
+            icon = "tab_orders",
+            text = "接取委托",
             variant = "primary",
             height = 48,
             fontSize = Theme.sizes.font_normal,
@@ -470,9 +488,10 @@ function M.create(state, curNode)
         local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
         if canCamp then
             local campLabel = hasStoryTopic
-                and "🔥 篝火休憩 · 有话题要谈"
-                or  "🔥 篝火休憩"
+                and "篝火休憩 · 有话题要谈"
+                or  "篝火休憩"
             table.insert(lowerChildren, F.actionBtn {
+                icon = "campfire",
                 text = campLabel,
                 variant = hasStoryTopic and "primary" or "secondary",
                 fontSize = Theme.sizes.font_normal,
@@ -501,7 +520,8 @@ function M.create(state, curNode)
         local pendingEvt = state.flow and state.flow.pending_settlement_event or nil
         if pendingEvt then
             table.insert(lowerChildren, F.actionBtn {
-                text = "⚡ " .. (pendingEvt.title or "聚落事件"),
+                icon = "lightning",
+                text = pendingEvt.title or "聚落事件",
                 variant = "primary",
                 fontSize = Theme.sizes.font_normal,
                 sound = "event",
@@ -522,9 +542,12 @@ function M.create(state, curNode)
         for _, npc in ipairs(settlementNpcs) do
             local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
             table.insert(lowerChildren, F.actionBtn {
+                icon = npc.chibi,
+                iconSize = 24,
+                iconRound = true,
                 text = canVisit
-                    and (npc.icon .. " 拜访 " .. npc.name)
-                    or  (npc.icon .. " " .. npc.name .. "（" .. (visitReason or "不可用") .. "）"),
+                    and ("拜访 " .. npc.name)
+                    or  (npc.name .. "（" .. (visitReason or "不可用") .. "）"),
                 variant = "secondary",
                 fontSize = Theme.sizes.font_normal,
                 disabled = not canVisit,
@@ -546,9 +569,12 @@ function M.create(state, curNode)
             if wnpc then
                 local wCanVisit, wReason = NpcManager.can_visit(state, wid)
                 table.insert(lowerChildren, F.actionBtn {
+                    icon = wnpc.chibi,
+                    iconSize = 24,
+                    iconRound = true,
                     text = wCanVisit
-                        and (wnpc.icon .. " 遇见 " .. wnpc.name .. "（" .. wnpc.title .. "）")
-                        or  (wnpc.icon .. " " .. wnpc.name .. "（" .. (wReason or "不可用") .. "）"),
+                        and ("遇见 " .. wnpc.name .. "（" .. wnpc.title .. "）")
+                        or  (wnpc.name .. "（" .. (wReason or "不可用") .. "）"),
                     variant = "secondary",
                     fontSize = Theme.sizes.font_normal,
                     disabled = not wCanVisit,
@@ -567,7 +593,8 @@ function M.create(state, curNode)
         if LetterSystem.has_pending(state) then
             local pendingCount = LetterSystem.pending_count(state)
             table.insert(lowerChildren, F.actionBtn {
-                text = "📨 雪冬送来了 " .. pendingCount .. " 封信",
+                icon = "letter",
+                text = "雪冬送来了 " .. pendingCount .. " 封信",
                 variant = "primary",
                 fontSize = Theme.sizes.font_normal,
                 highlight = true,
@@ -579,7 +606,8 @@ function M.create(state, curNode)
 
         -- 委托
         table.insert(lowerChildren, F.actionBtn {
-            text = "📋 接取委托",
+            icon = "tab_orders",
+            text = "接取委托",
             variant = "secondary",
             fontSize = Theme.sizes.font_normal,
             onClick = function(self)
@@ -590,7 +618,8 @@ function M.create(state, curNode)
 
         -- 交易所
         table.insert(lowerChildren, F.actionBtn {
-            text = "🏪 交易所",
+            icon = "exchange",
+            text = "交易所",
             variant = "secondary",
             fontSize = Theme.sizes.font_normal,
             onClick = function(self)
@@ -607,9 +636,10 @@ function M.create(state, curNode)
             local archUnlocked = Goodwill.is_unlocked(settGw, "archives")
             local unreadCount = archUnlocked and Archives.get_unread_count(state) or 0
             local archLabel = archUnlocked
-                and ("📖 档案阅览" .. (unreadCount > 0 and (" (" .. unreadCount .. " 未读)") or ""))
-                or  "📖 档案阅览（好感不足）"
+                and ("档案阅览" .. (unreadCount > 0 and (" (" .. unreadCount .. " 未读)") or ""))
+                or  "档案阅览（好感不足）"
             table.insert(lowerChildren, F.actionBtn {
+                icon = "book",
                 text = archLabel,
                 variant = "secondary",
                 fontSize = Theme.sizes.font_normal,
@@ -635,9 +665,10 @@ function M.create(state, curNode)
                 if slot.crop_id then busyCount = busyCount + 1 end
             end
             local farmLabel = farmUnlocked
-                and ("🌱 培育农场" .. (busyCount > 0 and (" (" .. busyCount .. " 栽种中)") or ""))
-                or  "🌱 培育农场（好感不足）"
+                and ("培育农场" .. (busyCount > 0 and (" (" .. busyCount .. " 栽种中)") or ""))
+                or  "培育农场（好感不足）"
             table.insert(lowerChildren, F.actionBtn {
+                icon = "map_resource",
                 text = farmLabel,
                 variant = "secondary",
                 fontSize = Theme.sizes.font_normal,
@@ -662,9 +693,10 @@ function M.create(state, curNode)
                 routeData = Intel.get_route_data(state)
             end
             local intelLabel = intelUnlocked
-                and ("📡 情报站" .. (routeData > 0 and (" (数据点: " .. routeData .. ")") or ""))
-                or  "📡 情报站（好感不足）"
+                and ("情报站" .. (routeData > 0 and (" (数据点: " .. routeData .. ")") or ""))
+                or  "情报站（好感不足）"
             table.insert(lowerChildren, F.actionBtn {
+                icon = "map_story",
                 text = intelLabel,
                 variant = "secondary",
                 fontSize = Theme.sizes.font_normal,
@@ -690,9 +722,10 @@ function M.create(state, curNode)
                 itemCount = #items
             end
             local marketLabel = marketUnlocked
-                and ("🏚 黑市" .. (itemCount > 0 and (" (" .. itemCount .. " 件商品)") or ""))
-                or  "🏚 黑市（好感不足）"
+                and ("黑市" .. (itemCount > 0 and (" (" .. itemCount .. " 件商品)") or ""))
+                or  "黑市（好感不足）"
             table.insert(lowerChildren, F.actionBtn {
+                icon = "map_hazard",
                 text = marketLabel,
                 variant = "secondary",
                 fontSize = Theme.sizes.font_normal,
@@ -713,11 +746,12 @@ function M.create(state, curNode)
         local canStroll, strollReason = Stroll.can_start(state)
         local strollLabel
         if canStroll then
-            strollLabel = "🚶 四处逛逛（消耗 1 饮用水）"
+            strollLabel = "四处逛逛（消耗 1 饮用水）"
         else
-            strollLabel = "🚶 四处逛逛（" .. (strollReason or "不可用") .. "）"
+            strollLabel = "四处逛逛（" .. (strollReason or "不可用") .. "）"
         end
         table.insert(lowerChildren, F.actionBtn {
+            icon = "walking",
             text = strollLabel,
             variant = "secondary",
             fontSize = Theme.sizes.font_normal,
@@ -741,20 +775,21 @@ function M.create(state, curNode)
         local campLabel
         if canCamp then
             if hasStoryTopic then
-                campLabel = "🔥 篝火休憩 · 有话题要谈"
+                campLabel = "篝火休憩 · 有话题要谈"
             elseif isCampFree then
-                campLabel = "🔥 篝火休憩"
+                campLabel = "篝火休憩"
             else
                 -- 显示将消耗的物品
                 local cargo = state.truck.cargo or {}
                 local costName = (cargo.food_can or 0) >= 1 and "罐头食品" or "燃料芯"
-                campLabel = "🔥 篝火休憩（消耗 1 " .. costName .. "）"
+                campLabel = "篝火休憩（消耗 1 " .. costName .. "）"
             end
         else
-            campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
+            campLabel = "篝火（" .. (campReason or "不可用") .. "）"
         end
         local campHighlight = hasStoryTopic or isFirstStoryVisit
         table.insert(lowerChildren, F.actionBtn {
+            icon = "campfire",
             text = campLabel,
             variant = campHighlight and "primary" or "secondary",
             fontSize = Theme.sizes.font_normal,
@@ -777,7 +812,8 @@ function M.create(state, curNode)
         -- 出发（仅有活跃订单时）
         if #activeOrders > 0 then
             table.insert(lowerChildren, F.actionBtn {
-                text = "🚚 出发",
+                icon = "tab_truck",
+                text = "出发",
                 variant = "primary",
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
@@ -796,9 +832,12 @@ function M.create(state, curNode)
             if wnpc then
                 local wCanVisit, wReason = NpcManager.can_visit(state, wid)
                 table.insert(lowerChildren, F.actionBtn {
+                    icon = wnpc.chibi,
+                    iconSize = 24,
+                    iconRound = true,
                     text = wCanVisit
-                        and (wnpc.icon .. " 遇见 " .. wnpc.name .. "（" .. wnpc.title .. "）")
-                        or  (wnpc.icon .. " " .. wnpc.name .. "（" .. (wReason or "不可用") .. "）"),
+                        and ("遇见 " .. wnpc.name .. "（" .. wnpc.title .. "）")
+                        or  (wnpc.name .. "（" .. (wReason or "不可用") .. "）"),
                     variant = "secondary",
                     fontSize = Theme.sizes.font_normal,
                     disabled = not wCanVisit,
@@ -817,7 +856,8 @@ function M.create(state, curNode)
         local pendingWP = state.flow and state.flow.pending_waypoint_event or nil
         if pendingWP then
             table.insert(lowerChildren, F.actionBtn {
-                text = "⚡ " .. (pendingWP.title or "路点事件"),
+                icon = "lightning",
+                text = pendingWP.title or "路点事件",
                 variant = "primary",
                 fontSize = Theme.sizes.font_normal,
                 sound = "event",
@@ -836,7 +876,8 @@ function M.create(state, curNode)
         -- 非聚落节点：出发按钮（如有订单）
         if #activeOrders > 0 then
             table.insert(lowerChildren, F.actionBtn {
-                text = "🚚 出发",
+                icon = "tab_truck",
+                text = "出发",
                 variant = "primary",
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
@@ -857,8 +898,9 @@ function M.create(state, curNode)
                 or (not hasWater and "缺少饮水")
                 or nil
             table.insert(lowerChildren, F.actionBtn {
-                text = canRest and "⛺ 短暂休整"
-                    or ("⛺ 休整（" .. (restReason or "不可用") .. "）"),
+                icon = "tent",
+                text = canRest and "短暂休整"
+                    or ("休整（" .. (restReason or "不可用") .. "）"),
                 variant = "secondary",
                 fontSize = Theme.sizes.font_normal,
                 disabled = not canRest,
@@ -896,16 +938,17 @@ function M.create(state, curNode)
         local campLabel
         if canCamp then
             if isFirstStoryVisit then
-                campLabel = "🔥 篝火休憩 · 此地似有故事"
+                campLabel = "篝火休憩 · 此地似有故事"
             elseif hasStoryTopic then
-                campLabel = "🔥 篝火休憩 · 有话题要谈"
+                campLabel = "篝火休憩 · 有话题要谈"
             else
-                campLabel = "🔥 篝火休憩"
+                campLabel = "篝火休憩"
             end
         else
-            campLabel = "🔥 篝火（" .. (campReason or "不可用") .. "）"
+            campLabel = "篝火（" .. (campReason or "不可用") .. "）"
         end
         table.insert(lowerChildren, F.actionBtn {
+            icon = "campfire",
             text = campLabel,
             variant = hasStoryTopic and "primary" or "secondary",
             fontSize = Theme.sizes.font_normal,
@@ -923,7 +966,8 @@ function M.create(state, curNode)
         -- 资源点特殊行动：搜刮此地
         if NODE_EXPLORE_ROOM[nodeId] then
             table.insert(lowerChildren, F.actionBtn {
-                text = "🔍 搜刮此地",
+                icon = "search",
+                text = "搜刮此地",
                 variant = "secondary",
                 fontSize = Theme.sizes.font_normal,
                 onClick = function(self)
@@ -937,15 +981,26 @@ function M.create(state, curNode)
 
     -- 探索区域已迁移到地图页面（screen_map）
 
-    local lowerPanel = F.card {
-        id = "settlementActions",
-        width = "100%",
-        padding = Theme.sizes.padding, gap = 10,
-        overflow = "scroll",
-        enterAnim = true, enterDelay = 0.05,
-        imageTint = Theme.colors.home_lower_tint,
-        children = lowerChildren,
+    -- 外层 Panel 负责背景图渲染（不滚动，保证 backgroundImage 生效）
+    -- 内层 F.card 带 overflow="scroll" 会被升级为 ScrollView（不支持 backgroundImage）
+    local lowerPanel = UI.Panel {
+        id = "settlementActionsWrap",
+        width = "100%", flexShrink = 1,
+        backgroundImage = Theme.textures.notebook_bg,
+        backgroundFit = "cover",
+        borderRadius = Theme.sizes.radius,
+        children = {
+            F.card {
+                id = "settlementActions",
+                width = "100%",
+                padding = Theme.sizes.padding, gap = 10,
+                enterAnim = true, enterDelay = 0.05,
+                sketch = false,  -- 边框画在外层
+                children = lowerChildren,
+            },
+        },
     }
+    SketchBorder.register(lowerPanel, "card")
 
     -- ── 组装：全屏背景 + 内容叠层 ──
     local rootChildren = {}
@@ -991,10 +1046,7 @@ function M.create(state, curNode)
                             UI.Panel {
                                 flexDirection = "row", alignItems = "center", gap = 6,
                                 children = {
-                                    UI.Label {
-                                        text = theme.icon,
-                                        fontSize = 20,
-                                    },
+                                    F.icon { icon = (Theme.icons[theme.icon] and theme.icon or "location"), size = 20 },
                                     UI.Label {
                                         text = nodeName,
                                         fontSize = Theme.sizes.font_large,
@@ -1044,7 +1096,9 @@ function M.create(state, curNode)
     else
     -- 成长目标按钮
     table.insert(floatingButtons, F.actionBtn {
-        text = "📊 成长目标",
+        icon = "target",
+        iconSize = 16,
+        text = "成长目标",
         variant = "secondary",
         width = "auto",
         height = 32,
@@ -1061,7 +1115,9 @@ function M.create(state, curNode)
     -- 活跃订单按钮
     if #activeOrders > 0 then
         table.insert(floatingButtons, F.actionBtn {
-            text = "📋 订单 " .. #activeOrders,
+            icon = "tab_orders",
+            iconSize = 16,
+            text = "订单 " .. #activeOrders,
             variant = "secondary",
             width = "auto",
             height = 32,
@@ -1105,6 +1161,8 @@ function M.create(state, curNode)
                     id = "homeProgressScroll",
                     width = "100%", maxHeight = "80%",
                     backgroundColor = Theme.colors.bg_primary,
+                    backgroundImage = Theme.textures.parchment,
+                    backgroundFit = "cover",
                     borderRadius = Theme.sizes.radius,
                     borderWidth = 1, borderColor = Theme.colors.border,
                     padding = 4,

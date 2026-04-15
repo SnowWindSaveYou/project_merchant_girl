@@ -51,11 +51,17 @@ function M.create(state)
     local statusText = table.concat(statusIcons, "")
 
     local barChildren = {
-        UI.Label {
-            id = "shellCredits",
-            text = "$ " .. tostring(state.economy.credits),
-            fontSize = Theme.sizes.font_normal,
-            fontColor = Theme.colors.accent,
+        UI.Panel {
+            flexDirection = "row", alignItems = "center", gap = 4,
+            children = {
+                F.icon { icon = "credits", size = 28 },
+                UI.Label {
+                    id = "shellCredits",
+                    text = tostring(state.economy.credits),
+                    fontSize = Theme.sizes.font_normal,
+                    fontColor = Theme.colors.accent,
+                },
+            },
         },
     }
 
@@ -72,18 +78,20 @@ function M.create(state)
 
     table.insert(barChildren, UI.Panel { flexGrow = 1 })
     table.insert(barChildren, M.chip("燃料", fuelPct .. "%", "shellFuelVal",
-        fuelPct > 30 and Theme.colors.text_secondary or Theme.colors.danger))
+        fuelPct > 30 and Theme.colors.text_secondary or Theme.colors.danger, "fuel"))
     table.insert(barChildren, M.chip("耐久", durPct .. "%", "shellDurVal",
-        durPct > 30 and Theme.colors.text_secondary or Theme.colors.danger))
+        durPct > 30 and Theme.colors.text_secondary or Theme.colors.danger, "durability"))
     table.insert(barChildren, M.chip("货舱", cargoUsed .. "/" .. state.truck.cargo_slots,
-        "shellCargoVal", hasShortage and Theme.colors.danger or Theme.colors.text_secondary))
+        "shellCargoVal", hasShortage and Theme.colors.danger or Theme.colors.text_secondary, "tab_cargo"))
 
     local statusBar = UI.Panel {
         id = "shellStatusBar",
         width = "100%", height = 40,
         flexDirection = "row", alignItems = "center",
-        paddingLeft = 12, paddingRight = 12,
+        paddingLeft = 16, paddingRight = 16,
         backgroundColor = Theme.colors.bg_secondary,
+        backgroundImage = Theme.textures.topbar,
+        backgroundFit = "cover",
         children = barChildren,
     }
     SketchBorder.register(statusBar, "card")
@@ -219,26 +227,25 @@ function M.createRadioStrip(state)
 
     local stripChildren = {}
 
-    -- 左侧：开关按钮
-    table.insert(stripChildren, F.actionBtn {
-        id = "shellRadioToggle",
-        text = "📻",
-        variant = isOn and "primary" or "secondary",
-        height = 24, width = 36,
-        fontSize = 12,
-        onClick = function(self)
-            local turningOn = not isOn
-            Radio.set_on(state, turningOn)
-            -- 首次打开收音机：标记 pending，等 shell 重建后再触发气泡
-            if turningOn then
-                local steps = Tutorial.get_radio_intro_steps(state)
-                if steps then
-                    Flags.set(state, "tutorial_radio_intro")
-                    M._pendingRadioTutorial = { state = state, steps = steps }
-                end
+    -- 左侧：收音机开关图标按钮
+    local radioIcon = F.icon {
+        icon = isOn and "radio_on" or "radio",
+        size = 28,
+    }
+    radioIcon:SetStyle({ id = "shellRadioToggle" })
+    radioIcon.onClick = function(self)
+        local turningOn = not isOn
+        Radio.set_on(state, turningOn)
+        -- 首次打开收音机：标记 pending，等 shell 重建后再触发气泡
+        if turningOn then
+            local steps = Tutorial.get_radio_intro_steps(state)
+            if steps then
+                Flags.set(state, "tutorial_radio_intro")
+                M._pendingRadioTutorial = { state = state, steps = steps }
             end
-        end,
-    })
+        end
+    end
+    table.insert(stripChildren, radioIcon)
 
     if isOn then
         -- 单个频道按钮：点击循环切换
@@ -319,16 +326,27 @@ function M.createRadioStrip(state)
 end
 
 --- 状态栏小标签
-function M.chip(label, value, valueId, color)
+---@param label string 文字标签（图标不可用时的回退）
+---@param value string 数值文字
+---@param valueId string UI 查找 ID
+---@param color table 数值颜色
+---@param iconKey string|nil Theme.icons 中的 key
+function M.chip(label, value, valueId, color, iconKey)
+    local labelChild
+    if iconKey and Theme.icons[iconKey] then
+        labelChild = F.icon { icon = iconKey, size = 26 }
+    else
+        labelChild = UI.Label {
+            text = label,
+            fontSize = 10,
+            fontColor = Theme.colors.text_dim,
+        }
+    end
     return UI.Panel {
         flexDirection = "row", alignItems = "center",
         marginLeft = 12, gap = 3,
         children = {
-            UI.Label {
-                text = label,
-                fontSize = 10,
-                fontColor = Theme.colors.text_dim,
-            },
+            labelChild,
             UI.Label {
                 id = valueId,
                 text = value,

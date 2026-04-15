@@ -39,24 +39,7 @@ local INTERACT_LINES = {
     "信能送到……就好。",
 }
 
--- NPC 图标映射
-local SENDER_ICONS = {
-    shen_he    = "🌿",
-    bai_shu    = "📖",
-    zhao_miao  = "🌱",
-    meng_hui   = "💊",
-    xue_dong   = "📮",
-    han_ce     = "🔧",
-    wu_shiqi   = "⚙",
-    ming_sha   = "📻",
-    cheng_yuan = "🔩",
-    su_mo      = "📋",
-    dao_yu     = "🔪",
-    xie_ling   = "🖊",
-    ji_wei     = "📡",
-    old_gan    = "🧓",
-    a_xiu      = "🚇",
-}
+-- NPC chibi 头像（从 Theme 获取）
 
 -- 模块级状态
 local _greeting   = nil
@@ -129,7 +112,7 @@ local function buildLayered(bgImage, greeting, contentChildren)
         padding = 10, gap = 4,
         flexDirection = "row", alignItems = "center", gap = 6,
         children = {
-            UI.Label { text = "📮", fontSize = 20 },
+            F.icon { icon = "letter", size = 22 },
             UI.Label {
                 text = "雪冬 · 邮递员",
                 fontSize = Theme.sizes.font_large,
@@ -177,22 +160,33 @@ local function buildLayered(bgImage, greeting, contentChildren)
         },
     })
 
-    -- 上层：内容面板
+    -- 上层：外层 Panel 负责背景图（不滚动，保证 backgroundImage 生效）
+    -- overflow="scroll" 会将 Panel 升级为 ScrollView，而 ScrollView 不支持 backgroundImage
     local contentPanel = UI.Panel {
-        width = "100%", flexGrow = 1, flexShrink = 1,
+        width = "100%",
+        height = "65%",
+        overflow = "hidden",
         backgroundColor = Theme.colors.home_lower_tint,
+        backgroundImage = Theme.textures.notebook_bg,
+        backgroundFit = "cover",
         borderRadius = Theme.sizes.radius_large,
         borderRadiusBottomLeft = 0, borderRadiusBottomRight = 0,
-        padding = Theme.sizes.padding, gap = 10,
-        paddingBottom = 40,
-        overflow = "scroll",
-        children = contentChildren,
+        children = {
+            UI.ScrollView {
+                width = "100%",
+                flexGrow = 1, flexBasis = 0,
+                padding = Theme.sizes.padding, gap = 10,
+                paddingBottom = 40,
+                children = contentChildren,
+            },
+        },
     }
     SketchBorder.register(contentPanel, "card")
 
     table.insert(layerChildren, UI.Panel {
         width = "100%", height = "100%",
-        paddingTop = "50%",
+        paddingTop = _bgImage and "38%" or 0,
+        justifyContent = "flex-end",
         children = { contentPanel },
     })
 
@@ -214,11 +208,17 @@ function M._buildPickup(state, pendingLetters)
         width = "100%", flexDirection = "row",
         justifyContent = "space-between", alignItems = "center",
         children = {
-            UI.Label {
-                text = "📨 待领取信件",
-                fontSize = Theme.sizes.font_normal,
-                fontColor = Theme.colors.text_primary,
-                fontWeight = "bold",
+            UI.Panel {
+                flexDirection = "row", alignItems = "center", gap = 6,
+                children = {
+                    F.icon { icon = "letter", size = 18 },
+                    UI.Label {
+                        text = "待领取信件",
+                        fontSize = Theme.sizes.font_normal,
+                        fontColor = Theme.colors.text_primary,
+                        fontWeight = "bold",
+                    },
+                },
             },
             UI.Label {
                 text = #pendingLetters .. " 封",
@@ -230,7 +230,7 @@ function M._buildPickup(state, pendingLetters)
 
     -- 信件列表
     for idx, letter in ipairs(pendingLetters) do
-        local icon = SENDER_ICONS[letter.sender] or "✉"
+        local chibiPath = Theme.npc_chibis[letter.sender]
         local letterCapture = letter
 
         table.insert(contentChildren, F.card {
@@ -255,7 +255,9 @@ function M._buildPickup(state, pendingLetters)
                     width = "100%", flexDirection = "row",
                     alignItems = "center", gap = 10,
                     children = {
-                        UI.Label { text = icon, fontSize = 22 },
+                        chibiPath
+                            and F.icon { icon = chibiPath, size = 32, round = true }
+                            or  F.icon { icon = "letter", size = 24 },
                         UI.Panel {
                             flexGrow = 1, flexShrink = 1, gap = 2,
                             children = {
@@ -285,7 +287,8 @@ function M._buildPickup(state, pendingLetters)
     -- 一键全部领取
     if #pendingLetters > 1 then
         table.insert(contentChildren, F.actionBtn {
-            text = "📨 全部领取（" .. #pendingLetters .. " 封）",
+            text = "全部领取（" .. #pendingLetters .. " 封）",
+            icon = "letter", iconSize = 22,
             variant = "primary",
             height = 44,
             fontSize = Theme.sizes.font_normal,
@@ -306,19 +309,6 @@ function M._buildPickup(state, pendingLetters)
         })
     end
 
-    -- 返回
-    table.insert(contentChildren, F.actionBtn {
-        text = "返回",
-        variant = "secondary",
-        height = 40,
-        fontSize = Theme.sizes.font_normal,
-        marginTop = 4,
-        onClick = function(self)
-            SoundMgr.play("close")
-            router.navigate("home")
-        end,
-    })
-
     return buildLayered(_bgImage, _greeting, contentChildren)
 end
 
@@ -332,17 +322,6 @@ function M._buildEmpty(state)
             fontSize = Theme.sizes.font_normal,
             fontColor = Theme.colors.text_dim,
             marginTop = 8,
-        },
-        F.actionBtn {
-            text = "返回",
-            variant = "primary",
-            height = 44,
-            fontSize = Theme.sizes.font_normal,
-            marginTop = 12,
-            onClick = function(self)
-                SoundMgr.play("close")
-                router.navigate("home")
-            end,
         },
     }
 

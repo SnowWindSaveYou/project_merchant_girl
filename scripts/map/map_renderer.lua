@@ -13,10 +13,50 @@ local M = {}
 -- ============================================================
 -- 显示常量
 -- ============================================================
-local NODE_ICON = {
-    settlement = "🏘", resource = "📦", transit = "🔀",
-    hazard     = "⚠",  story    = "📡",
+local NODE_ICON_KEY = {
+    settlement = "map_settlement", resource = "map_resource", transit = "map_transit",
+    hazard     = "map_hazard",     story    = "map_story",
 }
+-- NanoVG 图片句柄缓存 (nodeType → nvgImage handle)
+local nodeIconHandles_ = {}
+-- 通用图标句柄缓存 (iconKey → nvgImage handle)
+local iconHandles_ = {}
+
+--- 获取或创建 NanoVG 图标句柄
+local function getIconHandle(nvg, iconKey)
+    if iconHandles_[iconKey] then return iconHandles_[iconKey] end
+    local path = Theme.icons[iconKey]
+    if not path then return nil end
+    local h = nvgCreateImage(nvg, path, 0)
+    if h and h > 0 then
+        iconHandles_[iconKey] = h
+        return h
+    end
+    return nil
+end
+
+--- 在指定位置绘制图标（居中对齐）
+local function drawIcon(nvg, iconKey, cx, cy, size)
+    local ih = getIconHandle(nvg, iconKey)
+    if not ih then return end
+    local half = size * 0.5
+    local paint = nvgImagePattern(nvg, cx - half, cy - half, size, size, 0, ih, 1.0)
+    nvgBeginPath(nvg)
+    nvgRect(nvg, cx - half, cy - half, size, size)
+    nvgFillPaint(nvg, paint)
+    nvgFill(nvg)
+end
+
+--- 在指定位置绘制图标（左上角对齐）
+local function drawIconAt(nvg, iconKey, x, y, size)
+    local ih = getIconHandle(nvg, iconKey)
+    if not ih then return end
+    local paint = nvgImagePattern(nvg, x, y, size, size, 0, ih, 1.0)
+    nvgBeginPath(nvg)
+    nvgRect(nvg, x, y, size, size)
+    nvgFillPaint(nvg, paint)
+    nvgFill(nvg)
+end
 local EDGE_LABEL  = { main_road = "主干道", path = "小径", shortcut = "捷径" }
 local DANGER_STR  = { safe = "低", normal = "中", danger = "高" }
 
@@ -165,9 +205,7 @@ local function drawEdges(nvg, known)
                 nvgText(nvg, mx, my, e.travel_time_sec .. "s", nil)
 
                 if e.danger == "danger" then
-                    fc(nvg, Theme.colors.danger)
-                    nvgFontSize(nvg, 12)
-                    nvgText(nvg, mx, my - 14, "⚠", nil)
+                    drawIcon(nvg, "map_hazard", mx, my - 14, 14)
                 end
             end
         end
@@ -286,12 +324,29 @@ local function drawNodes(nvg, known, current, destSet, time, adjacentUnknowns)
             fc(nvg, col, 50)
             nvgFill(nvg)
 
-            -- 图标
-            nvgFontFaceId(nvg, cam.font)
-            nvgFontSize(nvg, isCur and 17 or 15)
-            nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
-            fc(nvg, col)
-            nvgText(nvg, sx, headCY, NODE_ICON[node.type] or "●", nil)
+            -- 图标（手绘图片）
+            local iconKey = NODE_ICON_KEY[node.type]
+            if iconKey and Theme.icons[iconKey] then
+                if not nodeIconHandles_[node.type] then
+                    nodeIconHandles_[node.type] = nvgCreateImage(nvg, Theme.icons[iconKey], 0)
+                end
+                local ih = nodeIconHandles_[node.type]
+                if ih and ih > 0 then
+                    local iconSz = isCur and 40 or 34
+                    local halfSz = iconSz * 0.5
+                    local ipaint = nvgImagePattern(nvg, sx - halfSz, headCY - halfSz, iconSz, iconSz, 0, ih, 1.0)
+                    nvgBeginPath(nvg)
+                    nvgRect(nvg, sx - halfSz, headCY - halfSz, iconSz, iconSz)
+                    nvgFillPaint(nvg, ipaint)
+                    nvgFill(nvg)
+                end
+            else
+                nvgFontFaceId(nvg, cam.font)
+                nvgFontSize(nvg, isCur and 17 or 15)
+                nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+                fc(nvg, col)
+                nvgText(nvg, sx, headCY, "●", nil)
+            end
 
             -- 名称标签
             nvgFontSize(nvg, isCur and 12 or 11)
@@ -308,10 +363,7 @@ local function drawNodes(nvg, known, current, destSet, time, adjacentUnknowns)
 
             -- 目的地角标
             if isDest then
-                nvgFontSize(nvg, 11)
-                nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_BOTTOM)
-                fc(nvg, Theme.colors.accent)
-                nvgText(nvg, sx + pinR * 0.5, headCY - pinR * 0.5, "🎯", nil)
+                drawIconAt(nvg, "target", sx + pinR * 0.3, headCY - pinR * 0.8, 14)
             end
         end
     end
@@ -396,10 +448,7 @@ local function drawIntelLayer(nvg, state, time)
                 nvgCircle(nvg, sx, hcy, NODE_R + 6 + 3 * math.sin(time * 2.2))
                 fc(nvg, Theme.colors.intel_tip, math.floor(50 * pulse))
                 nvgFill(nvg)
-                nvgFontSize(nvg, 16)
-                nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_BOTTOM)
-                fc(nvg, Theme.colors.intel_tip)
-                nvgText(nvg, sx + NODE_R + 2, hcy - NODE_R + 2, "💰", nil)
+                drawIcon(nvg, "credits", sx + NODE_R + 2, hcy - NODE_R - 4, 16)
                 local g = Goods.get(info.target_goods)
                 if g then
                     nvgFontSize(nvg, 9)
@@ -421,10 +470,7 @@ local function drawIntelLayer(nvg, state, time)
             if node then
                 local sx, sy = w2s(node.x, node.y)
                 local hcy = sy - NODE_R * PIN_H
-                nvgFontSize(nvg, 14)
-                nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_BOTTOM)
-                fc(nvg, Theme.colors.intel_price)
-                nvgText(nvg, sx + NODE_R + 2, hcy, "📊", nil)
+                drawIconAt(nvg, "exchange", sx + NODE_R, hcy - 14, 14)
                 nvgFontSize(nvg, 9)
                 nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_TOP)
                 local lbl = "物价已掌握"
@@ -462,12 +508,19 @@ local function drawIntelToggle(nvg, state)
     nvgStrokeWidth(nvg, 1)
     nvgStroke(nvg)
 
+    -- 按钮内图标 + 文字
+    local toggleIconSz = 14
+    local toggleLabel = intelLayerVisible_ and "情报 ON" or "情报 OFF"
     nvgFontFaceId(nvg, cam.font)
     nvgFontSize(nvg, 11)
-    nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+    nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_MIDDLE)
+    local lblW = nvgTextBounds(nvg, 0, 0, toggleLabel, nil)
+    local totalW = toggleIconSz + 4 + lblW
+    local startX = bx + (bw - totalW) / 2
+    local midY = by + bh / 2
+    drawIcon(nvg, "map_story", startX + toggleIconSz * 0.5, midY, toggleIconSz)
     fc(nvg, { 240, 235, 225, 240 })
-    local label = intelLayerVisible_ and "📡 情报 ON" or "📡 情报 OFF"
-    nvgText(nvg, bx + bw / 2, by + bh / 2, label, nil)
+    nvgText(nvg, startX + toggleIconSz + 4, midY, toggleLabel, nil)
 
     if #intels > 0 then
         local badge = tostring(#intels)
@@ -485,21 +538,21 @@ local function drawIntelToggle(nvg, state)
     if intelLayerVisible_ and #intels > 0 then
         local iy = by + bh + 6
         for _, info in ipairs(intels) do
-            local icon, col, txt
+            local iconKey, col, txt
             if info.type == "security" then
-                icon = "🛡"; col = Theme.colors.intel_security
+                iconKey = "shield"; col = Theme.colors.intel_security
                 txt = "安全预警(" .. info.trips_left .. "趟)"
             elseif info.type == "weather" then
-                icon = "🌤"; col = Theme.colors.intel_weather
+                iconKey = "weather"; col = Theme.colors.intel_weather
                 txt = "天气预报(" .. info.trips_left .. "趟)"
             elseif info.type == "price" then
-                icon = "📊"; col = Theme.colors.intel_price
+                iconKey = "exchange"; col = Theme.colors.intel_price
                 txt = info.desc_text and string.sub(info.desc_text, 1, 30) or "价格情报"
             elseif info.type == "tip" then
-                icon = "💰"; col = Theme.colors.intel_tip
+                iconKey = "credits"; col = Theme.colors.intel_tip
                 txt = info.desc_text and string.sub(info.desc_text, 1, 30) or "商机情报"
             else
-                icon = "📄"; col = Theme.colors.text_dim
+                iconKey = "tab_orders"; col = Theme.colors.text_dim
                 txt = info.desc_text or info.type
             end
 
@@ -508,10 +561,12 @@ local function drawIntelToggle(nvg, state)
             fc(nvg, { col[1], col[2], col[3], 40 })
             nvgFill(nvg)
 
+            local icoSz = 12
+            drawIcon(nvg, iconKey, bx - 6 + icoSz * 0.5, iy + 9, icoSz)
             nvgFontSize(nvg, 10)
             nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_MIDDLE)
             fc(nvg, col)
-            nvgText(nvg, bx - 6, iy + 9, icon .. " " .. txt, nil)
+            nvgText(nvg, bx - 6 + icoSz + 3, iy + 9, txt, nil)
             iy = iy + 22
         end
     end
@@ -535,11 +590,19 @@ local function drawIntelToggle(nvg, state)
     nvgStrokeWidth(nvg, 1)
     nvgStroke(nvg)
 
+    -- 自动计划按钮内图标 + 文字
+    local apIconSz = 14
+    local apLabel = "自动计划"
     nvgFontFaceId(nvg, cam.font)
     nvgFontSize(nvg, 11)
-    nvgTextAlign(nvg, NVG_ALIGN_CENTER + NVG_ALIGN_MIDDLE)
+    nvgTextAlign(nvg, NVG_ALIGN_LEFT + NVG_ALIGN_MIDDLE)
+    local apLblW = nvgTextBounds(nvg, 0, 0, apLabel, nil)
+    local apTotalW = apIconSz + 4 + apLblW
+    local apStartX = bx + (apW - apTotalW) / 2
+    local apMidY = apY + apH / 2
+    drawIcon(nvg, "settings", apStartX + apIconSz * 0.5, apMidY, apIconSz)
     fc(nvg, Theme.colors.accent)
-    nvgText(nvg, bx + apW / 2, apY + apH / 2, "⚙ 自动计划", nil)
+    nvgText(nvg, apStartX + apIconSz + 4, apMidY, apLabel, nil)
 end
 
 -- ============================================================
@@ -908,9 +971,7 @@ function M.drawMap(nvg, layout, state, mapMode)
                         fc(nvg, Theme.colors.map_label_text, alpha)
                         nvgText(nvg, mx, my, edge.travel_time_sec .. "s", nil)
                         if edge.danger == "danger" then
-                            fc(nvg, Theme.colors.danger, alpha)
-                            nvgFontSize(nvg, 12)
-                            nvgText(nvg, mx, my - 14, "⚠", nil)
+                            drawIcon(nvg, "map_hazard", mx, my - 14, 14)
                         end
                     end
                 end
