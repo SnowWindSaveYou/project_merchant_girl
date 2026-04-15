@@ -442,9 +442,9 @@ function M.create(state, curNode)
         })
         -- 跳过后续所有按钮，直接进入下方 UI 组装
 
-    elseif tutPhase == Tutorial.Phase.GREENHOUSE_FREE then
-        -- GREENHOUSE_FREE = 到达温室但未接北穹订单
-        -- 允许：NPC 对话 + 接单（高亮）+ 篝火；阻止：出发
+    elseif tutPhase == Tutorial.Phase.AT_GREENHOUSE then
+        -- AT_GREENHOUSE = 抵达温室社区，引导使用交易所
+        -- 允许：NPC 对话 + 交易所（高亮）+ 委托 + 篝火；出发锁定
 
         -- NPC 拜访
         local settlementNpcs = NpcManager.get_npcs_for_settlement(nodeId)
@@ -470,19 +470,31 @@ function M.create(state, curNode)
             })
         end
 
-        -- 接取委托（高亮引导）
+        -- 交易所（高亮引导：教程要求玩家访问交易所才能推进）
         table.insert(lowerChildren, F.actionBtn {
-            icon = "tab_orders",
-            text = "接取委托",
+            icon = "exchange",
+            text = "交易所",
             variant = "primary",
             height = 48,
             fontSize = Theme.sizes.font_normal,
             highlight = true,
             onClick = function(self)
+                router_.navigate("shop")
+            end,
+        })
+
+        -- 接取委托
+        table.insert(lowerChildren, F.actionBtn {
+            icon = "tab_orders",
+            text = "接取委托",
+            variant = "secondary",
+            fontSize = Theme.sizes.font_normal,
+            onClick = function(self)
                 Flow.enter_prepare(state)
                 router_.navigate("orders")
             end,
         })
+
         -- 篝火仍可用
         local canCamp, campReason = Campfire.can_start(state)
         local hasStoryTopic = canCamp and Campfire.has_story_topic(state)

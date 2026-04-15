@@ -104,9 +104,7 @@ function M.create(state, params, r)
     else
         -- 教程阶段：确保教程订单已生成
         local tutPhase = Tutorial.get_phase(state)
-        if tutPhase == Tutorial.Phase.SPAWN
-            or tutPhase == Tutorial.Phase.GREENHOUSE_FREE
-            or tutPhase == Tutorial.Phase.EXPLORE then
+        if tutPhase == Tutorial.Phase.SPAWN then
             local loc = state.map.current_location
             local needRegen = true
             local book = state.economy and state.economy.order_book or {}
@@ -169,8 +167,7 @@ function M.update(state, dt, r)
     -- ── 教程：路面拾取提示（首次出现掉落物时触发一次）──
     if not Flags.has(state, "tutorial_loot_hint_shown") then
         local tutPhase = Tutorial.get_phase(state)
-        if tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE
-            or tutPhase == Tutorial.Phase.EXPLORE then
+        if tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE then
             local drops = RoadLoot.get_active_drops(state)
             if drops and #drops > 0 then
                 Flags.set(state, "tutorial_loot_hint_shown")
