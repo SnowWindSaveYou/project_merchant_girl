@@ -122,9 +122,9 @@ function M.openNodeModal(nodeId, cam)
 
     local current = state_.map.current_location
 
-    -- 教程锁定
-    local tutPhase = Tutorial.get_phase(state_)
-    if (tutPhase == Tutorial.Phase.SPAWN or tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE)
+    -- 教程锁定（数据驱动：phaseDef.block_map）
+    local _tutPhase, tutDef = Tutorial.get_phase(state_)
+    if tutDef and tutDef.block_map
         and nodeId ~= current and nodeId ~= "greenhouse" then
         local root = UI.GetRoot()
         if root then
@@ -370,9 +370,9 @@ function M.openUnknownNodeModal(nodeId)
     if not node then return end
     local current = state_.map.current_location
 
-    -- 教程锁定
-    local tutPhase = Tutorial.get_phase(state_)
-    if tutPhase == Tutorial.Phase.SPAWN or tutPhase == Tutorial.Phase.TRAVEL_TO_GREENHOUSE then
+    -- 教程锁定（数据驱动：phaseDef.block_explore）
+    local _tutPhase2, tutDef2 = Tutorial.get_phase(state_)
+    if tutDef2 and tutDef2.block_explore then
         local root = UI.GetRoot()
         if root then
             local hints = {

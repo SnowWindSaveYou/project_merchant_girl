@@ -103,8 +103,9 @@ function M.create(state, params, r)
         return TravelView.create(state)
     else
         -- 教程阶段：确保教程订单已生成
-        local tutPhase = Tutorial.get_phase(state)
-        if tutPhase == Tutorial.Phase.SPAWN then
+        -- 适用于所有定义了 order 的教程阶段（spawn / explore_to_ruins 等）
+        local _tutPhase, tutDef = Tutorial.get_phase(state)
+        if tutDef and tutDef.order then
             local loc = state.map.current_location
             local needRegen = true
             local book = state.economy and state.economy.order_book or {}

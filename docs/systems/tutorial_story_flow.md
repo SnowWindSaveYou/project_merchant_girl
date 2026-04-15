@@ -7,7 +7,7 @@
 
 ## 一、教程阶段机
 
-教程有 5 个阶段，**完全由 flags 推导**，不存储独立变量。
+教程有 6 个阶段，**完全由 flags 推导**，不存储独立变量。
 
 | 阶段 | 条件 | 玩家可做的事 | 被锁的事 |
 |------|------|-------------|---------|
@@ -15,7 +15,8 @@
 | SPAWN | `tutorial_started` 已设置，无教程订单、未到温室 | 只能「接取委托」 | 出发、NPC、交易所、篝火、地图其他节点 |
 | TRAVEL_TO_GREENHOUSE | 有去温室的已接教程订单 | 行驶中、路面物资提示 | 地图点击非温室节点、探索未知区域 |
 | AT_GREENHOUSE | `tutorial_arrived_greenhouse` 已设置，`tutorial_shop_intro` 未设置 | NPC拜访、交易所（高亮）、委托、篝火 | **出发按钮锁定** |
-| COMPLETE | `tutorial_arrived_greenhouse` + `tutorial_shop_intro` 均已设置 | 全部 | 无 |
+| EXPLORE_TO_RUINS | `tutorial_arrived_greenhouse` + `tutorial_shop_intro` 已设置，`tutorial_explore_done` 未设置 | NPC拜访、接取委托（高亮，强制接废墟订单）、交易所、查看地图（高亮，引导探索未知节点）、篝火 | **出发按钮锁定**（需通过地图探索出发） |
+| COMPLETE | `tutorial_arrived_greenhouse` + `tutorial_shop_intro` + `tutorial_explore_done` 均已设置 | 全部 | 无 |
 
 阶段推导代码：`scripts/narrative/tutorial.lua` `M.get_phase()`
 
@@ -37,6 +38,7 @@
 |---|---------|------|---------|---------|-------------|
 | ② | SD_TUTORIAL_FIRST_DEPARTURE | 麻薯号，出发 | `screen_map.lua tryTutorialDeparture()` | 教程阶段=TRAVEL_TO_GREENHOUSE 且 `tutorial_first_departure_done` 未设置 | `tutorial_first_departure_done` |
 | ③ | SD_TUTORIAL_GREENHOUSE_ARRIVAL | 温室社区 | `tutorial.lua M.on_arrival()` 拦截 | 到达 greenhouse 节点 + `tutorial_started` 已设置 + `tutorial_arrived_greenhouse` 未设置 | `tutorial_arrived_greenhouse`, `npc_shen_he_intro` |
+| ③.5 | SD_TUTORIAL_RUINS_ARRIVAL | 废墟营地到达 | `tutorial.lua M.on_arrival()` 拦截 | 到达 ruins_camp 节点 + EXPLORE_TO_RUINS 阶段 | `tutorial_explore_done` |
 
 **关键时序约束**：
 - ② 在玩家确认路线后、行驶开始前触发（`Flow.start_travel` 先执行，然后导航到 campfire）
@@ -116,6 +118,7 @@ screen_map.lua tryTutorialDeparture()
 | SPAWN | 只有「接取委托」（高亮） | 只能点击温室节点，探索被阻 | 无 |
 | TRAVEL_TO_GREENHOUSE | 正常行驶页 | 只能点击温室节点，探索被阻 | 正常 |
 | AT_GREENHOUSE | NPC + 交易所（高亮）+ 委托 + 篝火；**出发锁定** | 正常 | 正常 |
+| EXPLORE_TO_RUINS | NPC + 委托（高亮，未接废墟单时）+ 交易所 + 地图（高亮，已接废墟单时）+ 篝火；**出发锁定** | 正常，引导点击未知区域探索 | 正常 |
 | COMPLETE | 全部 | 正常 | 全部 |
 
 代码位置：`scripts/ui/screen_home.lua` 行 391-463，`scripts/ui/screen_map.lua` 行 1230-1519
@@ -143,7 +146,11 @@ SD_TUTORIAL_GREENHOUSE_ARRIVAL
   └─ npc_shen_he_intro
   │
   ▼  (AT_GREENHOUSE: 交易所气泡)
-tutorial_shop_intro               ← 进入 COMPLETE
+tutorial_shop_intro               ← 进入 EXPLORE_TO_RUINS
+  │
+  ▼  (EXPLORE_TO_RUINS: 接废墟订单 → 地图探索未知节点 → 到达废墟营地)
+SD_TUTORIAL_RUINS_ARRIVAL
+  └─ tutorial_explore_done          ← 进入 COMPLETE
   │
   ▼  (再跑1趟, min_trips=2)
 SD_PROLOGUE_02
@@ -215,7 +222,7 @@ SD_CH1_04
 | 地点 | 首次到达对话 | 解锁方式 |
 |-----|------------|---------|
 | 温室社区 | SD_TUTORIAL_GREENHOUSE_ARRIVAL | 教程订单 |
-| 废墟营地 | SD_CH1_02 | CH1_01 的 `unlock_route:ruins_camp` |
+| 废墟营地 | SD_TUTORIAL_RUINS_ARRIVAL | 教程订单（EXPLORE_TO_RUINS 阶段，通过地图探索到达） |
 | 北穹塔台 | SD_TUTORIAL_TOWER_ARRIVAL | `ch2_started` flag |
 
 在玩家首次到达某地点之前，对话不应假设玩家已到过该地。
@@ -251,8 +258,9 @@ DialoguePool 加载顺序：campfire → story → tutorial（`scripts/narrative
 
 ## 九、已知设计约束与风险
 
-1. **CH1_02~03B 需要到达 settlement**：如果玩家不去废墟营地，这些对话不会触发。CH1_01 的 `unlock_route` 缓解了此问题。
+1. **CH1_02~03B 需要到达 settlement**：如果玩家不去废墟营地，这些对话不会触发。教程 EXPLORE_TO_RUINS 阶段已确保玩家首次到达废墟营地，CH1_01 的 `unlock_route:ruins_camp` 为幂等操作。
 2. **AT_GREENHOUSE 出发锁定**：玩家必须完成交易所教程才能离开温室。交易所按钮已加高亮引导。
+2.5. **EXPLORE_TO_RUINS 探索引导**：玩家需先接取废墟订单（高亮"接取委托"），再通过地图探索未知节点前往废墟营地（高亮"查看地图"）。到达后触发 SD_TUTORIAL_RUINS_ARRIVAL 对话，设置 `tutorial_explore_done` 进入 COMPLETE。路径：greenhouse → crossroads → signal_relay → dust_station → ruins_camp（约3步探索）。
 3. **`tutorial_shop_intro` 是功能教学 flag**：设置条件是进入交易所并完成6步气泡，不应用作主线门控。
 4. **PROLOGUE_02 的 `min_trips: 2`**：教程只跑了1趟，所以"第一晚"发生在教程后的第2趟。这是为了防止与 GREENHOUSE_ARRIVAL 背靠背。
 5. **旧存档兼容**：`tutorial_started` 未设置的旧存档，`Tutorial.get_phase()` 返回 NONE，整个教程被跳过。

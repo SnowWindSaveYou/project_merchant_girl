@@ -103,6 +103,41 @@
           "set_flags": ["tutorial_arrived_greenhouse", "npc_shen_he_intro"]
         }
       ]
+    },
+    {
+      "id": "SD_TUTORIAL_RUINS_ARRIVAL",
+      "title": "废墟游民营地",
+      "type": "tutorial",
+      "audioScene": "settlement",
+      "arrival_only": true,
+      "chapter": 0,
+      "node_types": ["any"],
+      "relation_stage": "any",
+      "weight": 999,
+      "cooldown": 99,
+      "required_flags": ["tutorial_started"],
+      "forbidden_flags": ["tutorial_explore_done"],
+      "steps": [
+        { "speaker": "narrator", "text": "货车穿过一条被碎砖铺满的窄道，驶入了一片由塌陷商场和铁皮棚子拼凑出来的聚落。" },
+        { "speaker": "narrator", "text": "和温室社区不一样——这里没有绿色，没有玻璃穹顶。到处是锈迹斑斑的钢筋和用油布搭的帐篷。但帐篷之间挂着晾衣绳，有人在生火，有小孩在追一只瘦瘦的狗。活着的气息，从每一个角落里钻出来。" },
+        { "speaker": "taoxia", "text": "到了……这就是废墟营地？比我想的……热闹。", "expression": "surprised" },
+        { "speaker": "linli", "text": "……拾荒者的据点。流动人口多，消息也多。" },
+        { "speaker": "taoxia", "text": "那我们的药品应该很受欢迎吧？这种地方肯定缺。", "expression": "thinking" },
+        { "speaker": "linli", "text": "嗯。先交货吧。" },
+        { "speaker": "narrator", "text": "两个人把药品从车上搬下来。接货的是一个戴着焊工面罩的年轻人，他数了数箱子，点了点头，从口袋里掏出一把皱巴巴的钞票。" },
+        { "speaker": "taoxia", "text": "第二趟生意也落地了！感觉我们越走越远了！", "expression": "happy" },
+        { "speaker": "linli", "text": "……嗯。路是一步步探出来的。以后还有更远的地方。" },
+        { "speaker": "taoxia", "text": "更远的地方！听起来就让人兴奋！", "expression": "happy" },
+        { "speaker": "linli", "text": "……先把眼前的事做好。" }
+      ],
+      "choices": [
+        {
+          "text": "看看这里有什么",
+          "ops": ["add_relation_linli:1", "add_relation_taoxia:1", "add_goodwill:ruins_camp:3"],
+          "result_text": "废墟营地的空气里混着铁锈和烤肉的味道。陶夏四处张望着，眼睛亮亮的，好像每一堆废铁后面都藏着宝藏。林砾跟在后面，手插在口袋里，但脚步比平时轻快了一点。第一次探索未知区域——成功。前方还有更多未知在等着她们。",
+          "set_flags": ["tutorial_explore_done"]
+        }
+      ]
     }
   ]
 }

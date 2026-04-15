@@ -424,99 +424,109 @@ function M.create(state, curNode)
 
     -- ── 下半部：操作按钮列表 ──
     local lowerChildren = {}
-    local tutPhase = Tutorial.get_phase(state)
+    local tutPhase, tutDef = Tutorial.get_phase(state)
 
-    -- ── 教程 SPAWN 阶段：锁定操作，只允许接取委托 ──
-    if tutPhase == Tutorial.Phase.SPAWN then
-        table.insert(lowerChildren, F.actionBtn {
-            icon = "tab_orders",
-            text = "接取委托",
-            variant = "primary",
-            height = 48,
-            fontSize = Theme.sizes.font_normal,
-            highlight = true,
-            onClick = function(self)
-                Flow.enter_prepare(state)
-                router_.navigate("orders")
-            end,
-        })
-        -- 跳过后续所有按钮，直接进入下方 UI 组装
-
-    elseif tutPhase == Tutorial.Phase.AT_GREENHOUSE then
-        -- AT_GREENHOUSE = 抵达温室社区，引导使用交易所
-        -- 允许：NPC 对话 + 交易所（高亮）+ 委托 + 篝火；出发锁定
-
-        -- NPC 拜访
-        local settlementNpcs = NpcManager.get_npcs_for_settlement(nodeId)
-        for _, npc in ipairs(settlementNpcs) do
-            local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
-            table.insert(lowerChildren, F.actionBtn {
-                icon = npc.chibi,
-                iconSize = 24,
-                iconRound = true,
-                text = canVisit
-                    and ("拜访 " .. npc.name)
-                    or  (npc.name .. "（" .. (visitReason or "不可用") .. "）"),
-                variant = "secondary",
+    -- ── 教程按钮构建表（按 home_buttons 白名单查找） ──
+    local _tutBtnBuilders = {
+        npc = function(children, hl)
+            local settlementNpcs = NpcManager.get_npcs_for_settlement(nodeId)
+            for _, npc in ipairs(settlementNpcs) do
+                local canVisit, visitReason = NpcManager.can_visit(state, npc.id)
+                table.insert(children, F.actionBtn {
+                    icon = npc.chibi,
+                    iconSize = 24,
+                    iconRound = true,
+                    text = canVisit
+                        and ("拜访 " .. npc.name)
+                        or  (npc.name .. "（" .. (visitReason or "不可用") .. "）"),
+                    variant = "secondary",
+                    fontSize = Theme.sizes.font_normal,
+                    disabled = not canVisit,
+                    onClick = function(self)
+                        if not canVisit then return end
+                        local dialogue = NpcManager.start_visit(state, npc.id)
+                        if dialogue then
+                            router_.navigate("npc", { npc_id = npc.id, dialogue = dialogue })
+                        end
+                    end,
+                })
+            end
+        end,
+        orders = function(children, hl)
+            local isHl = hl and hl.orders
+            table.insert(children, F.actionBtn {
+                icon = "tab_orders",
+                text = "接取委托",
+                variant = isHl and "primary" or "secondary",
+                height = isHl and 48 or nil,
                 fontSize = Theme.sizes.font_normal,
-                disabled = not canVisit,
+                highlight = isHl or nil,
                 onClick = function(self)
-                    if not canVisit then return end
-                    local dialogue = NpcManager.start_visit(state, npc.id)
-                    if dialogue then
-                        router_.navigate("npc", { npc_id = npc.id, dialogue = dialogue })
-                    end
+                    Flow.enter_prepare(state)
+                    router_.navigate("orders")
                 end,
             })
-        end
-
-        -- 交易所（高亮引导：教程要求玩家访问交易所才能推进）
-        table.insert(lowerChildren, F.actionBtn {
-            icon = "exchange",
-            text = "交易所",
-            variant = "primary",
-            height = 48,
-            fontSize = Theme.sizes.font_normal,
-            highlight = true,
-            onClick = function(self)
-                router_.navigate("shop")
-            end,
-        })
-
-        -- 接取委托
-        table.insert(lowerChildren, F.actionBtn {
-            icon = "tab_orders",
-            text = "接取委托",
-            variant = "secondary",
-            fontSize = Theme.sizes.font_normal,
-            onClick = function(self)
-                Flow.enter_prepare(state)
-                router_.navigate("orders")
-            end,
-        })
-
-        -- 篝火仍可用
-        local canCamp, campReason = Campfire.can_start(state)
-        local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
-        if canCamp then
-            local campLabel = hasStoryTopic
-                and "篝火休憩 · 有话题要谈"
-                or  "篝火休憩"
-            table.insert(lowerChildren, F.actionBtn {
-                icon = "campfire",
-                text = campLabel,
-                variant = hasStoryTopic and "primary" or "secondary",
+        end,
+        shop = function(children, hl)
+            local isHl = hl and hl.shop
+            table.insert(children, F.actionBtn {
+                icon = "exchange",
+                text = "交易所",
+                variant = isHl and "primary" or "secondary",
+                height = isHl and 48 or nil,
                 fontSize = Theme.sizes.font_normal,
-                highlight = hasStoryTopic or nil,
+                highlight = isHl or nil,
                 onClick = function(self)
-                    local dialogue, consumed = Campfire.start(state)
-                    if dialogue then
-                        router_.navigate("campfire", { dialogue = dialogue, consumed = consumed })
-                    end
+                    router_.navigate("shop")
                 end,
             })
+        end,
+        map = function(children, hl)
+            local isHl = hl and hl.map
+            table.insert(children, F.actionBtn {
+                icon = "compass",
+                text = "查看地图",
+                variant = isHl and "primary" or "secondary",
+                height = isHl and 48 or nil,
+                fontSize = Theme.sizes.font_normal,
+                highlight = isHl or nil,
+                onClick = function(self)
+                    router_.navigate("map")
+                end,
+            })
+        end,
+        campfire = function(children, _hl)
+            local canCamp, _campReason = Campfire.can_start(state)
+            local hasStoryTopic = canCamp and Campfire.has_story_topic(state)
+            if canCamp then
+                local campLabel = hasStoryTopic
+                    and "篝火休憩 · 有话题要谈"
+                    or  "篝火休憩"
+                table.insert(children, F.actionBtn {
+                    icon = "campfire",
+                    text = campLabel,
+                    variant = hasStoryTopic and "primary" or "secondary",
+                    fontSize = Theme.sizes.font_normal,
+                    highlight = hasStoryTopic or nil,
+                    onClick = function(self)
+                        local dialogue, consumed = Campfire.start(state)
+                        if dialogue then
+                            router_.navigate("campfire", { dialogue = dialogue, consumed = consumed })
+                        end
+                    end,
+                })
+            end
+        end,
+    }
+
+    -- ── 教程阶段：按 phaseDef.home_buttons 白名单渲染 ──
+    if tutDef and tutDef.home_buttons then
+        local hl = tutDef.highlight and tutDef.highlight(state) or nil
+        for _, btnKey in ipairs(tutDef.home_buttons) do
+            local builder = _tutBtnBuilders[btnKey]
+            if builder then builder(lowerChildren, hl) end
         end
-        -- 不显示出发按钮，阻止跑路
+        -- 教程阶段不显示出发按钮（hide_departure 由 phaseDef 控制）
 
     else -- 正常流程
 
@@ -989,7 +999,7 @@ function M.create(state, curNode)
         end
     end
 
-    end -- 教程 SPAWN 锁定分支结束
+    end -- 教程按钮白名单分支结束
 
     -- 探索区域已迁移到地图页面（screen_map）
 
@@ -1101,10 +1111,10 @@ function M.create(state, curNode)
     })
 
     -- 层 4：悬浮按钮行（成长目标 + 活跃订单）
-    -- 教程 SPAWN 阶段隐藏悬浮按钮，减少干扰
+    -- 教程阶段：仅 SPAWN（无 home_buttons 以外的交互）时隐藏悬浮按钮
     local floatingButtons = {}
-    if tutPhase == Tutorial.Phase.SPAWN then
-        -- 不添加任何悬浮按钮
+    if tutDef and tutDef.home_buttons and #tutDef.home_buttons <= 1 then
+        -- 按钮极少的教程阶段不添加悬浮按钮，减少干扰
     else
     -- 成长目标按钮
     table.insert(floatingButtons, F.actionBtn {
@@ -1144,7 +1154,7 @@ function M.create(state, curNode)
             end,
         })
     end
-    end -- 教程 SPAWN 悬浮按钮分支结束
+    end -- 教程悬浮按钮分支结束
     table.insert(rootChildren, UI.Panel {
         width = "100%",
         paddingLeft = 12, paddingRight = 12, paddingBottom = 4,

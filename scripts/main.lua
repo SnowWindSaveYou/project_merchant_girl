@@ -492,6 +492,7 @@ function HandleUpdate(eventType, eventData)
     local curPage = Router.current()
     local truck_stopped = curPage == "ambush"
         or curPage == "explore"
+        or curPage == "campfire"
     local in_event = curPage == "event"
         or curPage == "event_result"
     local on_regular_page = not truck_stopped and not in_event
@@ -635,24 +636,26 @@ function HandleUpdate(eventType, eventData)
         end
 
     -- 2d. 非行驶中：处理延迟行程结算 + 叙事导演检查
-    elseif on_regular_page then
-        -- 2d1. 延迟行程结算（StoryDirector 对话结束后）
-        if curPage ~= "campfire" and curPage ~= "npc"
-            and gameState.flow._deferred_trip_finish then
-            gameState.flow._deferred_trip_finish = nil
-            print("[Main] Processing deferred trip finish (non-travelling)")
-            handleTripFinish()
-        end
-        -- 2d2. 叙事导演：home 页主线对话自动触发
-        if curPage == "home" then
-            local directorAction = StoryDirector.check_home_auto_trigger(gameState)
-            if directorAction and directorAction.type == "story_dialogue" then
-                print("[Main] StoryDirector: auto-triggering story dialogue on home: "
-                    .. (directorAction.dialogue and directorAction.dialogue.id or "?"))
-                Router.navigate("campfire", {
-                    dialogue = directorAction.dialogue,
-                    consumed = false,
-                })
+    else
+        if on_regular_page then
+            -- 2d1. 延迟行程结算（StoryDirector 对话结束后）
+            if curPage ~= "campfire" and curPage ~= "npc"
+                and gameState.flow._deferred_trip_finish then
+                gameState.flow._deferred_trip_finish = nil
+                print("[Main] Processing deferred trip finish (non-travelling)")
+                handleTripFinish()
+            end
+            -- 2d2. 叙事导演：home 页主线对话自动触发
+            if curPage == "home" then
+                local directorAction = StoryDirector.check_home_auto_trigger(gameState)
+                if directorAction and directorAction.type == "story_dialogue" then
+                    print("[Main] StoryDirector: auto-triggering story dialogue on home: "
+                        .. (directorAction.dialogue and directorAction.dialogue.id or "?"))
+                    Router.navigate("campfire", {
+                        dialogue = directorAction.dialogue,
+                        consumed = false,
+                    })
+                end
             end
         end
     end

@@ -1,6 +1,6 @@
---- 新手教程引导系统
---- 教程服务于叙事：引导玩家从出生点到温室社区，完成后由故事接管
---- 旧存档无 tutorial_started flag 时整个教程跳过
+--- 新手教程引导系统（数据驱动）
+--- 所有阶段定义集中在 PHASE_DEFS 表中，新增阶段只需加一个条目。
+--- 旧存档无 tutorial_started flag 时整个教程跳过。
 local Flags        = require("core/flags")
 local DialoguePool = require("narrative/dialogue_pool")
 local Graph        = require("map/world_graph")
@@ -15,20 +15,35 @@ M.AVATAR_LINLI  = Theme.avatars.linli
 M.AVATAR_TAOXIA = Theme.avatars.taoxia
 
 -- ============================================================
--- 教程阶段常量（由 flags 推导，不存储独立变量）
--- 教程在温室社区完成后结束，后续由 StoryDirector 接管叙事
+-- 教程阶段常量（向后兼容，其他文件仍可用 Tutorial.Phase.SPAWN 等）
 -- ============================================================
 M.Phase = {
-    NONE                = "none",               -- 非教程状态（旧存档或未开始）
-    SPAWN               = "spawn",              -- 在出生点，引导接单去温室社区
-    TRAVEL_TO_GREENHOUSE = "travel_to_greenhouse", -- 正在前往温室社区
-    AT_GREENHOUSE       = "at_greenhouse",      -- 抵达温室社区，引导使用交易所
-    COMPLETE            = "complete",           -- 教程完成（到达温室+使用交易所）
+    NONE                = "none",
+    SPAWN               = "spawn",
+    TRAVEL_TO_GREENHOUSE = "travel_to_greenhouse",
+    AT_GREENHOUSE       = "at_greenhouse",
+    EXPLORE_TO_RUINS    = "explore_to_ruins",
+    COMPLETE            = "complete",
 }
 
 -- ============================================================
--- 教程订单定义
+-- 教程订单工厂（PHASE_DEFS 中的 order.make 引用）
 -- ============================================================
+
+--- 检查 order_book 中是否已接取指定目的地的教程订单
+---@param state table
+---@param dest string 目的地 node_id
+---@return boolean
+local function has_accepted_tutorial_order_to(state, dest)
+    local book = state.economy and state.economy.order_book or {}
+    for _, o in ipairs(book) do
+        if o.is_tutorial and o.to == dest
+            and (o.status == "accepted" or o.status == "loaded") then
+            return true
+        end
+    end
+    return false
+end
 
 --- 生成温室农场→温室社区的教程订单
 local function make_order_to_greenhouse()
@@ -51,41 +66,217 @@ local function make_order_to_greenhouse()
     }
 end
 
+--- 生成温室社区→废墟营地的教程订单
+local function make_order_to_ruins()
+    return {
+        order_id     = "tutorial_order_2",
+        from         = "greenhouse",
+        to           = "ruins_camp",
+        from_name    = Graph.get_node_name("greenhouse") or "温室社区",
+        to_name      = Graph.get_node_name("ruins_camp") or "废墟游民营地",
+        goods_id     = "medicine",
+        goods_name   = "基础药品",
+        count        = 1,
+        base_reward  = 80,
+        deadline_sec = 9999,
+        risk_level   = "low",
+        status       = "available",
+        accepted_at  = nil,
+        description  = "运送基础药品 ×1 到废墟游民营地",
+        is_tutorial  = true,
+    }
+end
+
 -- ============================================================
--- 阶段推导
+-- 阶段定义表（按时间顺序，新增阶段只需在此处插入条目）
+--
+-- 每个条目可包含：
+--   id              : string  阶段 ID（与 M.Phase 常量对应）
+--   check(state)    : 返回 true 表示该阶段的前置条件已满足
+--   completion_flag : string|nil  该阶段完成时设置的 flag
+--   home_buttons    : string[]|nil  首页按钮白名单
+--                     可选值: "npc", "orders", "shop", "map", "campfire"
+--   highlight(state): 返回 { btn_name = true } 表示高亮按钮
+--   hide_departure  : boolean  首页是否隐藏出发按钮
+--   block_map       : boolean  地图是否禁止点击非当前/非目标节点
+--   block_explore   : boolean  地图是否禁止探索未知区域
+--   order           : { node, make, condition? }  教程订单配置
+--   on_arrival      : { [node_id] = dialogue_id }  到达拦截配置
+--   bubbles         : { [screen] = config|function(state) }  气泡配置
+-- ============================================================
+
+---@type table[]
+M.PHASE_DEFS = {
+    -- ① SPAWN：在出生点，引导接单去温室社区
+    {
+        id = "spawn",
+        check = function(_state)
+            return true  -- fallback：tutorial_started 已设时的默认阶段
+        end,
+        home_buttons   = { "orders" },
+        highlight      = function(_state) return { orders = true } end,
+        hide_departure = true,
+        block_map      = true,
+        block_explore  = true,
+        order = {
+            node = "greenhouse_farm",
+            make = make_order_to_greenhouse,
+        },
+        bubbles = {
+            home = {
+                portrait = M.AVATAR_LINLI,
+                speaker  = "林砾",
+                text     = "这里是外围农场。我们先接个单，去温室社区看看吧。",
+                position = { x = "50%", y = "65%" },
+                autoHide = 0,
+            },
+        },
+    },
+
+    -- ② TRAVEL_TO_GREENHOUSE：正在前往温室社区
+    {
+        id = "travel_to_greenhouse",
+        check = function(state)
+            local book = state.economy and state.economy.order_book or {}
+            for _, o in ipairs(book) do
+                if o.is_tutorial and o.to == "greenhouse"
+                    and (o.status == "accepted" or o.status == "loaded") then
+                    return true
+                end
+            end
+            return false
+        end,
+        block_map     = true,
+        block_explore = true,
+        -- 行驶中不在首页，无需 home_buttons/bubbles
+    },
+
+    -- ③ AT_GREENHOUSE：抵达温室社区，引导使用交易所
+    {
+        id = "at_greenhouse",
+        check = function(state)
+            return Flags.has(state, "tutorial_arrived_greenhouse")
+        end,
+        completion_flag = "tutorial_shop_intro",
+        home_buttons    = { "npc", "shop", "orders", "campfire" },
+        highlight       = function(_state) return { shop = true } end,
+        hide_departure  = true,
+        on_arrival = {
+            greenhouse = { dialogue = "SD_TUTORIAL_GREENHOUSE_ARRIVAL", guard_flag = "tutorial_arrived_greenhouse" },
+        },
+        bubbles = {
+            home = {
+                portrait = M.AVATAR_TAOXIA,
+                speaker  = "陶夏",
+                text     = "先去交易所看看吧——看看有什么货和单子！",
+                position = { x = "50%", y = "65%" },
+                autoHide = 0,
+            },
+        },
+    },
+
+    -- ④ EXPLORE_TO_RUINS：引导探索未知节点前往废墟营地
+    {
+        id = "explore_to_ruins",
+        check = function(state)
+            return Flags.has(state, "tutorial_shop_intro")
+        end,
+        completion_flag = "tutorial_explore_done",
+        home_buttons    = { "npc", "orders", "shop", "map", "campfire" },
+        highlight = function(state)
+            return has_accepted_tutorial_order_to(state, "ruins_camp")
+                and { map = true } or { orders = true }
+        end,
+        hide_departure = true,
+        order = {
+            node      = "greenhouse",
+            make      = make_order_to_ruins,
+            condition = function(state)
+                return not has_accepted_tutorial_order_to(state, "ruins_camp")
+            end,
+        },
+        on_arrival = {
+            ruins_camp = { dialogue = "SD_TUTORIAL_RUINS_ARRIVAL", guard_flag = "tutorial_explore_done" },
+        },
+        bubbles = {
+            home = function(state)
+                if not has_accepted_tutorial_order_to(state, "ruins_camp") then
+                    return {
+                        portrait = M.AVATAR_LINLI,
+                        speaker  = "林砾",
+                        text     = "……有个去废墟营地的委托。先接下来吧。",
+                        position = { x = "50%", y = "65%" },
+                        autoHide = 0,
+                    }
+                else
+                    return {
+                        portrait = M.AVATAR_LINLI,
+                        speaker  = "林砾",
+                        text     = "……去地图看看。得先探索未知区域，打通前往废墟营地的路。",
+                        position = { x = "50%", y = "65%" },
+                        autoHide = 0,
+                    }
+                end
+            end,
+            map = {
+                portrait = M.AVATAR_TAOXIA,
+                speaker  = "陶夏",
+                text     = "看到那些问号了吗？点一下试试——说不定能发现新的路！",
+                position = { x = "50%", y = "85%" },
+                autoHide = 0,
+            },
+        },
+    },
+
+    -- ↑ 未来新增阶段在此处插入 ↑
+}
+
+-- ============================================================
+-- 不属于阶段推进、但调试跳过需要设置的功能教学 flags
+-- ============================================================
+M.EXTRA_FLAGS = {
+    "tutorial_first_departure_done",
+    "tutorial_truck_intro",
+    "tutorial_radio_intro",
+    "tutorial_auto_plan_intro",
+    "tutorial_explore_scavenge",
+    "tutorial_route_explore",
+    "tutorial_explore_guided",
+    "tutorial_arrived_tower",
+}
+
+-- ============================================================
+-- 阶段推导（从 PHASE_DEFS 表自动推导）
 -- ============================================================
 
 --- 根据 flags 推导当前教程阶段
+--- 返回 (phaseId, phaseDef|nil)
+--- phaseDef 为 PHASE_DEFS 中的条目，NONE/COMPLETE 时为 nil
 ---@param state table
----@return string phase  M.Phase 中的值
+---@return string phase, table|nil phaseDef
 function M.get_phase(state)
     -- 旧存档或教程从未开始
     if not Flags.has(state, "tutorial_started") then
-        return M.Phase.NONE
+        return M.Phase.NONE, nil
     end
 
-    -- 教程完成：到达温室社区且已使用交易所
-    if Flags.has(state, "tutorial_arrived_greenhouse")
-        and Flags.has(state, "tutorial_shop_intro") then
-        return M.Phase.COMPLETE
+    -- 最后阶段的 completion_flag 已设 → 教程完成
+    local lastDef = M.PHASE_DEFS[#M.PHASE_DEFS]
+    if lastDef and lastDef.completion_flag
+        and Flags.has(state, lastDef.completion_flag) then
+        return M.Phase.COMPLETE, nil
     end
 
-    -- 抵达温室社区，引导使用交易所
-    if Flags.has(state, "tutorial_arrived_greenhouse") then
-        return M.Phase.AT_GREENHOUSE
-    end
-
-    -- 检查是否在旅途中（有已接教程订单去温室社区）
-    local book = state.economy and state.economy.order_book or {}
-    for _, o in ipairs(book) do
-        if o.is_tutorial and o.to == "greenhouse"
-            and (o.status == "accepted" or o.status == "loaded") then
-            return M.Phase.TRAVEL_TO_GREENHOUSE
+    -- 从最后一个阶段向前检查，第一个 check() 为 true 的就是当前阶段
+    for i = #M.PHASE_DEFS, 1, -1 do
+        local def = M.PHASE_DEFS[i]
+        if def.check(state) then
+            return def.id, def
         end
     end
 
-    -- 在出生点，等待接单
-    return M.Phase.SPAWN
+    -- 不应到达此处，但防御性返回
+    return M.Phase.SPAWN, M.PHASE_DEFS[1]
 end
 
 --- 教程是否已完成（或从未开始）
@@ -97,7 +288,28 @@ function M.is_complete(state)
 end
 
 -- ============================================================
--- 教程订单
+-- 自动派生：调试用 flag 列表
+-- ============================================================
+
+--- 获取跳过教程需要设置的全部 flags（供 screen_debug 使用）
+---@return string[]
+function M.get_all_flags()
+    local flags = { "tutorial_started" }
+    -- 从阶段定义中收集 completion_flag
+    for _, def in ipairs(M.PHASE_DEFS) do
+        if def.completion_flag then
+            table.insert(flags, def.completion_flag)
+        end
+    end
+    -- 功能教学 flags
+    for _, f in ipairs(M.EXTRA_FLAGS) do
+        table.insert(flags, f)
+    end
+    return flags
+end
+
+-- ============================================================
+-- 教程订单（从 phaseDef.order 读取）
 -- ============================================================
 
 --- 获取教程专属订单（替代正常订单生成）
@@ -106,18 +318,18 @@ end
 ---@param node_id string 当前到达的聚落
 ---@return table[]|nil orders
 function M.get_tutorial_orders(state, node_id)
-    local phase = M.get_phase(state)
+    local _phase, def = M.get_phase(state)
+    if not def or not def.order then return nil end
 
-    -- Phase SPAWN：在温室农场，生成去温室社区的订单
-    if phase == M.Phase.SPAWN and node_id == "greenhouse_farm" then
-        return { make_order_to_greenhouse() }
-    end
+    local ord = def.order
+    if ord.node ~= node_id then return nil end
+    if ord.condition and not ord.condition(state) then return nil end
 
-    return nil
+    return { ord.make() }
 end
 
 -- ============================================================
--- 到达拦截
+-- 到达拦截（从 phaseDef.on_arrival 读取）
 -- ============================================================
 
 --- 节点到达时的教程拦截
@@ -128,14 +340,33 @@ end
 ---@param node_id string
 ---@return table|nil action  { type = "dialogue", dialogue = DialogueData }
 function M.on_arrival(state, node_id)
-    -- 抵达温室社区：教程已开始但温室社区介绍未完成
-    if node_id == "greenhouse"
-        and Flags.has(state, "tutorial_started")
-        and not Flags.has(state, "tutorial_arrived_greenhouse")
-    then
-        local dialogue = DialoguePool.get("SD_TUTORIAL_GREENHOUSE_ARRIVAL")
-        if dialogue then
-            return { type = "dialogue", dialogue = dialogue }
+    if not Flags.has(state, "tutorial_started") then return nil end
+
+    -- 从当前阶段及之前所有未完成阶段的 on_arrival 中查找匹配
+    -- （主要处理当前阶段，但也兼容跨阶段到达）
+    for _, def in ipairs(M.PHASE_DEFS) do
+        if def.on_arrival and def.on_arrival[node_id] then
+            local entry = def.on_arrival[node_id]
+            -- 支持两种格式：
+            --   旧格式（字符串）: node_id = "DIALOGUE_ID"
+            --   新格式（表）:     node_id = { dialogue = "DIALOGUE_ID", guard_flag = "flag_name" }
+            local dialogueId, guardFlag
+            if type(entry) == "table" then
+                dialogueId = entry.dialogue
+                guardFlag  = entry.guard_flag
+            else
+                dialogueId = entry
+                guardFlag  = nil
+            end
+
+            -- 用 guard_flag 判断是否已播放过；无 guard_flag 时回退到 completion_flag
+            local flag = guardFlag or def.completion_flag
+            if not flag or not Flags.has(state, flag) then
+                local dialogue = DialoguePool.get(dialogueId)
+                if dialogue then
+                    return { type = "dialogue", dialogue = dialogue }
+                end
+            end
         end
     end
 
@@ -143,7 +374,7 @@ function M.on_arrival(state, node_id)
 end
 
 -- ============================================================
--- 气泡配置
+-- 气泡配置（从 phaseDef.bubbles 读取）
 -- ============================================================
 
 --- 获取当前应显示的引导气泡配置
@@ -152,33 +383,17 @@ end
 ---@param screen string  当前屏幕名 ("home" | "map")
 ---@return table|nil config  { portrait, speaker, text, position }
 function M.get_bubble_config(state, screen)
-    local phase = M.get_phase(state)
+    local _phase, def = M.get_phase(state)
+    if not def or not def.bubbles then return nil end
 
-    if screen == "home" then
-        -- Phase SPAWN：引导接单
-        if phase == M.Phase.SPAWN then
-            return {
-                portrait = M.AVATAR_LINLI,
-                speaker  = "林砾",
-                text     = "这里是外围农场。我们先接个单，去温室社区看看吧。",
-                position = { x = "50%", y = "65%" },
-                autoHide = 0,
-            }
-        end
+    local entry = def.bubbles[screen]
+    if not entry then return nil end
 
-        -- Phase AT_GREENHOUSE：引导使用交易所
-        if phase == M.Phase.AT_GREENHOUSE then
-            return {
-                portrait = M.AVATAR_TAOXIA,
-                speaker  = "陶夏",
-                text     = "先去交易所看看吧——看看有什么货和单子！",
-                position = { x = "50%", y = "65%" },
-                autoHide = 0,
-            }
-        end
+    -- 支持静态表或动态函数
+    if type(entry) == "function" then
+        return entry(state)
     end
-
-    return nil
+    return entry
 end
 
 -- ============================================================
