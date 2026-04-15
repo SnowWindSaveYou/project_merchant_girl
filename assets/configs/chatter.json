@@ -1,14 +1,14 @@
 {
   "meta": {
     "type": "chatter",
-    "version": "0.1.0",
-    "description": "行驶中车内日常对话池。speaker: taoxia/linli; response 可选。"
+    "version": "0.2.0",
+    "description": "行驶中车内日常对话池（比阿特丽克斯·波特风格重写版）。speaker: taoxia/linli; response 可选。"
   },
   "dialogues": [
     {
       "id": "CHAT_001",
       "speaker": "taoxia",
-      "text": "路上好安静啊……以前这条路上还能碰到流浪商队的。",
+      "text": "路上好安静啊……以前这条路上还能碰到别的车，像蚂蚁排队一样。现在只剩我们了。",
       "weight": 50,
       "duration": 8,
       "edge_types": [],
@@ -16,14 +16,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "现在只剩我们了。",
+        "text": "……蚂蚁排队也有散的时候。但总会再排起来。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_002",
       "speaker": "taoxia",
-      "text": "你说，温室社区的番茄罐头为什么那么受欢迎？明明味道一般啊。",
+      "text": "温室社区的番茄罐头为什么那么受欢迎？明明味道一般啊。大概是因为红色在灰色的世界里太显眼了。",
       "weight": 50,
       "duration": 8,
       "edge_types": [],
@@ -35,7 +35,7 @@
     {
       "id": "CHAT_003",
       "speaker": "linli",
-      "text": "……油压表刚才跳了一下。可能是路面震动，先记一下。",
+      "text": "……油压表刚才跳了一下。像一只受惊的小鸟。可能是路面震动，先记一下。",
       "weight": 45,
       "duration": 7,
       "edge_types": [],
@@ -47,7 +47,7 @@
     {
       "id": "CHAT_004",
       "speaker": "taoxia",
-      "text": "嘿嘿，我刚才在货箱里发现一块旧巧克力包装纸。闻起来还有一点点甜味呢。",
+      "text": "我在货箱里发现一张旧巧克力包装纸。闻起来还有一点点甜味——像昨天做的一个很远的梦。",
       "weight": 45,
       "duration": 9,
       "edge_types": [],
@@ -55,14 +55,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "别乱翻货物啊。",
+        "text": "……别翻货物。不过那张纸你留着吧。偶尔闻闻也不错。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_005",
       "speaker": "linli",
-      "text": "这段路的路基还算结实。以前应该是省道。",
+      "text": "这段路的路基还算结实。以前应该是省道。路面上的裂缝像老树的纹路——还在长，但没有散。",
       "weight": 40,
       "duration": 7,
       "edge_types": ["main_road", "highway"],
@@ -74,7 +74,7 @@
     {
       "id": "CHAT_006",
       "speaker": "taoxia",
-      "text": "总觉得废墟游民营地的人看我们的眼神怪怪的……不过至少生意做得成。",
+      "text": "废墟游民营地的人看我们的眼神像在打量一只飞进鸡窝的麻雀——不太欢迎，但也没有赶走。",
       "weight": 40,
       "duration": 9,
       "edge_types": [],
@@ -86,7 +86,7 @@
     {
       "id": "CHAT_007",
       "speaker": "taoxia",
-      "text": "林砾，你有没有想过以后不跑商了做什么？",
+      "text": "林砾，你有没有想过以后不跑商了做什么？比如开一个修车铺？门口种一棵树的那种。",
       "weight": 35,
       "duration": 8,
       "edge_types": [],
@@ -94,14 +94,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "没想过。车能跑就继续跑。",
+        "text": "……没想过。车能跑就继续跑。树能种就种。不用选。",
         "effect": { "relation_linli": 1 }
       }
     },
     {
       "id": "CHAT_008",
       "speaker": "linli",
-      "text": "……天色不太好。希望不是辐射云。",
+      "text": "……天色不太好。云层厚得像棉被。希望不是辐射云。",
       "weight": 40,
       "duration": 7,
       "edge_types": ["shortcut", "hazard"],
@@ -113,7 +113,7 @@
     {
       "id": "CHAT_009",
       "speaker": "taoxia",
-      "text": "出发啦！今天的货应该挺好卖的。",
+      "text": "出发啦！今天的阳光特别好——像是从窗户里偷偷溜进来的小猫，软软的、暖暖的。",
       "weight": 60,
       "duration": 6,
       "edge_types": [],
@@ -125,7 +125,7 @@
     {
       "id": "CHAT_010",
       "speaker": "taoxia",
-      "text": "快到了吧？我已经开始想象卸完货之后吃什么了。",
+      "text": "快到了吧？我已经开始想象卸完货之后的罐头汤了——罐头汤不高级，但比什么都没有好。",
       "weight": 55,
       "duration": 8,
       "edge_types": [],
@@ -133,14 +133,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "先把货交了再说。",
+        "text": "……先把货交了再说。汤不会跑。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_011",
       "speaker": "linli",
-      "text": "轮胎磨损比预期快了一点……下次该换备件了。",
+      "text": "轮胎磨损比预期快了一点……就像鞋子磨薄了底。下次该换备件了。",
       "weight": 40,
       "duration": 7,
       "edge_types": [],
@@ -152,7 +152,7 @@
     {
       "id": "CHAT_012",
       "speaker": "taoxia",
-      "text": "你知道吗，钟楼那边有个老爷爷，收集了整整一墙的旧唱片。下次去了我想再听听。",
+      "text": "你知道吗，钟楼那边有个老爷爷收集了整整一墙的旧唱片。那些唱片像一片片黑色的池塘，里面藏着从前的声音。",
       "weight": 35,
       "duration": 10,
       "edge_types": [],
@@ -164,7 +164,7 @@
     {
       "id": "CHAT_013",
       "speaker": "linli",
-      "text": "陶夏，别把脚搁在仪表台上。",
+      "text": "陶夏，别把脚搁在仪表台上。仪表台不是脚垫。",
       "weight": 45,
       "duration": 6,
       "edge_types": [],
@@ -172,14 +172,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "好嘛好嘛~",
+        "text": "好嘛好嘛~但仪表台上晒太阳很舒服嘛，像窗台上的猫一样~",
         "effect": { "relation_linli": 1, "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_014",
       "speaker": "taoxia",
-      "text": "这条路两边都是旧楼，感觉随时会塌下来……开快点吧？",
+      "text": "这条路两边都是旧楼，像一排排合上的旧书——不知道里面写了什么故事。开快点吧？我总觉得那些楼在看我们。",
       "weight": 45,
       "duration": 8,
       "edge_types": ["shortcut", "hazard"],
@@ -191,7 +191,7 @@
     {
       "id": "CHAT_015",
       "speaker": "taoxia",
-      "text": "哇，刚才路过的那片废墟好大……以前是个商场吗？",
+      "text": "刚才路过的那片废墟好大……以前大概是个商场吧？想象一下里面曾经人来人往的样子——像蚁丘一样热闹。",
       "weight": 40,
       "duration": 8,
       "edge_types": [],
@@ -203,7 +203,7 @@
     {
       "id": "CHAT_016",
       "speaker": "linli",
-      "text": "走一半了。油耗正常。",
+      "text": "……走一半了。油耗正常。路也正常。天也正常。一切正常。",
       "weight": 50,
       "duration": 5,
       "edge_types": [],
@@ -215,7 +215,7 @@
     {
       "id": "CHAT_017",
       "speaker": "taoxia",
-      "text": "林砾你困不困？要不要我讲个笑话？……算了我讲的笑话你从来不笑。",
+      "text": "林砾你困不困？要不要我讲个笑话？……算了，我讲的笑话你从来不笑。你笑起来肯定像冰化了——一定很好看。",
       "weight": 40,
       "duration": 10,
       "edge_types": [],
@@ -223,14 +223,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "讲吧。",
+        "text": "……讲吧。反正我也不会笑。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_018",
       "speaker": "linli",
-      "text": "到站前把送货单再对一遍。别又搞错了。",
+      "text": "到站前把送货单再对一遍。上次送错了两箱——那两箱萝卜在废墟放了三天，差点变成了腌菜。",
       "weight": 50,
       "duration": 7,
       "edge_types": [],
@@ -242,7 +242,7 @@
     {
       "id": "CHAT_019",
       "speaker": "taoxia",
-      "text": "你有没有觉得……每次离开一个地方，再回来的时候它都变了一点点？",
+      "text": "你有没有觉得……每次离开一个地方，再回来的时候它都变了一点点？就像一棵树，你不在的时候它偷偷长了两片叶子。",
       "weight": 40,
       "duration": 9,
       "edge_types": [],
@@ -250,14 +250,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "人也是。",
+        "text": "……人也是。每次跑一趟回来，你也偷偷多了一点什么。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_020",
       "speaker": "linli",
-      "text": "后视镜松了。下次停车我紧一下。",
+      "text": "……后视镜松了。下次停车我紧一下。就像松鼠的窝松了要修一样——不修的话，看后面的眼睛就歪了。",
       "weight": 45,
       "duration": 6,
       "edge_types": [],
@@ -269,7 +269,7 @@
     {
       "id": "CHAT_021",
       "speaker": "taoxia",
-      "text": "如果旧时代的人看到我们现在这样子，会怎么想？一辆破卡车装着半车罐头到处跑。",
+      "text": "如果旧时代的人看到我们现在这样子——一辆焊了又焊的卡车装着半车罐头到处跑——他们会怎么想？大概会觉得……我们很努力。",
       "weight": 35,
       "duration": 10,
       "edge_types": [],
@@ -281,7 +281,7 @@
     {
       "id": "CHAT_022",
       "speaker": "linli",
-      "text": "……嗯？没事。刚走神了。",
+      "text": "……嗯？没事。刚走神了。在想一个零件的事。",
       "weight": 40,
       "duration": 6,
       "edge_types": [],
@@ -289,14 +289,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "想什么呢？",
+        "text": "什么零件？能告诉我吗？",
         "effect": { "relation_linli": 1 }
       }
     },
     {
       "id": "CHAT_023",
       "speaker": "taoxia",
-      "text": "我以前在钟楼看到过一本旧相册。里面的人笑得好开心，去海边度假什么的。那个叫'旅游'吧？",
+      "text": "我以前在钟楼看到过一本旧相册。里面的人笑得好开心，在海边。海是什么感觉呢？大概像一个特别大的、看不见边的湖。",
       "weight": 35,
       "duration": 11,
       "edge_types": [],
@@ -308,7 +308,7 @@
     {
       "id": "CHAT_024",
       "speaker": "taoxia",
-      "text": "肚子有点饿了……还有多久到啊？",
+      "text": "肚子有点饿了……肚子叫的声音像一只不高兴的猫。还有多久到啊？",
       "weight": 50,
       "duration": 6,
       "edge_types": [],
@@ -316,14 +316,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "忍忍。",
+        "text": "……忍忍。猫饿了也不会倒下。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_025",
       "speaker": "linli",
-      "text": "这条小路比上次来的时候宽了一点。有人在维护。",
+      "text": "……这条小路比上次来的时候宽了一点。有人在维护。就像有人一直在给一条小溪清理落叶——水流得更畅了。",
       "weight": 40,
       "duration": 7,
       "edge_types": ["path"],
@@ -335,7 +335,7 @@
     {
       "id": "CHAT_026",
       "speaker": "taoxia",
-      "text": "我在副驾发现了一颗螺丝。不知道是从哪掉下来的……要紧吗？",
+      "text": "我在副驾发现了一颗螺丝。不知道从哪掉下来的……它孤零零地躺在坐垫上，像一粒没人要的种子。要紧吗？",
       "weight": 45,
       "duration": 8,
       "edge_types": [],
@@ -343,14 +343,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "给我看看。",
+        "text": "……给我看看。种子可以不管，螺丝不行。",
         "effect": { "relation_linli": 1 }
       }
     },
     {
       "id": "CHAT_027",
       "speaker": "linli",
-      "text": "速度保持在四十左右。这个路况不能更快了。",
+      "text": "速度保持在四十左右。这个路况不能更快了。就像一只兔子——跑得太快会看不到脚下的坑。",
       "weight": 45,
       "duration": 7,
       "edge_types": ["shortcut", "path"],
@@ -362,7 +362,7 @@
     {
       "id": "CHAT_028",
       "speaker": "taoxia",
-      "text": "你说，如果有天所有路都修好了，世界是不是就算恢复正常了？",
+      "text": "你说，如果有天所有路都修好了，世界是不是就算恢复正常了？路连在一起，人也就连在一起了吧。",
       "weight": 35,
       "duration": 10,
       "edge_types": ["main_road"],
@@ -370,14 +370,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "也许吧。",
+        "text": "……也许吧。路好走了，走的人就多了。走的人多了，故事就多了。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_029",
       "speaker": "taoxia",
-      "text": "下次路过温室的时候，帮我带一株薄荷苗回来好不好？我想种在车里。",
+      "text": "下次路过温室的时候，帮我带一株薄荷苗回来好不好？我想种在车里。车里有一点点绿的话，开长途就不会那么困。",
       "weight": 35,
       "duration": 9,
       "edge_types": [],
@@ -385,14 +385,14 @@
       "required_flags": [],
       "forbidden_flags": [],
       "response": {
-        "text": "车里种不活。",
+        "text": "……车里种不活。但你可以试试。试试不亏。就像种子掉在石头缝里——万一呢。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_030",
       "speaker": "linli",
-      "text": "……前面有段下坡。坐稳了。",
+      "text": "……前面有段下坡。坐稳了。像坐滑梯一样——不过我们的滑梯是带轮子的。",
       "weight": 45,
       "duration": 6,
       "edge_types": [],
@@ -404,7 +404,7 @@
     {
       "id": "CHAT_CH1_001",
       "speaker": "taoxia",
-      "text": "沈禾说他们今年种的番茄比去年甜。我试了一口——确实！不知道是不是水质变好了。",
+      "text": "沈禾说他们今年种的番茄比去年甜。她说可能是水质变好了。我咬了一口——确实甜。甜得像小时候偷吃的糖果。",
       "weight": 45,
       "duration": 10,
       "edge_types": [],
@@ -416,7 +416,7 @@
     {
       "id": "CHAT_CH1_002",
       "speaker": "linli",
-      "text": "……温室到废墟这条路，我已经能闭着眼开了。",
+      "text": "……温室到废墟这条路，我已经能闭着眼开了。闭着眼也知道哪块石头会颠。",
       "weight": 40,
       "duration": 7,
       "edge_types": [],
@@ -424,14 +424,14 @@
       "required_flags": ["prologue_done"],
       "forbidden_flags": ["ch1_done"],
       "response": {
-        "text": "那你闭着眼开试试？",
+        "text": "那你闭着眼开试试？我帮你看着。",
         "effect": { "relation_linli": 1, "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_CH1_003",
       "speaker": "taoxia",
-      "text": "伍拾七那家伙，看着凶巴巴的，其实每次我们走的时候都会多塞两个净水片。嘴硬心软。",
+      "text": "伍拾七那家伙，看着凶巴巴的，像一只竖着刺的刺猬。但每次我们走的时候他都会多塞两个净水片。嘴硬心软——典型的刺猬。",
       "weight": 40,
       "duration": 10,
       "edge_types": [],
@@ -439,14 +439,14 @@
       "required_flags": ["ruins_market_intro"],
       "forbidden_flags": ["ch2_started"],
       "response": {
-        "text": "……他只是不想我们饿死在路上丢他面子。",
+        "text": "……他只是不想我们饿死在路上丢他面子。刺猬的刺是对外的。里面的肚子是软的。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_CH1_004",
       "speaker": "taoxia",
-      "text": "刀鱼今天又想卖给我一个'旧时代珍品'。这次是一个发光的方盒子。",
+      "text": "刀鱼今天又想卖给我一个'旧时代珍品'。这次是一个发光的方盒子。她举着它的时候眼睛亮亮的，像找到了宝藏的小老鼠。",
       "weight": 40,
       "duration": 9,
       "edge_types": [],
@@ -454,14 +454,14 @@
       "required_flags": ["ruins_market_intro"],
       "forbidden_flags": ["ch2_started"],
       "response": {
-        "text": "……那是电池充电器。问她多少钱。",
+        "text": "……那是电池充电器。问她多少钱。小老鼠找到的宝藏有时候真的值钱。",
         "effect": { "relation_linli": 1 }
       }
     },
     {
       "id": "CHAT_CH1_005",
       "speaker": "linli",
-      "text": "……赵苗说外围农场的灌溉渠堵了一段。下趟可以帮她带根管子。",
+      "text": "……赵苗说外围农场的灌溉渠堵了一段。就像一根血管被什么堵住了。下趟可以帮她带根管子。",
       "weight": 40,
       "duration": 9,
       "edge_types": [],
@@ -473,7 +473,7 @@
     {
       "id": "CHAT_CH1_006",
       "speaker": "taoxia",
-      "text": "麻薯今天跑得好稳！你是不是调过悬挂了？",
+      "text": "麻薯今天跑得好稳！你是不是调过悬挂？感觉像坐在一只很乖的大猫背上——一点都不颠。",
       "weight": 45,
       "duration": 8,
       "edge_types": [],
@@ -481,14 +481,14 @@
       "required_flags": ["prologue_done"],
       "forbidden_flags": [],
       "response": {
-        "text": "……昨天调的。减震弹簧换了。",
+        "text": "……昨天调的。减震弹簧换了。不是猫。是车。车不会伸懒腰。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_CH1_007",
       "speaker": "linli",
-      "text": "……收音机刚才收到一段杂音。大概是干扰。",
+      "text": "……收音机刚才收到一段杂音。有规律的。三短一长。像某种密码。像一只鸟在用特定的节奏啄树干。",
       "weight": 35,
       "duration": 7,
       "edge_types": [],
@@ -496,14 +496,14 @@
       "required_flags": ["prologue_done"],
       "forbidden_flags": ["ch1_done"],
       "response": {
-        "text": "是吗？我还以为是一首歌呢。",
+        "text": "是吗？我还以为是一首歌呢。鸟啄树干也可以是一首歌吧？",
         "effect": { "relation_linli": 1 }
       }
     },
     {
       "id": "CHAT_CH1_008",
       "speaker": "taoxia",
-      "text": "老甘的夜市烤肉真的好好吃……虽然不知道是什么肉。不不不，我不要知道。",
+      "text": "老甘的夜市烤肉真的好好吃……虽然不知道是什么肉。不不不，我不要知道。不知道的时候最好吃——像童话故事一样。",
       "weight": 45,
       "duration": 9,
       "edge_types": [],
@@ -511,14 +511,14 @@
       "required_flags": ["ruins_market_intro"],
       "forbidden_flags": [],
       "response": {
-        "text": "……别问了。",
+        "text": "……别问了。童话最好别知道结局。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_CH1_009",
       "speaker": "taoxia",
-      "text": "你有没有觉得……我们跑的路线越来越远了？",
+      "text": "你有没有觉得……我们跑的路线越来越远了？远的路上风景会不一样吗？大概会——不同的土长不同的花。",
       "weight": 35,
       "duration": 9,
       "edge_types": [],
@@ -526,14 +526,14 @@
       "required_flags": ["sd_ch1_03_done"],
       "forbidden_flags": ["ch1_done"],
       "response": {
-        "text": "远单利润高。",
+        "text": "……远单利润高。而且远的花确实不一样。",
         "effect": { "relation_linli": 1 }
       }
     },
     {
       "id": "CHAT_CH1_010",
       "speaker": "linli",
-      "text": "……这段路旁边的花开了。以前没注意过。",
+      "text": "……这段路旁边的花开了。不知道什么时候冒出来的。也许是一夜之间——花有时候就是这样，不声不响地就开了。",
       "weight": 40,
       "duration": 7,
       "edge_types": [],
@@ -545,7 +545,7 @@
     {
       "id": "CHAT_CH1_011",
       "speaker": "taoxia",
-      "text": "今天温室那边的赵苗说，她们培育的新品种土豆快要收了。到时候运去废墟肯定好卖！",
+      "text": "今天温室那边的赵苗说，她们培育的新品种土豆快要收了。土豆——不起眼的东西，但在灰色的世界里，一颗圆滚滚的土豆就是一个奇迹。",
       "weight": 40,
       "duration": 10,
       "edge_types": [],
@@ -557,7 +557,7 @@
     {
       "id": "CHAT_CH1_012",
       "speaker": "linli",
-      "text": "……废墟那边有个商路传闻。说往北走，有个技术据点。但我还没查证过。",
+      "text": "……废墟那边有个传闻。说往北走，有个技术据点。像一只藏在深洞里的兔子——没人见过，但洞口的脚印说明它确实在。",
       "weight": 35,
       "duration": 9,
       "edge_types": [],
@@ -565,14 +565,14 @@
       "required_flags": ["sd_ch1_01_done"],
       "forbidden_flags": ["ruins_market_intro"],
       "response": {
-        "text": "那我们去问问废墟的人？",
+        "text": "那我们去看看那只兔子？也许它也在等有人来敲门。",
         "effect": { "relation_taoxia": 1 }
       }
     },
     {
       "id": "CHAT_CH1_013",
       "speaker": "taoxia",
-      "text": "刚在那边看到一个小姑娘蹲在角落翻东西，好像在找一个发光的盒子。她没注意到我。",
+      "text": "刚在那边看到一个小姑娘蹲在角落翻东西，好像在找一个发光的盒子。她没注意到我——她专注的样子像一只低头找虫子的小鸟。",
       "weight": 35,
       "duration": 9,
       "edge_types": [],
@@ -584,7 +584,7 @@
     {
       "id": "CHAT_CH1_014",
       "speaker": "linli",
-      "text": "……上次那个小姑娘，刀鱼。她今天又躲在角落了。",
+      "text": "……上次那个小姑娘，刀鱼。她今天又躲在角落了。像一只习惯藏在阴影里的猫——不是怕人，是不太敢走近。",
       "weight": 30,
       "duration": 8,
       "edge_types": [],
@@ -596,7 +596,7 @@
     {
       "id": "CHAT_CH1_015",
       "speaker": "taoxia",
-      "text": "沈禾说东边那条岔路的路标被人动过了……谁会做这种事？",
+      "text": "沈禾说东边那条岔路的路标被人动过了……就像有人偷偷把花园的门牌换了方向。谁会做这种事呢？",
       "weight": 30,
       "duration": 9,
       "edge_types": [],
@@ -604,14 +604,14 @@
       "required_flags": ["sd_ch1_03_done"],
       "forbidden_flags": ["ch1_done"],
       "response": {
-        "text": "……记一下。",
+        "text": "……记一下。换门牌的人不一定有恶意。也许只是迷了路。",
         "effect": { "relation_linli": 1 }
       }
     },
     {
       "id": "CHAT_CH1_016",
       "speaker": "taoxia",
-      "text": "你说，这个世界还能恢复到以前的样子吗？像画册里那样。",
+      "text": "你说，这个世界还能恢复到以前的样子吗？像画册里那样——到处是灯，到处是树，到处是笑着走路的人。",
       "weight": 30,
       "duration": 10,
       "edge_types": [],
@@ -619,7 +619,7 @@
       "required_flags": ["sd_ch1_03_done"],
       "forbidden_flags": ["ch1_done"],
       "response": {
-        "text": "不知道。但我们还在路上。",
+        "text": "……不知道。但我们还在路上。路在走，故事就在长。",
         "effect": { "relation_taoxia": 1, "relation_linli": 1 }
       }
     }

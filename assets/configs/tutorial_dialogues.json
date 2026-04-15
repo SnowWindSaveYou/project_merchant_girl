@@ -13,27 +13,40 @@
       "required_flags": ["tutorial_started"],
       "forbidden_flags": ["tutorial_first_departure_done"],
       "steps": [
-        { "speaker": "taoxia", "text": "出发前……我有件事一直想说。", "expression": "thinking" },
+        { "speaker": "taoxia", "text": "出发前，我有一件事一直想说！", "expression": "happy" },
         { "speaker": "linli", "text": "……什么？" },
-        { "speaker": "taoxia", "text": "我们的车应该有个名字！天天一起走，没有名字多没礼貌。", "expression": "happy" },
+        { "speaker": "taoxia", "text": "我们的车应该有个名字！你看，天天一起走，没有名字多不礼貌啊。就像养了一只猫不叫它名字一样。", "expression": "happy" },
         { "speaker": "linli", "text": "……给车起名字？" },
-        { "speaker": "taoxia", "text": "叫麻薯号！你看它，外面全是焊疤和铁板，硬邦邦的——但车厢里被我们收拾得多舒服！", "expression": "happy" },
+        { "speaker": "taoxia", "text": "对！你看它嘛——外面全是焊疤和铁板，硬邦邦的，像一块大石头。但是！车厢里面被我们收拾得多舒服啊！", "expression": "happy" },
+        { "speaker": "taoxia", "text": "外面硬邦邦，里面软乎乎。外面是石头，里面是棉花糖。所以——叫麻薯号！", "expression": "happy" },
+        { "speaker": "linli", "text": "……麻薯号。" },
+        { "speaker": "taoxia", "text": "好不好！好不好！", "expression": "happy" },
         { "speaker": "linli", "text": "……俗。" },
-        { "speaker": "taoxia", "text": "哪里俗了！麻薯多可爱！", "expression": "angry" },
+        { "speaker": "taoxia", "text": "哪里俗了！麻薯多可爱！圆圆的、软软的、甜甜的！跟我们的车一模一样！", "expression": "angry" },
+        { "speaker": "linli", "text": "……车不甜。" },
+        { "speaker": "taoxia", "text": "车运来的东西甜啊！上次运的蜂蜜你忘了？", "expression": "happy" },
+        { "speaker": "linli", "text": "……那不是车甜。那是货甜。" },
+        { "speaker": "taoxia", "text": "反正就叫麻薯号！你不许反对！我已经决定了！", "expression": "angry" },
+        { "speaker": "narrator", "text": "林砾看了陶夏一眼。陶夏的表情很认真，两只手叉在腰上，下巴抬得高高的。她的样子像一只坚决不肯从花园里离开的小兔子——你推它也没用，它就是要赖在那里。" },
         { "speaker": "linli", "text": "……随便你。走了。" },
-        { "speaker": "narrator", "text": "引擎发动。麻薯号带着两个年轻行商，驶向第一个目的地。" },
-        { "speaker": "taoxia", "text": "麻薯号——出发！", "expression": "happy" }
+        { "speaker": "taoxia", "text": "你嘴上说随便，其实是同意了吧！", "expression": "happy" },
+        { "speaker": "linli", "text": "……不是同意。是懒得反驳。" },
+        { "speaker": "taoxia", "text": "一样的！", "expression": "happy" },
+        { "speaker": "narrator", "text": "引擎发动了。麻薯号抖了抖身子，发出一声不太情愿的嗡鸣。然后它慢慢地动了起来，轮子碾过碎石，发出沙沙的声响。两个年轻的行商——一个爱说话，一个不爱说话——就这样出发了。" },
+        { "speaker": "taoxia", "text": "麻薯号——出发！", "expression": "happy" },
+        { "speaker": "linli", "text": "……出发。" },
+        { "speaker": "narrator", "text": "窗外的原野灰蒙蒙的。但风从车窗里吹进来的时候，带着一点点野草的味道——不太香，但是是活的。就像一只小动物第一次离开巢穴时闻到的风：陌生的、大的，但充满了可能性。" }
       ],
       "choices": [
         {
           "text": "麻薯号，出发！",
           "ops": ["add_relation_linli:1", "add_relation_taoxia:2"],
-          "result_text": "陶夏趴在车窗上朝外面挥了挥手。林砾看了她一眼，没说话——但换挡的动作比平时轻了一点。",
+          "result_text": "陶夏趴在车窗上朝外面挥了挥手，好像在跟一个看不见的人说再见——或者说，跟一个还没到达的地方说你好。林砾看了她一眼，没说话，但换挡的动作比平时轻了一点。就像在对一个新朋友说：走吧。",
           "set_flags": ["tutorial_first_departure_done"],
           "memory": {
             "id": "mem_mashu_naming",
             "title": "麻薯号",
-            "desc": "货车有了名字。陶夏取的，林砾嫌俗。但后来谁先习惯了，说不好。"
+            "desc": "货车有了名字。陶夏取的——她说车像麻薯，外面硬里面软。林砾嫌俗。但后来谁先习惯了说不好。就像花园篱笆上长的野蔷薇——种的人不在意，但路过的人都会多看一眼。"
           }
         }
       ]
@@ -52,23 +65,41 @@
       "required_flags": ["tutorial_started"],
       "forbidden_flags": ["tutorial_arrived_greenhouse"],
       "steps": [
-        { "speaker": "narrator", "text": "货车驶入一片翠绿的穹顶建筑群。空气忽然变了——潮湿的、带着泥土和叶子的味道。" },
-        { "speaker": "taoxia", "text": "好绿……外面明明灰蒙蒙的，这里面居然在种菜！", "expression": "happy" },
+        { "speaker": "narrator", "text": "小货车慢慢地驶过一道矮矮的铁门，然后——空气变了。" },
+        { "speaker": "narrator", "text": "就像从冬天走进了春天。外面是灰蒙蒙的废墟和碎石，但门里面是绿色的。不是浅绿、不是深绿——是一种让你想深深吸一口气的、湿润的、带着泥土和叶子的浓绿。" },
+        { "speaker": "narrator", "text": "穹顶是玻璃做的，虽然裂了好几条缝，被胶带贴上了，但阳光还是从缝隙里漏进来。光线是浅绿色的，落在菜叶上、落在小路上、落在一只正慢悠悠爬过水管的小蜗牛身上。" },
+        { "speaker": "taoxia", "text": "好绿……", "expression": "happy" },
+        { "speaker": "taoxia", "text": "外面明明灰蒙蒙的，这里面居然在种菜！真的菜！活着的菜！", "expression": "surprised" },
         { "speaker": "linli", "text": "……空气不一样。有泥土味。" },
+        { "speaker": "taoxia", "text": "你不觉得像走进了一本故事书吗？就是那种——外面是荒野，推开门是一个花园。", "expression": "happy" },
+        { "speaker": "linli", "text": "……故事书里的花园不会有蜗牛爬在水管上。" },
+        { "speaker": "taoxia", "text": "有的！我看过一本，里面专门画了花园里的蜗牛！它叫提米！", "expression": "happy" },
+        { "speaker": "narrator", "text": "一个穿着围裙的人从菜地那边走过来。她的手上沾着泥土，头发用一根木棍别在脑后，脸上带着一种很踏实的、像晒过太阳的棉被一样的表情。" },
         { "speaker": "shen_he", "text": "是行商？从哪边过来的？" },
-        { "speaker": "taoxia", "text": "从农场那边！我们带了一批物资——", "expression": "happy" },
-        { "speaker": "shen_he", "text": "先停好车。我是沈禾，管这里的日常运转。" },
+        { "speaker": "taoxia", "text": "从农场那边来的！我们带了一批物资——净水片、铜线，还有一些种子！", "expression": "happy" },
+        { "speaker": "shen_he", "text": "种子？什么种子？" },
+        { "speaker": "taoxia", "text": "我也不太认得……包装袋上写着'改良型番茄'。", "expression": "thinking" },
+        { "speaker": "shen_he", "text": "先停好车。我是沈禾，管这里的日常运转。你们有什么就卸什么，我先看看。" },
         { "speaker": "linli", "text": "……林砾。这是陶夏。" },
         { "speaker": "shen_he", "text": "路上辛苦了。市场在右手边，需要修车去找老甘。先把货卸了，其他的慢慢来。" },
+        { "speaker": "narrator", "text": "沈禾说话的语气像浇菜用的水——不急不慢，刚好够用。她指了指右边，一条窄窄的小路通向一排低矮的棚子。" },
         { "speaker": "taoxia", "text": "那边有人在修房顶……还在唱歌？", "expression": "surprised" },
-        { "speaker": "shen_he", "text": "那是老甘。什么活都干，什么歌都唱。" },
-        { "speaker": "linli", "text": "……有活干、有歌唱。这地方还行。" }
+        { "speaker": "narrator", "text": "远处果然有一个人在屋顶上忙活。他一边钉木板一边哼歌，调子听不太清楚，但旋律是欢快的。像一只小鸟在雨后唱歌——不是因为雨停了高兴，而是因为唱着唱着，雨好像就不那么讨厌了。" },
+        { "speaker": "shen_he", "text": "那是老甘。什么活都干，什么歌都唱。住在这里快十年了。" },
+        { "speaker": "taoxia", "text": "什么歌都唱？他也唱摇篮曲吗？", "expression": "happy" },
+        { "speaker": "shen_he", "text": "唱过。有一回半夜屋顶漏水，他一边堵一边唱摇篮曲。整个温室的人都睡着了。" },
+        { "speaker": "taoxia", "text": "哈哈！那是摇篮曲厉害还是他太累了？", "expression": "happy" },
+        { "speaker": "shen_he", "text": "都有吧。" },
+        { "speaker": "linli", "text": "……有活干、有歌唱、有菜长。这地方还不错。" },
+        { "speaker": "shen_he", "text": "只是'不错'。还谈不上好。但不错就够走了。路是一步步蹚出来的，日子也是一天天过出来的。" },
+        { "speaker": "taoxia", "text": "你说得真好！我记住了！", "expression": "happy" },
+        { "speaker": "narrator", "text": "阳光从穹顶的裂缝里洒下来，把菜地照得斑斑驳驳的。那只蜗牛还在水管上爬。不急不慢的。但它一定会到达它想去的地方。" }
       ],
       "choices": [
         {
           "text": "先去交货",
           "ops": ["add_relation_linli:1", "add_relation_taoxia:1", "add_goodwill:greenhouse:3"],
-          "result_text": "沈禾点了点头，转身走回穹顶里面。两个人把货从车上搬下来，第一趟生意算是落地了。",
+          "result_text": "沈禾点了点头，转身走回菜地里去了。两个人把货从车上搬下来，一箱一箱的，像搬家的小蚂蚁。第一趟生意落地了——不是落在哪张桌子上，而是落在了这片湿润的、绿色的、有蜗牛爬的泥土上。",
           "set_flags": ["tutorial_arrived_greenhouse", "npc_shen_he_intro"]
         }
       ]
