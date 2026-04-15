@@ -189,7 +189,8 @@ function M._build_intro_view(state)
     return UI.Panel {
         id = "exploreScreen",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
+        backgroundImage = Theme.textures.parchment,
+        backgroundFit = "cover",
         children = {
             -- 顶部纸娃娃场景
             buildScenePanel(),
@@ -202,14 +203,23 @@ function M._build_intro_view(state)
                     F.card {
                         maxWidth = 420, width = "100%",
                         padding = Theme.sizes.padding_large,
+                        backgroundColor = Theme.colors.home_lower_tint,
+                        backgroundImage = Theme.textures.notebook_bg,
+                        backgroundFit = "cover",
                         borderWidth = 2, borderColor = Theme.colors.warning,
                         gap = 16, alignItems = "center",
                         enterAnim = true,
                         children = {
-                            UI.Label {
-                                text = "🔍 发现资源点",
-                                fontSize = Theme.sizes.font_title,
-                                fontColor = Theme.colors.warning,
+                            UI.Panel {
+                                flexDirection = "row", alignItems = "center", gap = 6,
+                                children = {
+                                    F.icon { icon = "search", size = 24 },
+                                    UI.Label {
+                                        text = "发现资源点",
+                                        fontSize = Theme.sizes.font_title,
+                                        fontColor = Theme.colors.warning,
+                                    },
+                                },
                             },
                             UI.Label {
                                 text = room.name,
@@ -231,9 +241,9 @@ function M._build_intro_view(state)
                                 width = "100%", flexDirection = "row",
                                 justifyContent = "space-around",
                                 children = {
-                                    M._info_chip("📦", "搜刮点", tostring(#explore.crates)),
-                                    M._info_chip("⚠️", "危险度", M._danger_text()),
-                                    M._info_chip("🔫", "弹药", tostring(explore.ammo_available)),
+                                    M._info_chip("tab_cargo", "搜刮点", tostring(#explore.crates)),
+                                    M._info_chip("map_hazard", "危险度", M._danger_text()),
+                                    M._info_chip("target", "弹药", tostring(explore.ammo_available)),
                                 },
                             },
                             UI.Panel {
@@ -325,10 +335,16 @@ function M._build_explore_view(state)
                 width = "100%", flexDirection = "row",
                 justifyContent = "space-between", alignItems = "center",
                 children = {
-                    UI.Label {
-                        text = "🔍 " .. explore.room.name,
-                        fontSize = Theme.sizes.font_large,
-                        fontColor = Theme.colors.warning,
+                    UI.Panel {
+                        flexDirection = "row", alignItems = "center", gap = 4,
+                        children = {
+                            F.icon { icon = "search", size = 20 },
+                            UI.Label {
+                                text = explore.room.name,
+                                fontSize = Theme.sizes.font_large,
+                                fontColor = Theme.colors.warning,
+                            },
+                        },
                     },
                     UI.Label {
                         text = "体力 " .. math.max(0, explore.player_hp) .. "/" .. explore.player_hp_max,
@@ -363,7 +379,7 @@ function M._build_explore_view(state)
     })
 
     for i, crate in ipairs(explore.crates) do
-        local status = crate.looted and "✅ 已搜索" or "📦 未搜索"
+        local status = crate.looted and "已搜索" or "未搜索"
         local statusColor = crate.looted and Theme.colors.text_dim or Theme.colors.accent
 
         table.insert(children, F.card {
@@ -375,10 +391,16 @@ function M._build_explore_view(state)
                     fontSize = Theme.sizes.font_normal,
                     fontColor = crate.looted and Theme.colors.text_dim or Theme.colors.text_primary,
                 },
-                UI.Label {
-                    text = status,
-                    fontSize = Theme.sizes.font_small,
-                    fontColor = statusColor,
+                UI.Panel {
+                    flexDirection = "row", alignItems = "center", gap = 3,
+                    children = {
+                        F.icon { icon = crate.looted and "check" or "tab_cargo", size = 16 },
+                        UI.Label {
+                            text = status,
+                            fontSize = Theme.sizes.font_small,
+                            fontColor = statusColor,
+                        },
+                    },
                 },
             },
         })
@@ -415,7 +437,9 @@ function M._build_explore_view(state)
         if act.id == "fight" then variant = "primary" end
 
         table.insert(children, F.actionBtn {
-            text = act.icon .. " " .. act.name,
+            text = act.name,
+            icon = act.icon,
+            iconSize = 22,
             variant = variant,
             height = 42,
             fontSize = Theme.sizes.font_normal,
@@ -443,41 +467,60 @@ function M._build_explore_view(state)
         width = "100%", flexDirection = "row",
         justifyContent = "space-around", marginTop = 4,
         children = {
-            UI.Label {
-                text = "🔫 弹药 " .. explore.ammo_available,
-                fontSize = Theme.sizes.font_tiny,
-                fontColor = Theme.colors.text_dim,
+            UI.Panel {
+                flexDirection = "row", alignItems = "center", gap = 3,
+                children = {
+                    F.icon { icon = "target", size = 14 },
+                    UI.Label { text = "弹药 " .. explore.ammo_available, fontSize = Theme.sizes.font_tiny, fontColor = Theme.colors.text_dim },
+                },
             },
-            UI.Label {
-                text = "🛡 耐久 " .. state.truck.durability,
-                fontSize = Theme.sizes.font_tiny,
-                fontColor = Theme.colors.text_dim,
+            UI.Panel {
+                flexDirection = "row", alignItems = "center", gap = 3,
+                children = {
+                    F.icon { icon = "shield", size = 14 },
+                    UI.Label { text = "耐久 " .. state.truck.durability, fontSize = Theme.sizes.font_tiny, fontColor = Theme.colors.text_dim },
+                },
             },
         },
     })
 
+    -- 外层 Panel 承载纹理背景 + 素描边框，内层 ScrollView 负责滚动
+    local contentPanel = UI.Panel {
+        width = "100%",
+        flexGrow = 1, flexShrink = 1,
+        overflow = "hidden",
+        backgroundColor = Theme.colors.home_lower_tint,
+        backgroundImage = Theme.textures.notebook_bg,
+        backgroundFit = "cover",
+        borderRadius = Theme.sizes.radius,
+        children = {
+            UI.ScrollView {
+                width = "100%",
+                flexGrow = 1, flexBasis = 0,
+                padding = Theme.sizes.padding, gap = 8,
+                paddingBottom = 20,
+                children = children,
+            },
+        },
+    }
+    SketchBorder.register(contentPanel, "card")
+
     return UI.Panel {
         id = "exploreScreen",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
+        backgroundImage = Theme.textures.parchment,
+        backgroundFit = "cover",
         children = {
             -- 标题行（场景上方）
             titleBar,
             -- 纸娃娃场景
             buildScenePanel(),
-            -- 底部可滚动卡片
+            -- 底部可滚动卡片（外层 Panel 承载纹理背景，内层 ScrollView 滚动）
             UI.Panel {
                 width = "100%", flexGrow = 1, flexShrink = 1,
                 padding = Theme.sizes.padding,
                 children = {
-                    F.card {
-                        width = "100%",
-                        padding = Theme.sizes.padding,
-                        gap = 8,
-                        flexGrow = 1, flexShrink = 1,
-                        overflow = "scroll",
-                        children = children,
-                    },
+                    contentPanel,
                 },
             },
         },
@@ -508,7 +551,8 @@ function M._show_result_view(state)
     local root = UI.Panel {
         id = "exploreScreen",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
+        backgroundImage = Theme.textures.parchment,
+        backgroundFit = "cover",
         children = {
             -- 顶部场景（和平状态）
             buildScenePanel(),
@@ -521,6 +565,9 @@ function M._show_result_view(state)
                     F.card {
                         maxWidth = 420, width = "100%",
                         padding = Theme.sizes.padding_large,
+                        backgroundColor = Theme.colors.home_lower_tint,
+                        backgroundImage = Theme.textures.notebook_bg,
+                        backgroundFit = "cover",
                         borderWidth = 2, borderColor = resultColor,
                         gap = 12, alignItems = "center",
                         enterAnim = true,
@@ -555,11 +602,11 @@ end
 -- 辅助组件
 -- ============================================================
 
-function M._info_chip(icon, label, value)
+function M._info_chip(iconKey, label, value)
     return UI.Panel {
         alignItems = "center", gap = 2,
         children = {
-            UI.Label { text = icon, fontSize = 18 },
+            F.icon { icon = iconKey, size = 24 },
             UI.Label { text = label, fontSize = Theme.sizes.font_tiny, fontColor = Theme.colors.text_dim },
             UI.Label { text = value, fontSize = Theme.sizes.font_small, fontColor = Theme.colors.text_primary },
         },

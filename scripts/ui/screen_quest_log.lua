@@ -107,7 +107,7 @@ end
 ---@param completed boolean 是否已完成
 ---@return table widget
 function createQuestCard(quest, completed)
-    local npcIcon = QuestLog.get_npc_icon(quest.npc_id)
+    local npcChibi = QuestLog.get_npc_chibi(quest.npc_id)
     local npcName = QuestLog.get_npc_name(quest.npc_id)
 
     local cardChildren = {
@@ -136,10 +136,12 @@ function createQuestCard(quest, completed)
                 UI.Panel {
                     flexDirection = "row", alignItems = "center", gap = 4,
                     children = {
-                        UI.Label {
-                            text = npcIcon,
-                            fontSize = 12,
-                        },
+                        npcChibi and UI.Panel {
+                            width = 18, height = 18,
+                            borderRadius = 9,
+                            backgroundImage = npcChibi,
+                            backgroundFit = "cover",
+                        } or nil,
                         UI.Label {
                             text = npcName,
                             fontSize = Theme.sizes.font_tiny,

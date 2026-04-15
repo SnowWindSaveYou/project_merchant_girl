@@ -143,20 +143,13 @@ local function createSceneView(state, scene, sceneIdx, totalScenes)
         id = "strollSceneView",
         backgroundImage = session.bgImage,
         children = {
-            UI.ScrollView {
-                width = "90%", maxWidth = 420,
-                maxHeight = "85%",
-                children = {
-                    F.card {
-                        width = "100%",
-                        padding = Theme.sizes.padding_large,
-                        borderWidth = Theme.sizes.border,
-                        borderColor = Theme.colors.info,
-                        gap = 12,
-                        enterAnim = true,
-                        children = cardChildren,
-                    },
-                },
+            F.popupCard {
+                padding = Theme.sizes.padding_large,
+                borderWidth = Theme.sizes.border,
+                borderColor = Theme.colors.info,
+                gap = 12,
+                enterAnim = true,
+                children = cardChildren,
             },
         },
     }
@@ -232,18 +225,11 @@ local function createResultView(state)
         id = "strollResultView",
         backgroundImage = session.bgImage,
         children = {
-            UI.ScrollView {
-                width = "90%", maxWidth = 420,
-                maxHeight = "85%",
-                children = {
-                    F.card {
-                        width = "100%",
-                        padding = Theme.sizes.padding_large,
-                        gap = 12, alignItems = "center",
-                        enterAnim = true,
-                        children = contentChildren,
-                    },
-                },
+            F.popupCard {
+                padding = Theme.sizes.padding_large,
+                gap = 12, alignItems = "center",
+                enterAnim = true,
+                children = contentChildren,
             },
         },
     }
@@ -324,18 +310,11 @@ local function createSummaryView(state)
         id = "strollSummaryView",
         backgroundImage = session.bgImage,
         children = {
-            UI.ScrollView {
-                width = "90%", maxWidth = 420,
-                maxHeight = "85%",
-                children = {
-                    F.card {
-                        width = "100%",
-                        padding = Theme.sizes.padding_large,
-                        gap = 12,
-                        enterAnim = true,
-                        children = summaryChildren,
-                    },
-                },
+            F.popupCard {
+                padding = Theme.sizes.padding_large,
+                gap = 12,
+                enterAnim = true,
+                children = summaryChildren,
             },
         },
     }

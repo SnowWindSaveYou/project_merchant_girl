@@ -1,12 +1,13 @@
 --- 货舱页面
 --- 显示货车容量、货物列表、空状态、物品使用
-local UI         = require("urhox-libs/UI")
-local Theme      = require("ui/theme")
-local Goods      = require("economy/goods")
-local ItemUse    = require("economy/item_use")
-local CargoUtils = require("economy/cargo_utils")
-local F          = require("ui/ui_factory")
-local SoundMgr   = require("ui/sound_manager")
+local UI           = require("urhox-libs/UI")
+local Theme        = require("ui/theme")
+local Goods        = require("economy/goods")
+local ItemUse      = require("economy/item_use")
+local CargoUtils   = require("economy/cargo_utils")
+local F            = require("ui/ui_factory")
+local SoundMgr     = require("ui/sound_manager")
+local LetterSystem = require("narrative/letter_system")
 
 local M = {}
 ---@type table
@@ -243,10 +244,54 @@ function M.create(state, params, r)
         end
     end
 
+    -- ── 信箱 ──
+    local readCount    = LetterSystem.read_count(state)
+    local pendingCount = LetterSystem.pending_count(state)
+    if readCount > 0 or pendingCount > 0 then
+        local mailDesc = "已收 " .. readCount .. " 封"
+        if pendingCount > 0 then
+            mailDesc = mailDesc .. "　待领 " .. pendingCount .. " 封"
+        end
+        table.insert(children, F.sectionTitle("信箱"))
+        table.insert(children, F.card {
+            padding = 12,
+            flexDirection = "row",
+            justifyContent = "space-between", alignItems = "center",
+            onClick = function(self)
+                SoundMgr.play("click_soft")
+                router.navigate("mailbox")
+            end,
+            children = {
+                UI.Panel {
+                    flexDirection = "row", alignItems = "center", gap = 8,
+                    children = {
+                        UI.Label { text = "📬", fontSize = 20 },
+                        UI.Panel { gap = 2, children = {
+                            UI.Label {
+                                text = "已收信件",
+                                fontSize = Theme.sizes.font_normal,
+                                fontColor = Theme.colors.text_primary,
+                            },
+                            UI.Label {
+                                text = mailDesc,
+                                fontSize = Theme.sizes.font_small,
+                                fontColor = Theme.colors.text_dim,
+                            },
+                        }},
+                    },
+                },
+                UI.Label {
+                    text = "查看 ›",
+                    fontSize = Theme.sizes.font_small,
+                    fontColor = Theme.colors.accent,
+                },
+            },
+        })
+    end
+
     return UI.Panel {
         id = "cargoScreen",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
         padding = Theme.sizes.padding, gap = 10,
         overflow = "scroll",
         children = children,

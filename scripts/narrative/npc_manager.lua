@@ -3,6 +3,8 @@
 local NpcDialoguePool = require("narrative/npc_dialogue_pool")
 local EventExec       = require("events/event_executor")
 
+local Theme = require("ui/theme")
+
 local M = {}
 
 -- ============================================================
@@ -16,7 +18,7 @@ M.NPC_DATA = {
         name       = "沈禾",
         settlement = "greenhouse",
         title      = "温室社区领袖",
-        icon       = "🌾",
+        chibi      = Theme.npc_chibis.shen_he,
         color      = { 108, 148,  96, 255 },
         bg         = {  38,  52,  38, 240 },
     },
@@ -25,7 +27,7 @@ M.NPC_DATA = {
         name       = "韩策",
         settlement = "tower",
         title      = "北穹塔台领袖",
-        icon       = "🔧",
+        chibi      = Theme.npc_chibis.han_ce,
         color      = { 112, 142, 168, 255 },
         bg         = {  32,  40,  54, 240 },
     },
@@ -34,7 +36,7 @@ M.NPC_DATA = {
         name       = "伍拾七",
         settlement = "ruins_camp",
         title      = "废墟营地头目",
-        icon       = "🔩",
+        chibi      = Theme.npc_chibis.wu_shiqi,
         color      = { 168, 128,  82, 255 },
         bg         = {  48,  38,  30, 240 },
     },
@@ -43,7 +45,7 @@ M.NPC_DATA = {
         name       = "白述",
         settlement = "bell_tower",
         title      = "钟楼书院领袖",
-        icon       = "📖",
+        chibi      = Theme.npc_chibis.bai_shu,
         color      = { 148, 128, 168, 255 },
         bg         = {  42,  36,  46, 240 },
     },
@@ -53,7 +55,7 @@ M.NPC_DATA = {
         name       = "赵苗",
         settlement = "greenhouse_farm",
         title      = "外围农场管事",
-        icon       = "🌱",
+        chibi      = Theme.npc_chibis.zhao_miao,
         color      = {  96, 138,  80, 255 },
         bg         = {  34,  48,  32, 240 },
     },
@@ -62,7 +64,7 @@ M.NPC_DATA = {
         name       = "程远",
         settlement = "dome_outpost",
         title      = "穹顶哨站站长",
-        icon       = "📡",
+        chibi      = Theme.npc_chibis.cheng_yuan,
         color      = {  96, 126, 152, 255 },
         bg         = {  30,  36,  48, 240 },
     },
@@ -71,7 +73,7 @@ M.NPC_DATA = {
         name       = "阿锈",
         settlement = "metro_camp",
         title      = "地铁营地机修头",
-        icon       = "🚇",
+        chibi      = Theme.npc_chibis.a_xiu,
         color      = { 152, 112,  72, 255 },
         bg         = {  44,  36,  28, 240 },
     },
@@ -80,7 +82,7 @@ M.NPC_DATA = {
         name       = "苏墨",
         settlement = "old_church",
         title      = "旧教堂看守",
-        icon       = "🕯",
+        chibi      = Theme.npc_chibis.su_mo,
         color      = { 132, 112, 148, 255 },
         bg         = {  38,  32,  42, 240 },
     },
@@ -90,7 +92,7 @@ M.NPC_DATA = {
         name       = "季微",
         settlement = "tower",
         title      = "塔台技术员",
-        icon       = "📡",
+        chibi      = Theme.npc_chibis.ji_wei,
         color      = {  98, 138, 172, 255 },
         bg         = {  28,  38,  52, 240 },
     },
@@ -99,7 +101,7 @@ M.NPC_DATA = {
         name       = "老甘",
         settlement = "greenhouse",
         title      = "温室长者",
-        icon       = "🧓",
+        chibi      = Theme.npc_chibis.old_gan,
         color      = { 128, 148, 108, 255 },
         bg         = {  36,  46,  34, 240 },
     },
@@ -108,7 +110,7 @@ M.NPC_DATA = {
         name       = "刀鱼",
         settlement = "ruins_camp",
         title      = "少女拾荒者",
-        icon       = "🔪",
+        chibi      = Theme.npc_chibis.dao_yu,
         color      = { 188, 148,  92, 255 },
         bg         = {  50,  40,  30, 240 },
     },
@@ -117,7 +119,7 @@ M.NPC_DATA = {
         name       = "谢令",
         settlement = "bell_tower",
         title      = "书院抄录员",
-        icon       = "🖊",
+        chibi      = Theme.npc_chibis.xie_ling,
         color      = { 138, 118, 158, 255 },
         bg         = {  40,  34,  44, 240 },
     },
@@ -128,7 +130,7 @@ M.NPC_DATA = {
         settlement = nil,  -- 流浪型
         wandering  = true,
         title      = "行脚医生",
-        icon       = "💊",
+        chibi      = Theme.npc_chibis.meng_hui,
         color      = { 128, 168, 128, 255 },
         bg         = {  32,  44,  36, 240 },
     },
@@ -138,9 +140,19 @@ M.NPC_DATA = {
         settlement = nil,  -- 流浪型
         wandering  = true,
         title      = "独行商人",
-        icon       = "🎒",
+        chibi      = Theme.npc_chibis.ming_sha,
         color      = { 178, 148,  98, 255 },
         bg         = {  44,  38,  28, 240 },
+    },
+    xue_dong = {
+        id         = "xue_dong",
+        name       = "雪冬",
+        settlement = nil,  -- 流浪型
+        wandering  = true,
+        title      = "自封邮递员",
+        chibi      = Theme.npc_chibis.xue_dong,
+        color      = { 168, 188, 208, 255 },
+        bg         = {  32,  38,  48, 240 },
     },
 }
 

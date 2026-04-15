@@ -87,6 +87,10 @@ function M.new()
             campfire_count     = 0,   -- 累计篝火次数
             npc_cooldowns      = {},  -- { ["NPC_001"] = 2 }
             npc_visit_count    = {},  -- { ["shen_he"] = 3 }
+            -- 信件系统
+            letters_pending    = {},  -- 待领取信件ID列表 { "letter_ch1_01", ... }
+            letters_read       = {},  -- 已读信件ID集合 { ["letter_ch1_01"] = true }
+            letters_delivered  = {},  -- 已触发过的信件（防止重复入队）{ ["letter_ch1_01"] = true }
         },
 
         -- 自动计划设置

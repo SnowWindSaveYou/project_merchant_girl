@@ -161,6 +161,7 @@ local NPC_PORTRAITS = {
     a_xiu      = "image/portrait_a_xiu_20260409120249.png",
     cheng_yuan = "image/portrait_cheng_yuan_20260409120343.png",
     su_mo      = "image/portrait_su_mo_20260409120418.png",
+    xue_dong   = "image/portrait_xue_dong_20260412064247.png",
 }
 
 --- 势力通用立绘（非领袖 NPC 使用）
@@ -455,6 +456,8 @@ function M.createDialogueView(opts)
         alignItems = "center",
         paddingLeft = 16, paddingRight = 8,
         backgroundColor = Theme.colors.dialogue_topbar,
+        backgroundImage = Theme.textures.topbar,
+        backgroundFit = "cover",
         children = {
             UI.Panel {
                 flexDirection = "row", gap = 8, alignItems = "center",
@@ -545,6 +548,8 @@ function M.createDialogueView(opts)
         width = "100%",
         flexGrow = 1,
         backgroundColor = Theme.colors.dialogue_bg,
+        backgroundImage = Theme.textures.notebook_bg,
+        backgroundFit = "cover",
         paddingLeft = 20, paddingRight = 20,
         paddingTop = 16, paddingBottom = 20,
         gap = 8,
@@ -636,6 +641,8 @@ function M.createHistoryView(opts)
                 alignItems = "center",
                 paddingLeft = 16, paddingRight = 8,
                 backgroundColor = Theme.colors.dialogue_topbar,
+                backgroundImage = Theme.textures.topbar,
+                backgroundFit = "cover",
                 children = {
                     UI.Label {
                         text = (d.title or "") .. " - LOG",
@@ -822,6 +829,8 @@ function M.createResultView(opts)
     local resultCard = UI.Panel {
         width = "100%",
         backgroundColor = Theme.colors.dialogue_bg,
+        backgroundImage = Theme.textures.notebook_bg,
+        backgroundFit = "cover",
         padding = 20,
         gap = 10,
         alignItems = "center",

@@ -67,7 +67,7 @@ function M.filter(state, npc_id)
         xie_ling     = "bell_tower",
     }
     -- 流浪 NPC 集合
-    local WANDERING_NPCS = { meng_hui = true, ming_sha = true }
+    local WANDERING_NPCS = { meng_hui = true, ming_sha = true, xue_dong = true }
 
     settlement_id = NPC_SETTLEMENT[npc_id]
     if not settlement_id and WANDERING_NPCS[npc_id] then

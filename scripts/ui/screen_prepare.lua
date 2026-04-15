@@ -231,7 +231,6 @@ function M.create(state, params, r)
     local root = UI.Panel {
         id = "prepareScreen",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
         children = {
             -- 内容（可滚动）
             UI.Panel {
@@ -244,7 +243,6 @@ function M.create(state, params, r)
             -- 底部操作按钮
             UI.Panel {
                 width = "100%", padding = Theme.sizes.padding, gap = 8,
-                backgroundColor = Theme.colors.bg_secondary,
                 borderTopWidth = 1, borderColor = Theme.colors.border,
                 children = bottomChildren,
             },

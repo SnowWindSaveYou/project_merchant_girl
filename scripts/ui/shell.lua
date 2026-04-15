@@ -163,7 +163,9 @@ local SHELLED = {
     archives     = true,
     farm         = true,
     intel        = true,
-    black_market = true,
+    black_market    = true,
+    letter_pickup   = true,
+    mailbox         = true,
 }
 
 --- 页面名 → 底栏高亮 tab 映射
@@ -179,7 +181,9 @@ local SCREEN_TO_TAB = {
     archives     = "home",        -- 聚落子功能均从首页进入
     farm         = "home",
     intel        = "home",
-    black_market = "home",
+    black_market    = "home",
+    letter_pickup   = "home",
+    mailbox         = "cargo",
 }
 
 --- 判断页面是否需要 Shell 包裹
@@ -201,7 +205,9 @@ function M.create(state, content, screenName, router)
     return UI.Panel {
         id = "shellRoot",
         width = "100%", height = "100%",
-        backgroundColor = Theme.colors.bg_primary,
+        backgroundColor = { 215, 205, 185, 255 },  -- 牛皮纸色 fallback（纹理加载前可见）
+        backgroundImage = Theme.textures.parchment,
+        backgroundFit = "cover",
         children = {
             UI.SafeAreaView {
                 width = "100%", height = "100%",
@@ -244,7 +250,7 @@ function M.update(state, dt)
     Radio.update(state, dt)
 
     local creditsLbl = root:FindById("shellCredits")
-    if creditsLbl then creditsLbl:SetText("$ " .. tostring(state.economy.credits)) end
+    if creditsLbl then creditsLbl:SetText(tostring(state.economy.credits)) end
 
     local fuelPct = math.floor(state.truck.fuel)
     local fuelLbl = root:FindById("shellFuelVal")

@@ -10,6 +10,7 @@ local Goodwill            = require("settlement/goodwill")
 local SettlementEventPool = require("events/settlement_event_pool")
 local WaypointEventPool   = require("events/waypoint_event_pool")
 local WanderingNpc        = require("narrative/wandering_npc")
+local LetterSystem        = require("narrative/letter_system")
 local Chatter             = require("travel/chatter")
 local Radio               = require("travel/radio")
 local Scenery             = require("travel/scenery")
@@ -355,6 +356,9 @@ function M.finish_trip(state)
 
     -- 流浪 NPC 迁移（50% 概率移动到新位置）
     WanderingNpc.migrate_all(state)
+
+    -- 信件系统：扫描并入队新信件
+    LetterSystem.scan_and_enqueue(state)
 
     -- 燃料已在 ticker.advance() 中按帧实时扣除，此处不再重复扣除
 

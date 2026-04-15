@@ -1,0 +1,119 @@
+{
+  "letters": [
+    {
+      "id": "letter_intro_01",
+      "sender": "shen_he",
+      "sender_name": "沈禾",
+      "title": "谢谢你们",
+      "content": [
+        "林砾、陶夏：",
+        "你们上次带来的东西，温室的人都很感激。赵苗说那批肥料质量不错，开春后苗床出芽率提高了不少。",
+        "说来也奇怪，写信给你们的时候，总觉得要说的话比见面时多。也许是因为见面的时候，总想着下一批货的事，反而忘了说谢谢。",
+        "所以——谢谢你们。",
+        "路上注意安全。",
+        "",
+        "沈禾"
+      ],
+      "postscript": "送信的姑娘跑得好快。我追出去想让她喝口水，她说「不用不用」就跑了。",
+      "trigger": {
+        "required_flags": ["npc_xue_dong_intro"],
+        "after_trips": 3
+      },
+      "effects": {
+        "set_flags": ["letter_intro_01_read"]
+      }
+    },
+    {
+      "id": "letter_intro_02",
+      "sender": "bai_shu",
+      "sender_name": "白述",
+      "title": "关于旧书",
+      "content": [
+        "行商的各位：",
+        "上次经过书院时，你们提到在路上见过废弃的印刷厂。如果下次路过，能帮我留意一下有没有保存完好的书吗？内容不限，技术手册、小说、甚至菜谱都行。",
+        "书院的档案室正在做一个「旧世界知识索引」，每一本书对我们来说都是一扇窗口。",
+        "不着急，顺路的时候就好。",
+        "",
+        "白述"
+      ],
+      "postscript": null,
+      "trigger": {
+        "required_flags": ["npc_xue_dong_intro"],
+        "after_trips": 5
+      },
+      "effects": {
+        "set_flags": ["letter_intro_02_read"],
+        "unlock_hint": "bai_shu_old_books"
+      }
+    },
+    {
+      "id": "letter_meng_hui_01",
+      "sender": "meng_hui",
+      "sender_name": "孟回",
+      "title": "路上见闻",
+      "content": [
+        "林砾、陶夏：",
+        "前几天路过你们常走的那条道，发现路标被人挪了位置。不知道是风吹的还是有人故意的，你们走的时候注意一下。",
+        "另外，在沟谷那边看到一种我没见过的菌子，长在朽木上，伞盖是蓝灰色的。我不确定能不能入药，想问问林砾认不认识。",
+        "下次碰面再聊吧。",
+        "",
+        "孟回"
+      ],
+      "postscript": "她在信封背面画了一个蘑菇的简笔画。画得……很认真。",
+      "trigger": {
+        "required_flags": ["npc_xue_dong_intro"],
+        "after_trips": 7
+      },
+      "effects": {
+        "set_flags": ["letter_meng_hui_01_read"]
+      }
+    },
+    {
+      "id": "letter_zhao_miao_01",
+      "sender": "zhao_miao",
+      "sender_name": "赵苗",
+      "title": "新品种的进展",
+      "content": [
+        "行商：",
+        "你们之前带来的那批种子里，有几颗发芽了。我试着用温室东区的土壤种了一小片，叶片比本地品种厚，但生长速度慢一些。",
+        "还需要观察两个生长周期才能确认产量。如果成功的话，这可能是我们三年来第一个新增的粮食品种。",
+        "写这封信的时候很开心。希望下次见面能给你们看看幼苗。",
+        "",
+        "赵苗"
+      ],
+      "postscript": null,
+      "trigger": {
+        "required_flags": ["npc_xue_dong_intro"],
+        "after_trips": 10
+      },
+      "effects": {
+        "set_flags": ["letter_zhao_miao_01_read"]
+      }
+    },
+    {
+      "id": "letter_xue_dong_01",
+      "sender": "xue_dong",
+      "sender_name": "雪冬",
+      "title": "（没有写标题）",
+      "content": [
+        "林砾、陶夏：",
+        "这封信没有人托我送。是我自己写的。",
+        "其实我不太会写信。帮别人送了那么多，但轮到自己写，反而不知道说什么。",
+        "就是想说，谢谢你们每次遇到我的时候，都愿意停下来跟我说话。别的人……有时候会觉得我奇怪吧。一个人在路上跑来跑去，也不赚什么钱。",
+        "但你们没有这样看我。至少我觉得没有。",
+        "所以，谢谢。",
+        "",
+        "雪冬",
+        "（字迹工整得不像她平时说话的样子）"
+      ],
+      "postscript": null,
+      "trigger": {
+        "required_flags": ["npc_xue_dong_intro", "letter_intro_01_read", "letter_intro_02_read"],
+        "after_trips": 14
+      },
+      "effects": {
+        "set_flags": ["letter_xue_dong_01_read"]
+      }
+    }
+  ]
+}

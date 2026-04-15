@@ -56,7 +56,7 @@ M.AMBUSH_ENEMIES = {
 M.TACTICS = {
     accelerate = {
         name       = "加速突破",
-        icon       = "��",
+        icon       = "lightning",
         desc       = "全力加速，拉开距离",
         escape_add = 35,       -- 逃脱进度增加
         dmg_mult   = 1.2,      -- 受到伤害倍率（加速时防御下降）
@@ -65,7 +65,7 @@ M.TACTICS = {
     },
     steady = {
         name       = "稳车射击",
-        icon       = "🎯",
+        icon       = "target",
         desc       = "保持平稳让陶夏开火",
         escape_add = 20,
         dmg_mult   = 0.8,      -- 稳定行驶受伤略少
@@ -76,7 +76,7 @@ M.TACTICS = {
     },
     evade = {
         name       = "急转规避",
-        icon       = "↩️",
+        icon       = "shield",
         desc       = "急转弯躲避攻击",
         escape_add = 15,
         dmg_mult   = 0.3,      -- 大幅减伤
@@ -85,7 +85,7 @@ M.TACTICS = {
     },
     smoke = {
         name       = "烟幕撤离",
-        icon       = "💨",
+        icon       = "weather",
         desc       = "释放烟幕，立刻脱离",
         escape_add = 999,      -- 直接逃脱
         dmg_mult   = 0.0,      -- 本回合不受伤
