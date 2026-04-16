@@ -168,8 +168,8 @@
       "type": "story",
       "desc": "废弃的通信中继站，偶有微弱信号",
       "bg": "image/bg_generic_tech_facility_20260409080009.png",
-      "x": 450,
-      "y": 280
+      "x": 120,
+      "y": 350
     },
     {
       "id": "dust_station",
@@ -240,8 +240,8 @@
       "type": "story",
       "desc": "深藏山壁中的隐居者洞穴，据说住着一位知晓旧时代秘密的老人",
       "bg": "image/bg_generic_cultural_20260409075953.png",
-      "x": 150,
-      "y": 520
+      "x": 450,
+      "y": 280
     },
     {
       "id": "wind_gap",
@@ -417,6 +417,16 @@
       "bidirectional": true
     },
     {
+      "id": "edge_gh_signal",
+      "from": "greenhouse",
+      "to": "signal_relay",
+      "type": "path",
+      "danger": "safe",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
+      "bidirectional": true
+    },
+    {
       "id": "edge_farm_hermit",
       "from": "greenhouse_farm",
       "to": "hermit_cave",
@@ -434,6 +444,26 @@
       "danger": "normal",
       "travel_time_sec": 20,
       "fuel_cost": 4,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_farm_signal",
+      "from": "greenhouse_farm",
+      "to": "signal_relay",
+      "type": "path",
+      "danger": "safe",
+      "travel_time_sec": 25,
+      "fuel_cost": 4,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_signal_mushroom",
+      "from": "signal_relay",
+      "to": "mushroom_cave",
+      "type": "path",
+      "danger": "normal",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
       "bidirectional": true
     },
     {
@@ -679,7 +709,7 @@
     {
       "id": "edge_cross_signal",
       "from": "crossroads",
-      "to": "signal_relay",
+      "to": "hermit_cave",
       "type": "path",
       "danger": "normal",
       "travel_time_sec": 35,
@@ -699,7 +729,7 @@
     {
       "id": "edge_toll_signal",
       "from": "toll_gate",
-      "to": "signal_relay",
+      "to": "hermit_cave",
       "type": "path",
       "danger": "normal",
       "travel_time_sec": 20,
@@ -728,7 +758,7 @@
     },
     {
       "id": "edge_signal_dust",
-      "from": "signal_relay",
+      "from": "hermit_cave",
       "to": "dust_station",
       "type": "path",
       "danger": "normal",
@@ -1089,7 +1119,7 @@
     {
       "id": "edge_bunker_relay",
       "from": "signal_bunker",
-      "to": "signal_relay",
+      "to": "hermit_cave",
       "type": "path",
       "danger": "normal",
       "travel_time_sec": 20,

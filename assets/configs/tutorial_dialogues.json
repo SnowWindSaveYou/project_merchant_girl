@@ -135,7 +135,7 @@
           "text": "看看这里有什么",
           "ops": ["add_relation_linli:1", "add_relation_taoxia:1", "add_goodwill:ruins_camp:3"],
           "result_text": "废墟营地的空气里混着铁锈和烤肉的味道。陶夏四处张望着，眼睛亮亮的，好像每一堆废铁后面都藏着宝藏。林砾跟在后面，手插在口袋里，但脚步比平时轻快了一点。第一次探索未知区域——成功。前方还有更多未知在等着她们。",
-          "set_flags": ["tutorial_explore_done"]
+          "set_flags": ["tutorial_explore_done", "prologue_done"]
         }
       ]
     }

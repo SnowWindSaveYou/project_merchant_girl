@@ -22,7 +22,8 @@ M.Phase = {
     SPAWN               = "spawn",
     TRAVEL_TO_GREENHOUSE = "travel_to_greenhouse",
     AT_GREENHOUSE       = "at_greenhouse",
-    EXPLORE_TO_RUINS    = "explore_to_ruins",
+    RETURN_JOURNEY      = "return_journey",  -- 返程探索阶段（步骤4-7）
+    EXPLORE_TO_RUINS    = "explore_to_ruins", -- 去废墟（剧情驱动的探索）
     COMPLETE            = "complete",
 }
 
@@ -87,6 +88,27 @@ local function make_order_to_ruins()
     }
 end
 
+--- 生成温室社区→外围农场的返程教程订单（序章探索用）
+local function make_order_return_to_farm()
+    return {
+        order_id     = "tutorial_order_return",
+        from         = "greenhouse",
+        to           = "greenhouse_farm",
+        from_name    = Graph.get_node_name("greenhouse") or "温室社区",
+        to_name      = Graph.get_node_name("greenhouse_farm") or "外围农场",
+        goods_id     = "vegetables",
+        goods_name   = "新鲜蔬菜",
+        count        = 3,
+        base_reward  = 40,
+        deadline_sec = 9999,
+        risk_level   = "low",
+        status       = "available",
+        accepted_at  = nil,
+        description  = "运送新鲜蔬菜 ×3 返回外围农场",
+        is_tutorial  = true,
+    }
+end
+
 -- ============================================================
 -- 阶段定义表（按时间顺序，新增阶段只需在此处插入条目）
 --
@@ -107,7 +129,7 @@ end
 
 ---@type table[]
 M.PHASE_DEFS = {
-    -- ① SPAWN：在出生点，引导接单去温室社区
+    -- ① SPAWN：在车厂（外围农场），引导接单去温室社区
     {
         id = "spawn",
         check = function(_state)
@@ -126,7 +148,7 @@ M.PHASE_DEFS = {
             home = {
                 portrait = M.AVATAR_LINLI,
                 speaker  = "林砾",
-                text     = "这里是外围农场。我们先接个单，去温室社区看看吧。",
+                text     = "这里是外围农场。先接个单，去温室社区看看。",
                 position = { x = "50%", y = "65%" },
                 autoHide = 0,
             },
@@ -168,18 +190,80 @@ M.PHASE_DEFS = {
             home = {
                 portrait = M.AVATAR_TAOXIA,
                 speaker  = "陶夏",
-                text     = "先去交易所看看吧——看看有什么货和单子！",
+                text     = "先去交易所看看——看看有什么货和单子！",
                 position = { x = "50%", y = "65%" },
                 autoHide = 0,
             },
         },
     },
 
-    -- ④ EXPLORE_TO_RUINS：引导探索未知节点前往废墟营地
+    -- ④ RETURN_JOURNEY：返程探索阶段
+    -- 玩家接返程订单，到达特定节点触发 SD_PROLOGUE_04~06（水渠、蘑菇洞、信号中继站）
+    -- 完成后回到农场，触发 SD_PROLOGUE_07，沈禾提示废墟有生意
+    {
+        id = "return_journey",
+        check = function(state)
+            return Flags.has(state, "tutorial_shop_intro")
+        end,
+        completion_flag = "prologue_can_go_ruins",  -- SD_PROLOGUE_07 完成后设置
+        home_buttons    = { "npc", "orders", "shop", "map", "campfire" },
+        highlight = function(state)
+            -- 如果已接返程订单，高亮地图；否则高亮订单
+            return has_accepted_tutorial_order_to(state, "greenhouse_farm")
+                and { map = true } or { orders = true }
+        end,
+        hide_departure = true,
+        order = {
+            node      = "greenhouse",
+            make      = make_order_return_to_farm,
+            condition = function(state)
+                return not has_accepted_tutorial_order_to(state, "greenhouse_farm")
+            end,
+        },
+        on_arrival = {
+            -- 返回农场时触发序章完结对话
+            greenhouse_farm = { dialogue = "SD_PROLOGUE_07", guard_flag = "prologue_can_go_ruins" },
+            -- 返程路上的探索节点
+            irrigation_canal = { dialogue = "SD_PROLOGUE_04", guard_flag = "sd_prologue_04_done" },
+            mushroom_cave    = { dialogue = "SD_PROLOGUE_05", guard_flag = "sd_prologue_05_done" },
+            signal_relay     = { dialogue = "SD_PROLOGUE_06", guard_flag = "sd_prologue_06_done" },
+        },
+        bubbles = {
+            home = function(state)
+                if not has_accepted_tutorial_order_to(state, "greenhouse_farm") then
+                    return {
+                        portrait = M.AVATAR_LINLI,
+                        speaker  = "林砾",
+                        text     = "……有个返程的委托。该回去了。",
+                        position = { x = "50%", y = "65%" },
+                        autoHide = 0,
+                    }
+                else
+                    return {
+                        portrait = M.AVATAR_TAOXIA,
+                        speaker  = "陶夏",
+                        text     = "出发！路上还有好多想看的呢！",
+                        position = { x = "50%", y = "65%" },
+                        autoHide = 0,
+                    }
+                end
+            end,
+            map = {
+                portrait = M.AVATAR_LINLI,
+                speaker  = "林砾",
+                text     = "回去的路……顺路看看水渠那边。",
+                position = { x = "50%", y = "85%" },
+                autoHide = 0,
+            },
+        },
+    },
+
+    -- ⑤ EXPLORE_TO_RUINS：去废墟营地（剧情驱动）
+    -- SD_PROLOGUE_07 中沈禾提到废墟有生意，玩家有充分理由去探索
     {
         id = "explore_to_ruins",
         check = function(state)
-            return Flags.has(state, "tutorial_shop_intro")
+            return Flags.has(state, "prologue_can_go_ruins")
         end,
         completion_flag = "tutorial_explore_done",
         home_buttons    = { "npc", "orders", "shop", "map", "campfire" },
@@ -202,9 +286,9 @@ M.PHASE_DEFS = {
             home = function(state)
                 if not has_accepted_tutorial_order_to(state, "ruins_camp") then
                     return {
-                        portrait = M.AVATAR_LINLI,
-                        speaker  = "林砾",
-                        text     = "……有个去废墟营地的委托。先接下来吧。",
+                        portrait = M.AVATAR_TAOXIA,
+                        speaker  = "陶夏",
+                        text     = "沈禾姐说废墟那边有生意做，去看看！",
                         position = { x = "50%", y = "65%" },
                         autoHide = 0,
                     }
@@ -241,8 +325,16 @@ M.EXTRA_FLAGS = {
     "tutorial_auto_plan_intro",
     "tutorial_explore_scavenge",
     "tutorial_route_explore",
-    "tutorial_explore_guided",
     "tutorial_arrived_tower",
+    -- 序章相关 flags
+    "sd_prologue_01_done",
+    "sd_prologue_02_done",
+    "sd_prologue_03_done",
+    "sd_prologue_04_done",
+    "sd_prologue_05_done",
+    "sd_prologue_06_done",
+    "found_ruins_traced",
+    "prologue_can_go_ruins",
 }
 
 -- ============================================================
