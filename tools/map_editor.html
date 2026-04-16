@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《末世行商》地图编辑器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #2a2a2a;
+            color: #eee;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        /* 左侧工具栏 */
+        .toolbar {
+            width: 150px;
+            background: #333;
+            padding: 15px;
+            border-right: 1px solid #444;
+            overflow-y: auto;
+        }
+        .toolbar h3 {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        .toolbar button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: #4a90d9;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .toolbar button:hover {
+            background: #3a7bc8;
+        }
+        .toolbar button.danger {
+            background: #d0021b;
+        }
+        .toolbar button.danger:hover {
+            background: #b00216;
+        }
+        .toolbar .separator {
+            height: 1px;
+            background: #555;
+            margin: 15px 0;
+        }
+        .legend {
+            font-size: 11px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        /* 中间画布区域 */
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a1a;
+        }
+        .canvas-toolbar {
+            height: 40px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid #444;
+            gap: 15px;
+        }
+        .canvas-toolbar button {
+            padding: 5px 12px;
+            background: #555;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .canvas-toolbar button:hover {
+            background: #666;
+        }
+        .canvas-toolbar .info {
+            font-size: 12px;
+            color: #aaa;
+        }
+        #mapCanvas {
+            flex: 1;
+            cursor: grab;
+            background: #f5f0e6;
+        }
+        #mapCanvas:active {
+            cursor: grabbing;
+        }
+        #mapCanvas.dragging {
+            cursor: crosshair;
+        }
+        /* 右侧面板 */
+        .side-panel {
+            width: 450px;
+            background: #333;
+            border-left: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+        }
+        .tabs {
+            display: flex;
+            background: #2a2a2a;
+            border-bottom: 1px solid #444;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 2px solid transparent;
+        }
+        .tab:hover {
+            background: #3a3a3a;
+        }
+        .tab.active {
+            border-bottom-color: #4a90d9;
+            color: #4a90d9;
+        }
+        .tab-content {
+            flex: 1;
+            overflow: hidden;
+            display: none;
+        }
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+        /* 列表样式 */
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .search-box {
+            padding: 10px;
+            border-bottom: 1px solid #444;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            color: #eee;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .list-item {
+            padding: 10px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .list-item:hover {
+            background: #3a3a3a;
+        }
+        .list-item.selected {
+            background: #4a90d9;
+            color: white;
+        }
+        .list-item .id {
+            font-size: 11px;
+            color: #aaa;
+        }
+        .list-item.selected .id {
+            color: #ddd;
+        }
+        /* 属性编辑器 */
+        .property-editor {
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            color: #eee;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .form-group input[type="checkbox"] {
+            width: auto;
+        }
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        .btn-save {
+            width: 100%;
+            padding: 12px;
+            background: #7ed321;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .btn-save:hover {
+            background: #6bc01a;
+        }
+        /* 图片选择器 */
+        .image-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .image-selector input {
+            flex: 1;
+        }
+        .image-selector button {
+            padding: 8px 12px;
+            background: #555;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .image-selector button:hover {
+            background: #666;
+        }
+        /* 图片浏览器模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #333;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 900px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: normal;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            color: #fff;
+        }
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .image-item {
+            background: #2a2a2a;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .image-item:hover {
+            border-color: #4a90d9;
+            background: #3a3a3a;
+        }
+        .image-item.selected {
+            border-color: #7ed321;
+            background: #3a3a3a;
+        }
+        .image-item img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .image-item .name {
+            font-size: 11px;
+            color: #aaa;
+            word-break: break-all;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #444;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal-footer button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .modal-footer .btn-cancel {
+            background: #555;
+            color: white;
+        }
+        .modal-footer .btn-confirm {
+            background: #7ed321;
+            color: white;
+        }
+        /* 状态栏 */
+        .statusbar {
+            height: 30px;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 12px;
+            color: #aaa;
+            border-top: 1px solid #444;
+        }
+        /* 提示 */
+        .hint {
+            padding: 10px;
+            background: #3a3a3a;
+            font-size: 11px;
+            color: #aaa;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧工具栏 -->
+        <div class="toolbar">
+            <h3>工具</h3>
+            <button onclick="editor.addNode()">添加节点</button>
+            <button onclick="editor.deleteSelectedNode()" class="danger">删除节点</button>
+            <div class="separator"></div>
+            <button onclick="editor.addEdge()">添加边</button>
+            <button onclick="editor.deleteSelectedEdge()" class="danger">删除边</button>
+            <div class="separator"></div>
+            <button onclick="editor.resetView()">重置视图</button>
+            <button onclick="editor.toggleBackground()">显示/隐藏背景</button>
+            <div class="separator"></div>
+            <button onclick="editor.saveData()">保存 (Ctrl+S)</button>
+            <button onclick="editor.reloadData()">重新加载</button>
+            <div class="separator"></div>
+            <div class="legend">
+                <h3>图例</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4A90D9;"></div>
+                    <span>聚落</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #7ED321;"></div>
+                    <span>资源</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #F5A623;"></div>
+                    <span>中转</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #D0021B;"></div>
+                    <span>危险</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #9013FE;"></div>
+                    <span>故事</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间画布 -->
+        <div class="canvas-container">
+            <div class="canvas-toolbar">
+                <button onclick="editor.zoomIn()">+</button>
+                <button onclick="editor.zoomOut()">-</button>
+                <span class="info" id="zoomInfo">100%</span>
+                <span class="info" id="modeInfo">选择模式</span>
+                <span class="info" id="coordInfo"></span>
+            </div>
+            <canvas id="mapCanvas"></canvas>
+            <div class="hint">
+                操作提示：左键拖拽节点移动 | 右键拖拽平移视角 | 滚轮缩放 | 点击节点或边选中编辑
+            </div>
+        </div>
+
+        <!-- 右侧面板 -->
+        <div class="side-panel">
+            <div class="tabs">
+                <div class="tab active" onclick="editor.switchTab('nodes')">节点列表</div>
+                <div class="tab" onclick="editor.switchTab('edges')">边列表</div>
+                <div class="tab" onclick="editor.switchTab('properties')">属性编辑</div>
+            </div>
+
+            <!-- 节点列表 -->
+            <div id="tab-nodes" class="tab-content active">
+                <div class="search-box">
+                    <input type="text" id="nodeSearch" placeholder="搜索节点..." oninput="editor.filterNodes()">
+                </div>
+                <div class="list-container" id="nodeList"></div>
+            </div>
+
+            <!-- 边列表 -->
+            <div id="tab-edges" class="tab-content">
+                <div class="search-box">
+                    <input type="text" id="edgeSearch" placeholder="搜索边..." oninput="editor.filterEdges()">
+                </div>
+                <div class="list-container" id="edgeList"></div>
+            </div>
+
+            <!-- 属性编辑 -->
+            <div id="tab-properties" class="tab-content">
+                <div class="property-editor" id="propertyEditor">
+                    <p style="color: #888; text-align: center; margin-top: 50px;">选择一个节点或边进行编辑</p>
+                </div>
+            </div>
+
+            <div class="statusbar" id="statusbar">就绪</div>
+        </div>
+    </div>
+
+    <script>
+        // 节点类型配置
+        const NODE_TYPES = {
+            settlement: { color: '#4A90D9', label: '聚落', radius: 12 },
+            resource: { color: '#7ED321', label: '资源', radius: 10 },
+            transit: { color: '#F5A623', label: '中转', radius: 10 },
+            hazard: { color: '#D0021B', label: '危险', radius: 10 },
+            story: { color: '#9013FE', label: '故事', radius: 10 }
+        };
+
+        const EDGE_TYPES = {
+            main_road: { color: '#333333', width: 3, label: '主干道' },
+            path: { color: '#666666', width: 2, label: '小径' },
+            shortcut: { color: '#D0021B', width: 2, label: '捷径' }
+        };
+
+        class MapEditor {
+            constructor() {
+                this.canvas = document.getElementById('mapCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                // 数据
+                this.nodes = [];
+                this.edges = [];
+                this.modified = false;
+                
+                // 视图状态
+                this.scale = 1.0;
+                this.panX = 0;
+                this.panY = 0;
+                this.showBackground = true;
+                
+                // 背景图
+                this.bgImage = null;
+                this.bgLoaded = false;
+                
+                // 交互状态
+                this.selectedNode = null;
+                this.selectedEdge = null;
+                this.draggingNode = null;
+                this.panning = false;
+                this.lastMouseX = 0;
+                this.lastMouseY = 0;
+                this.edgeCreationMode = false;
+                this.edgeStartNode = null;
+                
+                // 初始化
+                this.setupCanvas();
+                this.loadData();
+                this.setupEvents();
+                this.setupKeyboard();
+            }
+
+            setupCanvas() {
+                const resize = () => {
+                    const container = this.canvas.parentElement;
+                    this.canvas.width = container.clientWidth;
+                    this.canvas.height = container.clientHeight;
+                    this.draw();
+                };
+                window.addEventListener('resize', resize);
+                resize();
+            }
+
+            async loadData() {
+                try {
+                    const response = await fetch('../assets/configs/map_graph.json');
+                    const data = await response.json();
+                    this.nodes = data.nodes || [];
+                    this.edges = data.edges || [];
+                    this.initCamera();
+                    this.loadBackground();
+                    this.refreshNodeList();
+                    this.refreshEdgeList();
+                    this.updateStatus(`已加载 ${this.nodes.length} 个节点, ${this.edges.length} 条边`);
+                    this.draw();
+                } catch (err) {
+                    this.updateStatus('加载失败: ' + err.message);
+                }
+            }
+
+            loadBackground() {
+                this.bgImage = new Image();
+                this.bgImage.onload = () => {
+                    this.bgLoaded = true;
+                    this.draw();
+                };
+                this.bgImage.src = '../assets/image/edited_map_bg_mashu_v2_20260411070244.png';
+            }
+
+            initCamera() {
+                // 计算合适的缩放和平移，使地图居中
+                const canvasWidth = this.canvas.width;
+                const canvasHeight = this.canvas.height;
+                
+                // 地图范围: x[0, 900], y[0, 600]
+                const mapWidth = 1000;  // 包含背景图范围
+                const mapHeight = 700;
+                
+                const scaleX = canvasWidth / mapWidth;
+                const scaleY = canvasHeight / mapHeight;
+                this.scale = Math.min(scaleX, scaleY) * 0.9;
+                
+                // 居中
+                const worldCenterX = 450;
+                const worldCenterY = 300;
+                this.panX = canvasWidth / 2 - worldCenterX * this.scale;
+                this.panY = canvasHeight / 2 - worldCenterY * this.scale;
+                
+                this.updateZoomInfo();
+            }
+
+            // 坐标转换
+            worldToScreen(x, y) {
+                return {
+                    x: x * this.scale + this.panX,
+                    y: y * this.scale + this.panY
+                };
+            }
+
+            screenToWorld(x, y) {
+                return {
+                    x: (x - this.panX) / this.scale,
+                    y: (y - this.panY) / this.scale
+                };
+            }
+
+            // 绘制
+            draw() {
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+
+                // 清空画布
+                ctx.fillStyle = '#f5f0e6';
+                ctx.fillRect(0, 0, width, height);
+
+                // 绘制背景图
+                if (this.showBackground && this.bgLoaded) {
+                    // 背景图对应世界坐标 (-40, -40) 到 (960, 640)
+                    const bgTopLeft = this.worldToScreen(-40, -40);
+                    const bgBottomRight = this.worldToScreen(960, 640);
+                    const bgWidth = bgBottomRight.x - bgTopLeft.x;
+                    const bgHeight = bgBottomRight.y - bgTopLeft.y;
+                    
+                    ctx.drawImage(this.bgImage, bgTopLeft.x, bgTopLeft.y, bgWidth, bgHeight);
+                }
+
+                // 绘制网格
+                this.drawGrid();
+
+                // 绘制边
+                this.drawEdges();
+
+                // 绘制节点
+                this.drawNodes();
+
+                // 绘制高亮
+                this.drawHighlight();
+            }
+
+            drawGrid() {
+                const ctx = this.ctx;
+                const gridSize = 50;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+
+                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                ctx.lineWidth = 1;
+
+                // 垂直线
+                for (let x = 0; x <= 900; x += gridSize) {
+                    const pos = this.worldToScreen(x, 0);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, 0);
+                    ctx.lineTo(pos.x, height);
+                    ctx.stroke();
+                }
+
+                // 水平线
+                for (let y = 0; y <= 600; y += gridSize) {
+                    const pos = this.worldToScreen(0, y);
+                    ctx.beginPath();
+                    ctx.moveTo(0, pos.y);
+                    ctx.lineTo(width, pos.y);
+                    ctx.stroke();
+                }
+            }
+
+            drawEdges() {
+                const ctx = this.ctx;
+                
+                this.edges.forEach(edge => {
+                    const fromNode = this.nodes.find(n => n.id === edge.from);
+                    const toNode = this.nodes.find(n => n.id === edge.to);
+                    if (!fromNode || !toNode) return;
+
+                    const from = this.worldToScreen(fromNode.x, fromNode.y);
+                    const to = this.worldToScreen(toNode.x, toNode.y);
+
+                    const config = EDGE_TYPES[edge.type] || EDGE_TYPES.path;
+                    
+                    ctx.strokeStyle = edge.danger === 'danger' ? '#D0021B' : 
+                                     edge.danger === 'normal' ? '#F5A623' : config.color;
+                    ctx.lineWidth = config.width * this.scale;
+                    
+                    if (edge.type === 'path' || edge.type === 'shortcut') {
+                        ctx.setLineDash([5 * this.scale, 5 * this.scale]);
+                    } else {
+                        ctx.setLineDash([]);
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                });
+            }
+
+            drawNodes() {
+                const ctx = this.ctx;
+                
+                this.nodes.forEach(node => {
+                    const pos = this.worldToScreen(node.x, node.y);
+                    const config = NODE_TYPES[node.type] || NODE_TYPES.settlement;
+                    const radius = config.radius * this.scale;
+
+                    // 节点圆形
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = config.color;
+                    ctx.fill();
+                    
+                    if (node.hidden) {
+                        ctx.strokeStyle = '#333';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([3, 3]);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    } else {
+                        ctx.strokeStyle = '#333';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+
+                    // 标签
+                    ctx.fillStyle = '#333';
+                    ctx.font = `${Math.max(10, 9 * this.scale)}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(node.name, pos.x, pos.y + radius + 15 * this.scale);
+                });
+            }
+
+            drawHighlight() {
+                const ctx = this.ctx;
+                
+                if (this.selectedNode) {
+                    const node = this.nodes.find(n => n.id === this.selectedNode);
+                    if (node) {
+                        const pos = this.worldToScreen(node.x, node.y);
+                        const config = NODE_TYPES[node.type] || NODE_TYPES.settlement;
+                        const radius = config.radius * this.scale;
+
+                        ctx.beginPath();
+                        ctx.arc(pos.x, pos.y, radius + 5 * this.scale, 0, Math.PI * 2);
+                        ctx.strokeStyle = '#00FF00';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                    }
+                }
+
+                if (this.selectedEdge) {
+                    const edge = this.edges.find(e => e.id === this.selectedEdge);
+                    if (edge) {
+                        const fromNode = this.nodes.find(n => n.id === edge.from);
+                        const toNode = this.nodes.find(n => n.id === edge.to);
+                        if (fromNode && toNode) {
+                            const from = this.worldToScreen(fromNode.x, fromNode.y);
+                            const to = this.worldToScreen(toNode.x, toNode.y);
+
+                            ctx.beginPath();
+                            ctx.moveTo(from.x, from.y);
+                            ctx.lineTo(to.x, to.y);
+                            ctx.strokeStyle = '#00FF00';
+                            ctx.lineWidth = 5 * this.scale;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            // 事件处理
+            setupEvents() {
+                // 鼠标按下
+                this.canvas.addEventListener('mousedown', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const worldPos = this.screenToWorld(x, y);
+
+                    if (e.button === 2) {
+                        // 右键 - 平移
+                        this.panning = true;
+                        this.lastMouseX = x;
+                        this.lastMouseY = y;
+                        e.preventDefault();
+                    } else if (e.button === 0) {
+                        // 左键
+                        const clickedNode = this.getNodeAt(x, y);
+                        
+                        if (this.edgeCreationMode && clickedNode) {
+                            this.handleEdgeCreation(clickedNode);
+                        } else if (clickedNode) {
+                            this.selectNode(clickedNode);
+                            this.draggingNode = clickedNode;
+                            this.canvas.classList.add('dragging');
+                        } else {
+                            const clickedEdge = this.getEdgeAt(x, y);
+                            if (clickedEdge) {
+                                this.selectEdge(clickedEdge);
+                            } else {
+                                this.clearSelection();
+                            }
+                        }
+                    }
+                });
+
+                // 鼠标移动
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const worldPos = this.screenToWorld(x, y);
+
+                    // 更新坐标显示
+                    document.getElementById('coordInfo').textContent = 
+                        `世界: (${Math.round(worldPos.x)}, ${Math.round(worldPos.y)})`;
+
+                    if (this.panning) {
+                        const dx = x - this.lastMouseX;
+                        const dy = y - this.lastMouseY;
+                        this.panX += dx;
+                        this.panY += dy;
+                        this.lastMouseX = x;
+                        this.lastMouseY = y;
+                        this.draw();
+                    } else if (this.draggingNode) {
+                        const node = this.nodes.find(n => n.id === this.draggingNode);
+                        if (node) {
+                            node.x = Math.round(worldPos.x);
+                            node.y = Math.round(worldPos.y);
+                            this.modified = true;
+                            this.draw();
+                            this.updatePropertyEditor();
+                        }
+                    }
+                });
+
+                // 鼠标释放
+                this.canvas.addEventListener('mouseup', () => {
+                    this.panning = false;
+                    this.draggingNode = null;
+                    this.canvas.classList.remove('dragging');
+                    this.draw();
+                });
+
+                // 鼠标离开
+                this.canvas.addEventListener('mouseleave', () => {
+                    this.panning = false;
+                    this.draggingNode = null;
+                    this.canvas.classList.remove('dragging');
+                });
+
+                // 滚轮缩放
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const worldPos = this.screenToWorld(x, y);
+
+                    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                    const newScale = Math.max(0.3, Math.min(3, this.scale * zoomFactor));
+                    
+                    // 以鼠标位置为中心缩放
+                    this.panX = x - worldPos.x * newScale;
+                    this.panY = y - worldPos.y * newScale;
+                    this.scale = newScale;
+                    
+                    this.updateZoomInfo();
+                    this.draw();
+                });
+
+                // 禁用右键菜单
+                this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            setupKeyboard() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 's') {
+                        e.preventDefault();
+                        this.saveData();
+                    } else if (e.key === 'Delete') {
+                        this.deleteSelected();
+                    } else if (e.key === 'Escape') {
+                        this.cancelEdgeCreation();
+                    }
+                });
+            }
+
+            // 工具方法
+            getNodeAt(x, y) {
+                for (const node of this.nodes) {
+                    const pos = this.worldToScreen(node.x, node.y);
+                    const config = NODE_TYPES[node.type] || NODE_TYPES.settlement;
+                    const radius = config.radius * this.scale;
+                    const dx = x - pos.x;
+                    const dy = y - pos.y;
+                    if (dx * dx + dy * dy <= radius * radius) {
+                        return node.id;
+                    }
+                }
+                return null;
+            }
+
+            getEdgeAt(x, y) {
+                const threshold = 10;
+                for (const edge of this.edges) {
+                    const fromNode = this.nodes.find(n => n.id === edge.from);
+                    const toNode = this.nodes.find(n => n.id === edge.to);
+                    if (!fromNode || !toNode) continue;
+
+                    const from = this.worldToScreen(fromNode.x, fromNode.y);
+                    const to = this.worldToScreen(toNode.x, toNode.y);
+
+                    const dist = this.pointToLineDistance(x, y, from.x, from.y, to.x, to.y);
+                    if (dist < threshold) {
+                        return edge.id;
+                    }
+                }
+                return null;
+            }
+
+            pointToLineDistance(px, py, x1, y1, x2, y2) {
+                const A = px - x1;
+                const B = py - y1;
+                const C = x2 - x1;
+                const D = y2 - y1;
+
+                const dot = A * C + B * D;
+                const lenSq = C * C + D * D;
+                let param = -1;
+                if (lenSq !== 0) param = dot / lenSq;
+
+                let xx, yy;
+                if (param < 0) {
+                    xx = x1;
+                    yy = y1;
+                } else if (param > 1) {
+                    xx = x2;
+                    yy = y2;
+                } else {
+                    xx = x1 + param * C;
+                    yy = y1 + param * D;
+                }
+
+                const dx = px - xx;
+                const dy = py - yy;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            // 选择操作
+            selectNode(nodeId) {
+                this.selectedNode = nodeId;
+                this.selectedEdge = null;
+                this.refreshNodeList();
+                this.refreshEdgeList();
+                this.updatePropertyEditor();
+                this.draw();
+            }
+
+            selectEdge(edgeId) {
+                this.selectedEdge = edgeId;
+                this.selectedNode = null;
+                this.refreshNodeList();
+                this.refreshEdgeList();
+                this.updatePropertyEditor();
+                this.draw();
+            }
+
+            clearSelection() {
+                this.selectedNode = null;
+                this.selectedEdge = null;
+                this.refreshNodeList();
+                this.refreshEdgeList();
+                this.updatePropertyEditor();
+                this.draw();
+            }
+
+            // UI 更新
+            switchTab(tab) {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                
+                event.target.classList.add('active');
+                document.getElementById(`tab-${tab}`).classList.add('active');
+            }
+
+            refreshNodeList() {
+                const list = document.getElementById('nodeList');
+                const search = document.getElementById('nodeSearch').value.toLowerCase();
+                
+                list.innerHTML = this.nodes
+                    .filter(n => !search || 
+                        n.id.toLowerCase().includes(search) || 
+                        n.name.toLowerCase().includes(search))
+                    .sort((a, b) => a.id.localeCompare(b.id))
+                    .map(node => `
+                        <div class="list-item ${this.selectedNode === node.id ? 'selected' : ''}" 
+                             onclick="editor.selectNode('${node.id}')">
+                            <div>${node.name}</div>
+                            <div class="id">${node.id} | ${NODE_TYPES[node.type]?.label || node.type}</div>
+                        </div>
+                    `).join('');
+            }
+
+            refreshEdgeList() {
+                const list = document.getElementById('edgeList');
+                const search = document.getElementById('edgeSearch').value.toLowerCase();
+                
+                list.innerHTML = this.edges
+                    .filter(e => !search || 
+                        e.id.toLowerCase().includes(search) || 
+                        e.from.toLowerCase().includes(search) ||
+                        e.to.toLowerCase().includes(search))
+                    .sort((a, b) => a.id.localeCompare(b.id))
+                    .map(edge => `
+                        <div class="list-item ${this.selectedEdge === edge.id ? 'selected' : ''}" 
+                             onclick="editor.selectEdge('${edge.id}')">
+                            <div>${edge.from} → ${edge.to}</div>
+                            <div class="id">${edge.id} | ${EDGE_TYPES[edge.type]?.label || edge.type}</div>
+                        </div>
+                    `).join('');
+            }
+
+            filterNodes() {
+                this.refreshNodeList();
+            }
+
+            filterEdges() {
+                this.refreshEdgeList();
+            }
+
+            updatePropertyEditor() {
+                const container = document.getElementById('propertyEditor');
+                
+                if (this.selectedNode) {
+                    const node = this.nodes.find(n => n.id === this.selectedNode);
+                    if (node) {
+                        container.innerHTML = `
+                            <h3 style="margin-bottom: 15px;">节点属性</h3>
+                            <div class="form-group">
+                                <label>ID</label>
+                                <input type="text" value="${node.id}" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>背景图</label>
+                                <div class="image-selector">
+                                    <input type="text" id="prop-bg" value="${node.bg || ''}" onchange="editor.updateNode()" placeholder="选择或输入图片路径">
+                                    <button onclick="editor.openImageSelector('prop-bg')">浏览...</button>
+                                </div>
+                                ${node.bg ? `<img src="${editor.getAssetPath(node.bg)}" class="image-preview" onerror="this.style.display='none'">` : ''}
+                            </div>
+                            <div class="form-group">
+                                <label>类型</label>
+                                <select id="prop-type" onchange="editor.updateNode()">
+                                    ${Object.entries(NODE_TYPES).map(([key, config]) => 
+                                        `<option value="${key}" ${node.type === key ? 'selected' : ''}>${config.label}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>X 坐标</label>
+                                    <input type="number" id="prop-x" value="${node.x}" onchange="editor.updateNode()">
+                                </div>
+                                <div class="form-group">
+                                    <label>Y 坐标</label>
+                                    <input type="number" id="prop-y" value="${node.y}" onchange="editor.updateNode()">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>描述</label>
+                                <textarea id="prop-desc" onchange="editor.updateNode()">${node.desc || ''}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>背景图</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="prop-bg" value="${node.bg || ''}" onchange="editor.updateNode()" style="flex: 1;">
+                                    <button onclick="editor.openImageSelector()" style="padding: 5px 10px; background: #555; color: white; border: none; border-radius: 3px; cursor: pointer;">浏览...</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="prop-hidden" ${node.hidden ? 'checked' : ''} onchange="editor.updateNode()">
+                                    隐藏节点
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>探索标记</label>
+                                <input type="text" id="prop-explore" value="${node.explore_flag || ''}" onchange="editor.updateNode()">
+                            </div>
+                        `;
+                    }
+                } else if (this.selectedEdge) {
+                    const edge = this.edges.find(e => e.id === this.selectedEdge);
+                    if (edge) {
+                        container.innerHTML = `
+                            <h3 style="margin-bottom: 15px;">边属性</h3>
+                            <div class="form-group">
+                                <label>ID</label>
+                                <input type="text" value="${edge.id}" disabled>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>起点</label>
+                                    <input type="text" id="prop-from" value="${edge.from}" onchange="editor.updateEdge()">
+                                </div>
+                                <div class="form-group">
+                                    <label>终点</label>
+                                    <input type="text" id="prop-to" value="${edge.to}" onchange="editor.updateEdge()">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>类型</label>
+                                <select id="prop-type" onchange="editor.updateEdge()">
+                                    ${Object.entries(EDGE_TYPES).map(([key, config]) => 
+                                        `<option value="${key}" ${edge.type === key ? 'selected' : ''}>${config.label}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>危险度</label>
+                                <select id="prop-danger" onchange="editor.updateEdge()">
+                                    <option value="safe" ${edge.danger === 'safe' ? 'selected' : ''}>安全</option>
+                                    <option value="normal" ${edge.danger === 'normal' ? 'selected' : ''}>普通</option>
+                                    <option value="danger" ${edge.danger === 'danger' ? 'selected' : ''}>危险</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>旅行时间(秒)</label>
+                                    <input type="number" id="prop-time" value="${edge.travel_time_sec}" onchange="editor.updateEdge()">
+                                </div>
+                                <div class="form-group">
+                                    <label>燃料消耗</label>
+                                    <input type="number" id="prop-fuel" value="${edge.fuel_cost}" onchange="editor.updateEdge()">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="prop-bidirectional" ${edge.bidirectional ? 'checked' : ''} onchange="editor.updateEdge()">
+                                    双向通行
+                                </label>
+                            </div>
+                        `;
+                    }
+                } else {
+                    container.innerHTML = '<p style="color: #888; text-align: center; margin-top: 50px;">选择一个节点或边进行编辑</p>';
+                }
+            }
+
+            updateNode() {
+                const node = this.nodes.find(n => n.id === this.selectedNode);
+                if (!node) return;
+
+                node.name = document.getElementById('prop-name').value;
+                node.type = document.getElementById('prop-type').value;
+                node.x = parseInt(document.getElementById('prop-x').value) || 0;
+                node.y = parseInt(document.getElementById('prop-y').value) || 0;
+                node.desc = document.getElementById('prop-desc').value;
+                node.bg = document.getElementById('prop-bg').value;
+                node.hidden = document.getElementById('prop-hidden').checked;
+                node.explore_flag = document.getElementById('prop-explore').value;
+
+                this.modified = true;
+                this.draw();
+                this.refreshNodeList();
+            }
+
+            updateEdge() {
+                const edge = this.edges.find(e => e.id === this.selectedEdge);
+                if (!edge) return;
+
+                edge.from = document.getElementById('prop-from').value;
+                edge.to = document.getElementById('prop-to').value;
+                edge.type = document.getElementById('prop-type').value;
+                edge.danger = document.getElementById('prop-danger').value;
+                edge.travel_time_sec = parseInt(document.getElementById('prop-time').value) || 0;
+                edge.fuel_cost = parseInt(document.getElementById('prop-fuel').value) || 0;
+                edge.bidirectional = document.getElementById('prop-bidirectional').checked;
+
+                this.modified = true;
+                this.draw();
+                this.refreshEdgeList();
+            }
+
+            // 操作功能
+            addNode() {
+                const id = prompt('请输入节点ID:');
+                if (!id) return;
+                if (this.nodes.find(n => n.id === id)) {
+                    alert('节点ID已存在!');
+                    return;
+                }
+
+                const name = prompt('请输入节点名称:', '新节点');
+                
+                // 在画布中心创建
+                const worldPos = this.screenToWorld(this.canvas.width / 2, this.canvas.height / 2);
+                
+                const node = {
+                    id,
+                    name: name || '新节点',
+                    type: 'settlement',
+                    desc: '',
+                    bg: '',
+                    x: Math.round(worldPos.x),
+                    y: Math.round(worldPos.y)
+                };
+
+                this.nodes.push(node);
+                this.modified = true;
+                this.selectNode(id);
+                this.refreshNodeList();
+                this.draw();
+            }
+
+            deleteSelectedNode() {
+                if (!this.selectedNode) {
+                    alert('请先选择一个节点');
+                    return;
+                }
+
+                if (!confirm(`确定要删除节点 "${this.selectedNode}" 吗?`)) return;
+
+                // 删除相关边
+                this.edges = this.edges.filter(e => e.from !== this.selectedNode && e.to !== this.selectedNode);
+                
+                // 删除节点
+                this.nodes = this.nodes.filter(n => n.id !== this.selectedNode);
+                
+                this.selectedNode = null;
+                this.modified = true;
+                this.refreshNodeList();
+                this.refreshEdgeList();
+                this.updatePropertyEditor();
+                this.draw();
+            }
+
+            addEdge() {
+                if (!this.selectedNode) {
+                    alert('请先选择一个节点作为起点');
+                    return;
+                }
+
+                this.edgeCreationMode = true;
+                this.edgeStartNode = this.selectedNode;
+                document.getElementById('modeInfo').textContent = '创建边模式: 选择终点节点';
+            }
+
+            handleEdgeCreation(endNodeId) {
+                if (this.edgeStartNode === endNodeId) {
+                    this.cancelEdgeCreation();
+                    return;
+                }
+
+                const id = prompt('请输入边ID:', `edge_${this.edgeStartNode}_${endNodeId}`);
+                if (!id) {
+                    this.cancelEdgeCreation();
+                    return;
+                }
+
+                const edge = {
+                    id,
+                    from: this.edgeStartNode,
+                    to: endNodeId,
+                    type: 'path',
+                    danger: 'safe',
+                    travel_time_sec: 30,
+                    fuel_cost: 5,
+                    bidirectional: true
+                };
+
+                this.edges.push(edge);
+                this.modified = true;
+                this.cancelEdgeCreation();
+                this.selectEdge(id);
+                this.refreshEdgeList();
+                this.draw();
+            }
+
+            deleteSelectedEdge() {
+                if (!this.selectedEdge) {
+                    alert('请先选择一条边');
+                    return;
+                }
+
+                if (!confirm(`确定要删除边 "${this.selectedEdge}" 吗?`)) return;
+
+                this.edges = this.edges.filter(e => e.id !== this.selectedEdge);
+                this.selectedEdge = null;
+                this.modified = true;
+                this.refreshEdgeList();
+                this.updatePropertyEditor();
+                this.draw();
+            }
+
+            cancelEdgeCreation() {
+                this.edgeCreationMode = false;
+                this.edgeStartNode = null;
+                document.getElementById('modeInfo').textContent = '选择模式';
+            }
+
+            deleteSelected() {
+                if (this.selectedNode) {
+                    this.deleteSelectedNode();
+                } else if (this.selectedEdge) {
+                    this.deleteSelectedEdge();
+                }
+            }
+
+            // 视图操作
+            zoomIn() {
+                this.scale = Math.min(3, this.scale * 1.2);
+                this.updateZoomInfo();
+                this.draw();
+            }
+
+            zoomOut() {
+                this.scale = Math.max(0.3, this.scale / 1.2);
+                this.updateZoomInfo();
+                this.draw();
+            }
+
+            resetView() {
+                this.initCamera();
+                this.draw();
+            }
+
+            toggleBackground() {
+                this.showBackground = !this.showBackground;
+                this.draw();
+            }
+
+            updateZoomInfo() {
+                document.getElementById('zoomInfo').textContent = Math.round(this.scale * 100) + '%';
+            }
+
+            // 数据操作
+            async saveData() {
+                const data = {
+                    nodes: this.nodes,
+                    edges: this.edges
+                };
+
+                try {
+                    // 使用 File System Access API 保存
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: 'map_graph.json',
+                        types: [{
+                            description: 'JSON Files',
+                            accept: { 'application/json': ['.json'] }
+                        }]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(JSON.stringify(data, null, 2));
+                    await writable.close();
+
+                    this.modified = false;
+                    this.updateStatus('已保存');
+                    alert('地图数据已保存');
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error('保存失败:', err);
+                        // 降级方案：下载文件
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'map_graph.json';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        this.updateStatus('已下载');
+                    }
+                }
+            }
+
+            reloadData() {
+                if (this.modified && !confirm('有未保存的更改，确定要重新加载吗?')) return;
+                this.loadData();
+            }
+
+            updateStatus(msg) {
+                document.getElementById('statusbar').textContent = msg;
+            }
+
+            // 图片选择器
+            openImagePicker() {
+                const modal = document.getElementById('imagePickerModal');
+                const grid = document.getElementById('imageGrid');
+                modal.style.display = 'block';
+                
+                // 清空并显示加载状态
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">加载图片列表...</div>';
+                
+                // 获取当前选中的节点背景图
+                const currentNode = this.nodes.find(n => n.id === this.selectedNode);
+                const currentBg = currentNode ? currentNode.bg : '';
+                
+                // 扫描图片目录
+                this.scanImageDirectory().then(images => {
+                    if (images.length === 0) {
+                        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">未找到图片文件</div>';
+                        return;
+                    }
+                    
+                    grid.innerHTML = images.map(img => {
+                        const isSelected = currentBg === img.path;
+                        return `
+                            <div class="image-item ${isSelected ? 'selected' : ''}" onclick="editor.selectImage('${img.path}')">
+                                <img src="${img.path}" alt="${img.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%2280%22><rect fill=%22%23333%22 width=%22100%22 height=%2280%22/><text fill=%22%23666%22 x=%2250%22 y=%2245%22 text-anchor=%22middle%22>无预览</text></svg>'">
+                                <div class="image-name">${img.name}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }).catch(err => {
+                    console.error('加载图片失败:', err);
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #f66;">加载失败，请检查图片目录</div>';
+                });
+            }
+
+            async scanImageDirectory() {
+                // 尝试从服务器获取图片列表
+                try {
+                    const response = await fetch('../assets/image/');
+                    if (response.ok) {
+                        const text = await response.text();
+                        // 解析目录列表
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(text, 'text/html');
+                        const links = doc.querySelectorAll('a[href$=".png"], a[href$=".jpg"], a[href$=".jpeg"], a[href$=".webp"]');
+                        
+                        const images = [];
+                        links.forEach(link => {
+                            const href = link.getAttribute('href');
+                            if (href && !href.startsWith('..')) {
+                                images.push({
+                                    path: `../assets/image/${href}`,
+                                    name: href
+                                });
+                            }
+                        });
+                        
+                        if (images.length > 0) {
+                            return images.sort((a, b) => a.name.localeCompare(b.name));
+                        }
+                    }
+                } catch (e) {
+                    console.log('无法从服务器获取图片列表，使用预定义列表');
+                }
+                
+                // 预定义的图片列表（作为后备）
+                const predefinedImages = [
+                    { path: '../assets/image/edited_bg_greenhouse_mashu_20260411063945.png', name: 'greenhouse.png' },
+                    { path: '../assets/image/edited_bg_greenhouse_farm_mashu_v4_20260411063338.png', name: 'greenhouse_farm.png' },
+                    { path: '../assets/image/edited_bg_tower_20260408155249.png', name: 'tower.png' },
+                    { path: '../assets/image/edited_bg_dome_outpost_mashu_20260411063817.png', name: 'dome_outpost.png' },
+                    { path: '../assets/image/edited_bg_ruins_camp_20260408155347.png', name: 'ruins_camp.png' },
+                    { path: '../assets/image/edited_bg_metro_camp_20260408160649.png', name: 'metro_camp.png' },
+                    { path: '../assets/image/edited_bg_bell_tower_mashu_20260411063907.png', name: 'bell_tower.png' },
+                    { path: '../assets/image/edited_bg_old_church_20260408160413.png', name: 'old_church.png' },
+                    { path: '../assets/image/edited_map_bg_mashu_v2_20260411070244.png', name: 'map_bg.png' },
+                    { path: '../assets/image/bg_generic_wilderness_20260409080002.png', name: 'wilderness.png' },
+                    { path: '../assets/image/bg_generic_underground_20260409080000.png', name: 'underground.png' },
+                    { path: '../assets/image/bg_generic_tech_facility_20260409080009.png', name: 'tech_facility.png' },
+                    { path: '../assets/image/bg_generic_ruins_industrial_20260409080003.png', name: 'ruins_industrial.png' },
+                    { path: '../assets/image/bg_generic_road_20260409075956.png', name: 'road.png' },
+                    { path: '../assets/image/bg_generic_cultural_20260409075953.png', name: 'cultural.png' }
+                ];
+                
+                return predefinedImages;
+            }
+
+            selectImage(imagePath) {
+                // 更新输入框
+                const bgInput = document.getElementById('prop-bg');
+                if (bgInput) {
+                    bgInput.value = imagePath;
+                    this.updateNode();
+                }
+                this.closeImagePicker();
+            }
+
+            closeImagePicker() {
+                document.getElementById('imagePickerModal').style.display = 'none';
+            }
+
+            filterImages() {
+                const search = document.getElementById('imageSearch').value.toLowerCase();
+                const items = document.querySelectorAll('.image-item');
+                items.forEach(item => {
+                    const name = item.querySelector('.image-name').textContent.toLowerCase();
+                    item.style.display = name.includes(search) ? 'block' : 'none';
+                });
+            }
+        }
+
+        // 初始化编辑器
+        const editor = new MapEditor();
+    </script>
+</body>
+</html>

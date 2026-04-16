@@ -6,8 +6,8 @@
       "type": "settlement",
       "desc": "以旧生态穹顶为核心的农业聚落",
       "bg": "image/edited_bg_greenhouse_mashu_20260411063945.png",
-      "x": 80,
-      "y": 400
+      "x": 99,
+      "y": 394
     },
     {
       "id": "greenhouse_farm",
@@ -15,8 +15,8 @@
       "type": "settlement",
       "desc": "温室社区南侧的露天耕地，种植抗辐射作物",
       "bg": "image/edited_bg_greenhouse_farm_mashu_v4_20260411063338.png",
-      "x": 120,
-      "y": 530
+      "x": 83,
+      "y": 464
     },
     {
       "id": "irrigation_canal",
@@ -24,8 +24,8 @@
       "type": "resource",
       "desc": "农耕派维护的旧灌溉渠道，沿途可见锈迹斑斑的水泵和蓄水池",
       "bg": "image/bg_generic_wilderness_20260409080002.png",
-      "x": 50,
-      "y": 300
+      "x": 16,
+      "y": 397
     },
     {
       "id": "mushroom_cave",
@@ -96,8 +96,8 @@
       "type": "resource",
       "desc": "层叠的废旧汽车和家电，拾荒者在此翻找零件和稀有金属",
       "bg": "image/bg_generic_ruins_industrial_20260409080003.png",
-      "x": 520,
-      "y": 540
+      "x": 516,
+      "y": 566
     },
     {
       "id": "sewer_maze",
@@ -123,8 +123,8 @@
       "type": "settlement",
       "desc": "钟楼书院东南的废弃教堂，被学者们改造为分院",
       "bg": "image/edited_bg_old_church_20260408160413.png",
-      "x": 820,
-      "y": 350
+      "x": 783,
+      "y": 310
     },
     {
       "id": "stone_garden",
@@ -141,8 +141,8 @@
       "type": "resource",
       "desc": "废弃的旧时代印刷工厂，纸张和油墨残存，学者们来此抄录修复典籍",
       "bg": "image/bg_generic_ruins_industrial_20260409080003.png",
-      "x": 730,
-      "y": 380
+      "x": 736,
+      "y": 390
     },
     {
       "id": "crossroads",
@@ -150,8 +150,8 @@
       "type": "transit",
       "desc": "一处半废弃的高速匝道，可补给和分道",
       "bg": "image/bg_generic_road_20260409075956.png",
-      "x": 280,
-      "y": 250
+      "x": 242,
+      "y": 262
     },
     {
       "id": "old_warehouse",
@@ -168,8 +168,8 @@
       "type": "story",
       "desc": "废弃的通信中继站，偶有微弱信号",
       "bg": "image/bg_generic_tech_facility_20260409080009.png",
-      "x": 120,
-      "y": 350
+      "x": 180,
+      "y": 468
     },
     {
       "id": "dust_station",
@@ -213,8 +213,8 @@
       "type": "transit",
       "desc": "早已干涸的河道，沙尘中偶见旧桥墩残骸",
       "bg": "image/bg_generic_wilderness_20260409080002.png",
-      "x": 650,
-      "y": 400
+      "x": 597,
+      "y": 403
     },
     {
       "id": "radar_hill",
@@ -231,8 +231,8 @@
       "type": "hazard",
       "desc": "地面塌陷形成的凹地，有变异生物出没",
       "bg": "image/bg_generic_road_20260409075956.png",
-      "x": 400,
-      "y": 500
+      "x": 379,
+      "y": 482
     },
     {
       "id": "hermit_cave",
@@ -240,8 +240,8 @@
       "type": "story",
       "desc": "深藏山壁中的隐居者洞穴，据说住着一位知晓旧时代秘密的老人",
       "bg": "image/bg_generic_cultural_20260409075953.png",
-      "x": 450,
-      "y": 280
+      "x": 731,
+      "y": 496
     },
     {
       "id": "wind_gap",
@@ -267,8 +267,8 @@
       "type": "resource",
       "desc": "灾前的物流配送中心，货架倒塌但仓库结构完好",
       "bg": "image/bg_generic_ruins_industrial_20260409080003.png",
-      "x": 700,
-      "y": 450
+      "x": 675,
+      "y": 429
     },
     {
       "id": "mist_valley",
@@ -277,8 +277,8 @@
       "desc": "终年笼罩浓雾的山谷，能见度极低，传闻深处有人定居",
       "explore_flag": "mist_valley_accessible",
       "bg": "image/bg_generic_wilderness_20260409080002.png",
-      "x": 850,
-      "y": 120
+      "x": 875,
+      "y": 136
     },
     {
       "id": "dead_forest",
@@ -286,8 +286,8 @@
       "type": "hazard",
       "desc": "大片枯死的树木矗立如骨，辐射残留偏高，但林中藏有灾前物资缓存点",
       "bg": "image/bg_generic_wilderness_20260409080002.png",
-      "x": 100,
-      "y": 80
+      "x": 36,
+      "y": 219
     },
     {
       "id": "toxic_marsh",
@@ -295,8 +295,8 @@
       "type": "hazard",
       "desc": "化工厂泄漏形成的有毒湿地，空气刺鼻，但沼底沉积着稀有化学原料",
       "bg": "image/bg_generic_underground_20260409080000.png",
-      "x": 30,
-      "y": 500
+      "x": 10,
+      "y": 481
     },
     {
       "id": "military_bunker",
@@ -322,8 +322,8 @@
       "type": "story",
       "desc": "孤零零的高塔，夜间偶尔自动播放灾前的紧急广播录音",
       "bg": "image/bg_generic_cultural_20260409075953.png",
-      "x": 900,
-      "y": 430
+      "x": 892,
+      "y": 436
     },
     {
       "id": "rust_bridge",
@@ -331,8 +331,8 @@
       "type": "transit",
       "desc": "横跨干涸峡谷的铁桥，锈迹斑斑但仍能承重，通向未知的东北方",
       "bg": "image/bg_generic_road_20260409075956.png",
-      "x": 900,
-      "y": 130
+      "x": 803,
+      "y": 170
     },
     {
       "id": "underground_market",
@@ -341,7 +341,7 @@
       "desc": "隐藏在废弃地下停车场内的非法交易市场，只有熟人引荐才能找到入口",
       "bg": "image/bg_generic_underground_20260409080000.png",
       "x": 480,
-      "y": 500,
+      "y": 499,
       "hidden": true
     },
     {
@@ -350,8 +350,8 @@
       "type": "story",
       "desc": "深埋地下的旧时代通信枢纽，设备大部分完好，似乎还能接收远方信号",
       "bg": "image/bg_generic_tech_facility_20260409080009.png",
-      "x": 400,
-      "y": 180,
+      "x": 489,
+      "y": 179,
       "hidden": true
     },
     {
@@ -360,8 +360,8 @@
       "type": "story",
       "desc": "灾前市政档案馆，地下室保存着大量未被销毁的政府文件和户籍记录",
       "bg": "image/bg_generic_cultural_20260409075953.png",
-      "x": 800,
-      "y": 280,
+      "x": 818,
+      "y": 254,
       "hidden": true
     }
   ],
@@ -373,34 +373,24 @@
       "type": "main_road",
       "danger": "safe",
       "travel_time_sec": 50,
-      "fuel_cost": 8,
+      "fuel_cost": 5,
       "bidirectional": true
     },
     {
       "id": "edge_gh_farm",
       "from": "greenhouse",
       "to": "greenhouse_farm",
-      "type": "path",
+      "type": "main_road",
       "danger": "safe",
       "travel_time_sec": 25,
       "fuel_cost": 4,
       "bidirectional": true
     },
     {
-      "id": "edge_gh_hermit",
-      "from": "greenhouse",
-      "to": "hermit_cave",
-      "type": "path",
-      "danger": "normal",
-      "travel_time_sec": 40,
-      "fuel_cost": 7,
-      "bidirectional": true
-    },
-    {
       "id": "edge_gh_irrigation",
       "from": "greenhouse",
       "to": "irrigation_canal",
-      "type": "path",
+      "type": "main_road",
       "danger": "safe",
       "travel_time_sec": 25,
       "fuel_cost": 4,
@@ -412,7 +402,7 @@
       "to": "danger_pass",
       "type": "shortcut",
       "danger": "danger",
-      "travel_time_sec": 25,
+      "travel_time_sec": 30,
       "fuel_cost": 6,
       "bidirectional": true
     },
@@ -422,16 +412,6 @@
       "to": "signal_relay",
       "type": "path",
       "danger": "safe",
-      "travel_time_sec": 30,
-      "fuel_cost": 5,
-      "bidirectional": true
-    },
-    {
-      "id": "edge_farm_hermit",
-      "from": "greenhouse_farm",
-      "to": "hermit_cave",
-      "type": "path",
-      "danger": "normal",
       "travel_time_sec": 30,
       "fuel_cost": 5,
       "bidirectional": true
@@ -477,16 +457,6 @@
       "bidirectional": true
     },
     {
-      "id": "edge_mushroom_hermit",
-      "from": "mushroom_cave",
-      "to": "hermit_cave",
-      "type": "path",
-      "danger": "normal",
-      "travel_time_sec": 25,
-      "fuel_cost": 4,
-      "bidirectional": true
-    },
-    {
       "id": "edge_dome_tower",
       "from": "dome_outpost",
       "to": "tower",
@@ -503,7 +473,7 @@
       "type": "path",
       "danger": "normal",
       "travel_time_sec": 30,
-      "fuel_cost": 5,
+      "fuel_cost": 6,
       "bidirectional": true
     },
     {
@@ -551,7 +521,7 @@
       "from": "solar_field",
       "to": "radar_hill",
       "type": "path",
-      "danger": "normal",
+      "danger": "danger",
       "travel_time_sec": 25,
       "fuel_cost": 4,
       "bidirectional": true
@@ -570,7 +540,7 @@
       "id": "edge_metro_ruins",
       "from": "metro_camp",
       "to": "ruins_camp",
-      "type": "path",
+      "type": "main_road",
       "danger": "safe",
       "travel_time_sec": 20,
       "fuel_cost": 3,
@@ -600,8 +570,8 @@
       "id": "edge_ruins_riverbed",
       "from": "ruins_camp",
       "to": "dry_riverbed",
-      "type": "main_road",
-      "danger": "safe",
+      "type": "path",
+      "danger": "normal",
       "travel_time_sec": 30,
       "fuel_cost": 5,
       "bidirectional": true
@@ -644,16 +614,6 @@
       "danger": "safe",
       "travel_time_sec": 20,
       "fuel_cost": 3,
-      "bidirectional": true
-    },
-    {
-      "id": "edge_church_riverbed",
-      "from": "old_church",
-      "to": "dry_riverbed",
-      "type": "path",
-      "danger": "normal",
-      "travel_time_sec": 35,
-      "fuel_cost": 6,
       "bidirectional": true
     },
     {
@@ -707,32 +667,12 @@
       "bidirectional": true
     },
     {
-      "id": "edge_cross_signal",
-      "from": "crossroads",
-      "to": "hermit_cave",
-      "type": "path",
-      "danger": "normal",
-      "travel_time_sec": 35,
-      "fuel_cost": 6,
-      "bidirectional": true
-    },
-    {
       "id": "edge_cross_toll",
       "from": "crossroads",
       "to": "toll_gate",
       "type": "path",
       "danger": "normal",
       "travel_time_sec": 25,
-      "fuel_cost": 4,
-      "bidirectional": true
-    },
-    {
-      "id": "edge_toll_signal",
-      "from": "toll_gate",
-      "to": "hermit_cave",
-      "type": "path",
-      "danger": "normal",
-      "travel_time_sec": 20,
       "fuel_cost": 4,
       "bidirectional": true
     },
@@ -754,16 +694,6 @@
       "danger": "normal",
       "travel_time_sec": 20,
       "fuel_cost": 3,
-      "bidirectional": true
-    },
-    {
-      "id": "edge_signal_dust",
-      "from": "hermit_cave",
-      "to": "dust_station",
-      "type": "path",
-      "danger": "normal",
-      "travel_time_sec": 25,
-      "fuel_cost": 4,
       "bidirectional": true
     },
     {
@@ -793,7 +723,7 @@
       "type": "path",
       "danger": "safe",
       "travel_time_sec": 35,
-      "fuel_cost": 6,
+      "fuel_cost": 4,
       "bidirectional": true
     },
     {
@@ -809,11 +739,11 @@
     {
       "id": "edge_bridge_sunken",
       "from": "overgrown_bridge",
-      "to": "sunken_plaza",
-      "type": "shortcut",
-      "danger": "danger",
-      "travel_time_sec": 20,
-      "fuel_cost": 4,
+      "to": "greenhouse",
+      "type": "path",
+      "danger": "safe",
+      "travel_time_sec": 35,
+      "fuel_cost": 5,
       "bidirectional": true
     },
     {
@@ -833,16 +763,6 @@
       "type": "path",
       "danger": "normal",
       "travel_time_sec": 25,
-      "fuel_cost": 5,
-      "bidirectional": true
-    },
-    {
-      "id": "edge_hermit_sunken",
-      "from": "hermit_cave",
-      "to": "sunken_plaza",
-      "type": "shortcut",
-      "danger": "danger",
-      "travel_time_sec": 30,
       "fuel_cost": 5,
       "bidirectional": true
     },
@@ -887,16 +807,6 @@
       "bidirectional": true
     },
     {
-      "id": "edge_logistics_bell",
-      "from": "old_logistics",
-      "to": "bell_tower",
-      "type": "path",
-      "danger": "normal",
-      "travel_time_sec": 40,
-      "fuel_cost": 7,
-      "bidirectional": true
-    },
-    {
       "id": "edge_logistics_metro",
       "from": "old_logistics",
       "to": "metro_camp",
@@ -904,16 +814,6 @@
       "danger": "normal",
       "travel_time_sec": 30,
       "fuel_cost": 5,
-      "bidirectional": true
-    },
-    {
-      "id": "edge_mist_radar",
-      "from": "mist_valley",
-      "to": "radar_hill",
-      "type": "path",
-      "danger": "danger",
-      "travel_time_sec": 40,
-      "fuel_cost": 7,
       "bidirectional": true
     },
     {
@@ -943,16 +843,6 @@
       "type": "path",
       "danger": "danger",
       "travel_time_sec": 35,
-      "fuel_cost": 6,
-      "bidirectional": true
-    },
-    {
-      "id": "edge_toxic_hermit",
-      "from": "toxic_marsh",
-      "to": "hermit_cave",
-      "type": "shortcut",
-      "danger": "danger",
-      "travel_time_sec": 30,
       "fuel_cost": 6,
       "bidirectional": true
     },
@@ -1031,9 +921,9 @@
       "from": "broadcast_tower",
       "to": "stone_garden",
       "type": "path",
-      "danger": "normal",
+      "danger": "danger",
       "travel_time_sec": 30,
-      "fuel_cost": 5,
+      "fuel_cost": 6,
       "bidirectional": true
     },
     {
@@ -1063,7 +953,7 @@
       "type": "path",
       "danger": "danger",
       "travel_time_sec": 35,
-      "fuel_cost": 6,
+      "fuel_cost": 8,
       "bidirectional": true
     },
     {
@@ -1117,16 +1007,6 @@
       "bidirectional": true
     },
     {
-      "id": "edge_bunker_relay",
-      "from": "signal_bunker",
-      "to": "hermit_cave",
-      "type": "path",
-      "danger": "normal",
-      "travel_time_sec": 20,
-      "fuel_cost": 3,
-      "bidirectional": true
-    },
-    {
       "id": "edge_archives_bell",
       "from": "old_archives",
       "to": "bell_tower",
@@ -1144,6 +1024,76 @@
       "danger": "normal",
       "travel_time_sec": 20,
       "fuel_cost": 3,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_signal_bunker_wind_gap",
+      "from": "signal_bunker",
+      "to": "wind_gap",
+      "type": "path",
+      "danger": "danger",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_irrigation_canal_greenhouse_farm",
+      "from": "irrigation_canal",
+      "to": "greenhouse_farm",
+      "type": "path",
+      "danger": "safe",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_old_logistics_printing_ruins",
+      "from": "old_logistics",
+      "to": "printing_ruins",
+      "type": "path",
+      "danger": "normal",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_hermit_cave_broadcast_tower",
+      "from": "hermit_cave",
+      "to": "broadcast_tower",
+      "type": "path",
+      "danger": "danger",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_hermit_cave_old_logistics",
+      "from": "hermit_cave",
+      "to": "old_logistics",
+      "type": "path",
+      "danger": "safe",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_overgrown_bridge_sunken_plaza",
+      "from": "overgrown_bridge",
+      "to": "sunken_plaza",
+      "type": "path",
+      "danger": "normal",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
+      "bidirectional": true
+    },
+    {
+      "id": "edge_overgrown_bridge_mushroom_cave",
+      "from": "overgrown_bridge",
+      "to": "mushroom_cave",
+      "type": "path",
+      "danger": "safe",
+      "travel_time_sec": 30,
+      "fuel_cost": 5,
       "bidirectional": true
     }
   ]
