@@ -112,7 +112,7 @@ end
 --- 按当前状态筛选可用对话
 ---@param state table
 ---@param node_type string|nil 当前节点类型（nil 时不做节点过滤）
----@param opts table|nil 可选参数 { include_arrival_only = bool }
+---@param opts table|nil 可选参数 { include_arrival_only = bool, node_id = string }
 ---@return table[]
 function M.filter(state, node_type, opts)
     M._load()
@@ -120,6 +120,7 @@ function M.filter(state, node_type, opts)
     local stage = M.get_relation_stage(state)
     local cooldowns = state.narrative and state.narrative.campfire_cooldowns or {}
     local include_arrival = opts and opts.include_arrival_only
+    local current_node_id = opts and opts.node_id
     local available = {}
 
     for _, d in ipairs(M._dialogues) do
@@ -170,7 +171,24 @@ function M.filter(state, node_type, opts)
             ok = false
         end
 
-        -- 7. min_trips（最低行程数要求）
+        -- 7. node_ids：限定到具体节点（比 node_types 更精确）
+        if ok and d.node_ids then
+            if current_node_id then
+                local found = false
+                for _, nid in ipairs(d.node_ids) do
+                    if nid == current_node_id then
+                        found = true
+                        break
+                    end
+                end
+                if not found then ok = false end
+            else
+                -- 没有传入 node_id 但对话要求限定节点 → 不匹配
+                ok = false
+            end
+        end
+
+        -- 8. min_trips（最低行程数要求）
         if ok and d.min_trips then
             local trips = state.stats and state.stats.total_trips or 0
             if trips < d.min_trips then

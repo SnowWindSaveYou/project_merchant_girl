@@ -200,6 +200,7 @@ M.PHASE_DEFS = {
     -- ④ RETURN_JOURNEY：返程探索阶段
     -- 玩家接返程订单，到达特定节点触发 SD_PROLOGUE_04~06（水渠、蘑菇洞、信号中继站）
     -- 完成后回到农场，触发 SD_PROLOGUE_07，沈禾提示废墟有生意
+    -- 04/05/06 由 StoryDirector 在到达对应节点时自动触发（node_ids 限定）
     {
         id = "return_journey",
         check = function(state)
@@ -213,6 +214,12 @@ M.PHASE_DEFS = {
                 and { map = true } or { orders = true }
         end,
         hide_departure = true,
+        -- 接返程订单时解锁周边探索节点
+        discover_nodes = { "irrigation_canal", "mushroom_cave", "signal_relay" },
+        -- 探索边界：07完成前阻止进入外围节点
+        blocked_nodes = {
+            "danger_pass", "crossroads", "old_warehouse", "sunken_plaza", "junkyard",
+        },
         order = {
             node      = "greenhouse",
             make      = make_order_return_to_farm,
@@ -221,40 +228,96 @@ M.PHASE_DEFS = {
             end,
         },
         on_arrival = {
-            -- 返回农场时触发序章完结对话
+            -- 回到农场时触发序章完结对话（需要 04/05/06 全部完成）
             greenhouse_farm = { dialogue = "SD_PROLOGUE_07", guard_flag = "prologue_can_go_ruins" },
-            -- 返程路上的探索节点
-            irrigation_canal = { dialogue = "SD_PROLOGUE_04", guard_flag = "sd_prologue_04_done" },
-            mushroom_cave    = { dialogue = "SD_PROLOGUE_05", guard_flag = "sd_prologue_05_done" },
-            signal_relay     = { dialogue = "SD_PROLOGUE_06", guard_flag = "sd_prologue_06_done" },
         },
         bubbles = {
             home = function(state)
                 if not has_accepted_tutorial_order_to(state, "greenhouse_farm") then
+                    -- 还没接返程订单：引导去接单
                     return {
-                        portrait = M.AVATAR_LINLI,
-                        speaker  = "林砾",
-                        text     = "……有个返程的委托。该回去了。",
-                        position = { x = "50%", y = "65%" },
-                        autoHide = 0,
-                    }
-                else
-                    return {
-                        portrait = M.AVATAR_TAOXIA,
-                        speaker  = "陶夏",
-                        text     = "出发！路上还有好多想看的呢！",
-                        position = { x = "50%", y = "65%" },
-                        autoHide = 0,
+                        {
+                            portrait = M.AVATAR_LINLI,
+                            speaker  = "林砾",
+                            text     = "……有一批新鲜蔬菜要送回农场。沈禾姐托的。",
+                        },
+                        {
+                            portrait = M.AVATAR_TAOXIA,
+                            speaker  = "陶夏",
+                            text     = "好嘞，正好回去的路上还能看看周围有什么。",
+                        },
+                        {
+                            portrait = M.AVATAR_LINLI,
+                            speaker  = "林砾",
+                            text     = "……先去接委托吧。",
+                        },
                     }
                 end
+                -- 已接单但还没探索完周边
+                local done04 = Flags.has(state, "sd_prologue_04_done")
+                local done05 = Flags.has(state, "sd_prologue_05_done")
+                local done06 = Flags.has(state, "sd_prologue_06_done")
+                local all_explored = done04 and done05 and done06
+                if not all_explored then
+                    -- 根据剩余数量和具体地点动态生成提示
+                    local missing = {}
+                    if not done04 then table.insert(missing, "水渠") end
+                    if not done05 then table.insert(missing, "蘑菇洞") end
+                    if not done06 then table.insert(missing, "信号站") end
+                    local n = #missing
+                    local placesStr = table.concat(missing, "、")
+                    -- 根据剩余数量调整语气
+                    local taoxiaLine, linliLine
+                    if n == 1 then
+                        taoxiaLine = "就差" .. placesStr .. "没去了吧？快去看看！"
+                        linliLine  = "……嗯。去完就可以回农场了。"
+                    else
+                        taoxiaLine = "地图上还有几个没去过的地方呢，要不顺路看看？"
+                        linliLine  = "……" .. placesStr .. "还没去过。回去之前，顺路看看。"
+                    end
+                    return {
+                        {
+                            portrait = M.AVATAR_TAOXIA,
+                            speaker  = "陶夏",
+                            text     = taoxiaLine,
+                        },
+                        {
+                            portrait = M.AVATAR_LINLI,
+                            speaker  = "林砾",
+                            text     = linliLine,
+                        },
+                    }
+                end
+                -- 全部探索完，该回农场了
+                return {
+                    {
+                        portrait = M.AVATAR_TAOXIA,
+                        speaker  = "陶夏",
+                        text     = "周围都逛了一圈了——收获不少呢。",
+                    },
+                    {
+                        portrait = M.AVATAR_LINLI,
+                        speaker  = "林砾",
+                        text     = "……嗯。该回农场了。趁天还没黑，赶紧出发。",
+                    },
+                }
             end,
-            map = {
-                portrait = M.AVATAR_LINLI,
-                speaker  = "林砾",
-                text     = "回去的路……顺路看看水渠那边。",
-                position = { x = "50%", y = "85%" },
-                autoHide = 0,
-            },
+            map = function(state)
+                -- 已接单且还没全部探索时，在地图上提示
+                if has_accepted_tutorial_order_to(state, "greenhouse_farm")
+                    and not (Flags.has(state, "sd_prologue_04_done")
+                        and Flags.has(state, "sd_prologue_05_done")
+                        and Flags.has(state, "sd_prologue_06_done")) then
+                    return {
+                        {
+                            portrait = M.AVATAR_LINLI,
+                            speaker  = "林砾",
+                            text     = "……地图上有几个标记点。顺路看看，不急着回去。",
+                        },
+                    }
+                end
+                return nil
+            end,
         },
     },
 
@@ -417,6 +480,16 @@ function M.get_tutorial_orders(state, node_id)
     if ord.node ~= node_id then return nil end
     if ord.condition and not ord.condition(state) then return nil end
 
+    -- 阶段级节点发现（幂等，可重复调用）
+    if def.discover_nodes and state.map.known_nodes then
+        for _, nid in ipairs(def.discover_nodes) do
+            if not state.map.known_nodes[nid] then
+                state.map.known_nodes[nid] = true
+                print("[Tutorial] Discovered exploration node: " .. nid)
+            end
+        end
+    end
+
     return { ord.make() }
 end
 
@@ -456,7 +529,28 @@ function M.on_arrival(state, node_id)
             if not flag or not Flags.has(state, flag) then
                 local dialogue = DialoguePool.get(dialogueId)
                 if dialogue then
-                    return { type = "dialogue", dialogue = dialogue }
+                    -- 检查对话自身的 required_flags / forbidden_flags
+                    -- 防止玩家以非预期顺序到达节点时跳序播放对话
+                    local flags_ok = true
+                    if dialogue.required_flags then
+                        for _, rf in ipairs(dialogue.required_flags) do
+                            if not Flags.has(state, rf) then
+                                flags_ok = false
+                                break
+                            end
+                        end
+                    end
+                    if flags_ok and dialogue.forbidden_flags then
+                        for _, ff in ipairs(dialogue.forbidden_flags) do
+                            if Flags.has(state, ff) then
+                                flags_ok = false
+                                break
+                            end
+                        end
+                    end
+                    if flags_ok then
+                        return { type = "dialogue", dialogue = dialogue }
+                    end
                 end
             end
         end
@@ -471,9 +565,10 @@ end
 
 --- 获取当前应显示的引导气泡配置
 --- 返回 nil 表示不显示气泡
+--- 返回值可能是单条 config 或多步数组 config[]
 ---@param state table
 ---@param screen string  当前屏幕名 ("home" | "map")
----@return table|nil config  { portrait, speaker, text, position }
+---@return table|table[]|nil config  单条 { portrait, speaker, text } 或多步数组
 function M.get_bubble_config(state, screen)
     local _phase, def = M.get_phase(state)
     if not def or not def.bubbles then return nil end
@@ -954,6 +1049,70 @@ local UPGRADE_DIALOGUES = {
 function M.get_upgrade_dialogue(module_id, new_level)
     local key = module_id .. "_" .. new_level
     return UPGRADE_DIALOGUES[key]
+end
+
+-- ============================================================
+-- 探索边界（blocked_nodes 限定移动范围）
+-- ============================================================
+
+--- 被阻止节点的气泡对话（随机选取一组）
+local BLOCKED_NODE_BUBBLES = {
+    {
+        {
+            portrait = M.AVATAR_TAOXIA,
+            speaker  = "陶夏",
+            text     = "前面的路好像不太好走……到处都是碎石和歪倒的路牌。",
+        },
+        {
+            portrait = M.AVATAR_LINLI,
+            speaker  = "林砾",
+            text     = "……这片区域还没探过，不知道什么情况。先把附近逛完再说。",
+        },
+    },
+    {
+        {
+            portrait = M.AVATAR_LINLI,
+            speaker  = "林砾",
+            text     = "……再往前就出温室辖区了。现在过去不安全。",
+        },
+        {
+            portrait = M.AVATAR_TAOXIA,
+            speaker  = "陶夏",
+            text     = "好吧，那先把手边的事做完。",
+        },
+    },
+    {
+        {
+            portrait = M.AVATAR_TAOXIA,
+            speaker  = "陶夏",
+            text     = "那边看起来好远啊——走过去天都要黑了吧？",
+        },
+        {
+            portrait = M.AVATAR_LINLI,
+            speaker  = "林砾",
+            text     = "……嗯。先把附近的地方看完。远处的路，以后总会走到的。",
+        },
+    },
+}
+
+--- 检查某个节点是否被当前教程阶段阻止
+---@param state table
+---@param node_id string
+---@return boolean blocked
+function M.is_node_blocked(state, node_id)
+    if not Flags.has(state, "tutorial_started") then return false end
+    local _phase, def = M.get_phase(state)
+    if not def or not def.blocked_nodes then return false end
+    for _, bid in ipairs(def.blocked_nodes) do
+        if bid == node_id then return true end
+    end
+    return false
+end
+
+--- 获取边界阻止时的气泡对话步骤（随机选取一组）
+---@return table[] steps  多步气泡配置数组
+function M.get_blocked_node_bubbles()
+    return BLOCKED_NODE_BUBBLES[math.random(#BLOCKED_NODE_BUBBLES)]
 end
 
 return M

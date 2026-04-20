@@ -13,6 +13,24 @@ local _time = 0
 local _seedCounter = 1
 
 -- ============================================================
+-- 角落手绘纹理装饰
+-- ============================================================
+
+local _cornerTexPaths = {
+    "image/handdrawtex01.png",
+    "image/handdrawtex02.png",
+    "image/handdrawtex03.png",
+    "image/handdrawtex04.png",
+    "image/handdrawtex05.png",
+    "image/handdrawtex06.png",
+    "image/handdrawtex07.png",
+    "image/handdrawtex08.png",
+    "image/handdrawtex09.png",
+}
+local _cornerTexHandles = {}   -- nvg image handles, 懒加载
+local _cornerTexLoaded = false
+
+-- ============================================================
 -- 哈希 / 噪声（移植自 lineui.lua.md）
 -- ============================================================
 
@@ -35,12 +53,13 @@ end
 M.styles = {
     --- 卡片边框：双层、呼吸、标准抖动
     card = {},
-    --- 按钮边框：单层、更细、无呼吸
+    --- 按钮边框：单层、更细、无呼吸、无角落纹理
     button = {
         layers      = 1,
         baseWidth   = 1.0,
         breathAmp   = 0,
         breakChance = 0.25,
+        cornerTex   = false,
     },
     --- 分割线：单条水平线、高断裂率
     divider = {
@@ -66,7 +85,7 @@ M.styles = {
     danger_card = {
         ink_color = Theme.sketch.ink_danger,
     },
-    --- 高亮按钮：金色墨水 + 呼吸动画 + 双层强调
+    --- 高亮按钮：金色墨水 + 呼吸动画 + 双层强调、无角落纹理
     accent_button = {
         layers      = 2,
         baseWidth   = 1.6,
@@ -75,6 +94,7 @@ M.styles = {
         ink_color   = Theme.sketch.ink_accent,
         glow        = true,
         glow_color  = Theme.colors.sketch_glow,  -- 随主题变化
+        cornerTex   = false,
     },
 }
 
@@ -195,6 +215,84 @@ local function drawSketchLine(ctx, sk, x1, y1, x2, y2, seed, time)
 end
 
 -- ============================================================
+-- 角落手绘纹理：懒加载 + 绘制（依赖 hash / getParam）
+-- ============================================================
+
+--- 懒加载所有角落纹理（首次渲染时调用一次）
+local function ensureCornerTexLoaded(ctx)
+    if _cornerTexLoaded then return end
+    _cornerTexLoaded = true
+    for i, path in ipairs(_cornerTexPaths) do
+        local handle = nvgCreateImage(ctx, path, 0)
+        if handle and handle > 0 then
+            _cornerTexHandles[#_cornerTexHandles + 1] = handle
+        end
+    end
+    if #_cornerTexHandles > 0 then
+        print("[SketchBorder] Loaded " .. #_cornerTexHandles .. " corner textures")
+    end
+end
+
+--- 在矩形的四个角落各绘制一张随机手绘纹理
+local function drawCornerTexture(ctx, sk, x, y, w, h, seed)
+    if #_cornerTexHandles == 0 then return end
+
+    local cc = getParam(sk, "ink_color") or Theme.sketch.ink_color
+    local tintColor = nvgRGBA(cc[1], cc[2], cc[3], 90)
+
+    local count = #_cornerTexHandles
+
+    -- 预选 4 张不重复的纹理
+    local used = {}
+    local picks = {}
+    for ci = 0, 3 do
+        local cSeed = seed + ci * 137
+        local texIdx
+        for attempt = 0, 20 do
+            texIdx = math.floor(hash(cSeed * 23.7 + 41.3 + attempt * 7.9) * count) + 1
+            texIdx = math.max(1, math.min(count, texIdx))
+            if not used[texIdx] or attempt == 20 then break end
+        end
+        used[texIdx] = true
+        picks[ci] = texIdx
+    end
+
+    for ci = 0, 3 do
+        local cSeed = seed + ci * 137
+        local img = _cornerTexHandles[picks[ci]]
+
+        -- 纹理尺寸放大：32~56px，根据卡片尺寸自适应
+        local baseSize = math.max(32, math.min(56, math.min(w, h) * 0.3))
+        local sizeJitter = 1.0 + (hash(cSeed * 13.3 + 55.5) - 0.5) * 0.3
+        local texSize = baseSize * sizeJitter
+
+        -- 向内偏移，让纹理骑在角落边框上
+        local inset = texSize * 0.25
+
+        local tx, ty
+        if ci == 0 then      -- 左上
+            tx = x - inset
+            ty = y - inset
+        elseif ci == 1 then  -- 右上
+            tx = x + w - texSize + inset
+            ty = y - inset
+        elseif ci == 2 then  -- 右下
+            tx = x + w - texSize + inset
+            ty = y + h - texSize + inset
+        else                 -- 左下
+            tx = x - inset
+            ty = y + h - texSize + inset
+        end
+
+        local paint = nvgImagePatternTinted(ctx, tx, ty, texSize, texSize, 0, img, tintColor)
+        nvgBeginPath(ctx)
+        nvgRect(ctx, tx, ty, texSize, texSize)
+        nvgFillPaint(ctx, paint)
+        nvgFill(ctx)
+    end
+end
+
+-- ============================================================
 -- 手绘矩形 / 分割线
 -- ============================================================
 
@@ -224,6 +322,12 @@ local function drawSketchRect(ctx, sk, x, y, w, h, seed, time)
         nvgLineTo(ctx, c[1], c[2])
         nvgLineTo(ctx, c[5], c[6])
         nvgStroke(ctx)
+    end
+
+    -- 角落手绘纹理装饰（按钮等设置 cornerTex=false 时跳过）
+    if sk.cornerTex ~= false then
+        ensureCornerTexLoaded(ctx)
+        drawCornerTexture(ctx, sk, x, y, w, h, seed)
     end
 end
 

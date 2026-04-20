@@ -1210,9 +1210,37 @@ function M.create(state, curNode)
     end
 
     -- 层 7：教程引导气泡（绝对定位浮层）
+    -- 支持单条 config 和多步 config[] 两种格式
     local bubbleCfg = Tutorial.get_bubble_config(state, "home")
     if bubbleCfg then
-        table.insert(rootChildren, SpeechBubble.createWidget(bubbleCfg))
+        -- 判断是多步数组还是单条：数组的第一个元素有 portrait 字段
+        local isMultiStep = bubbleCfg[1] and bubbleCfg[1].portrait
+        if isMultiStep then
+            -- 多步：第一条用 createWidget 嵌入 UI 树，后续通过 onDismiss 链式展示
+            local steps = bubbleCfg
+            local firstStep = steps[1]
+            local function showRemaining(idx)
+                if idx > #steps then return end
+                local root = UI.GetRoot()
+                if not root then return end
+                SpeechBubble.show(root, {
+                    portrait  = steps[idx].portrait,
+                    speaker   = steps[idx].speaker,
+                    text      = steps[idx].text,
+                    autoHide  = 0,
+                    onDismiss = function() showRemaining(idx + 1) end,
+                })
+            end
+            table.insert(rootChildren, SpeechBubble.createWidget({
+                portrait  = firstStep.portrait,
+                speaker   = firstStep.speaker,
+                text      = firstStep.text,
+                autoHide  = 0,
+                onDismiss = function() showRemaining(2) end,
+            }))
+        else
+            table.insert(rootChildren, SpeechBubble.createWidget(bubbleCfg))
+        end
     end
 
     return UI.Panel {

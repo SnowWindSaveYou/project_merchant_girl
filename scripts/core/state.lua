@@ -26,7 +26,7 @@ function M.new()
             durability_max = 100,
             fuel           = 80,
             fuel_max       = 100,
-            cargo_slots    = 8,
+            cargo_slots    = 10,
             cargo          = {}, -- { [goods_id] = count }
             committed      = {}, -- { [goods_id] = count } 委托货物追踪
             modules = {

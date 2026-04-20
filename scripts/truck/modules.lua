@@ -26,8 +26,8 @@ M.DEFS = {
         },
     },
     cargo_bay = {
-        name     = "货舱扩容",
-        desc     = "增加货舱容量上限",
+        name     = "货仓升级",
+        desc     = "扩容货仓并改善内部环境",
         max_level = 3,
         upgrade_at = { greenhouse = true, ruins_camp = true },
         costs = {
@@ -36,9 +36,9 @@ M.DEFS = {
             [3] = { credits = 350, materials = { metal_scrap = 8, circuit = 1 } },
         },
         effects = {
-            [1] = { cargo_slots = 12, desc = "仓位 → 12" },
-            [2] = { cargo_slots = 16, desc = "仓位 → 16" },
-            [3] = { cargo_slots = 20, desc = "仓位 → 20" },
+            [1] = { cargo_slots = 14, truck_image = "image/edited_truck_home_mid_20260420100832.png",  desc = "仓位 → 14, 内饰改善" },
+            [2] = { cargo_slots = 18, truck_image = "image/truck_home_clean.png",                      desc = "仓位 → 18, 内饰翻新" },
+            [3] = { cargo_slots = 22, truck_image = "image/truck_home_clean.png",                      desc = "仓位 → 22" },
         },
     },
     radar = {

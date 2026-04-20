@@ -47,7 +47,10 @@ function M.check_pending_story_dialogue(state, include_arrival_only)
     if not node then return nil end
 
     -- 从对话池中筛选，找第一个 is_story 且 type=main_story 的
-    local pool = DialoguePool.filter(state, node.type, { include_arrival_only = include_arrival_only })
+    local pool = DialoguePool.filter(state, node.type, {
+        include_arrival_only = include_arrival_only,
+        node_id = loc,
+    })
     for _, d in ipairs(pool) do
         if d.is_story and d.type == "main_story" then
             return d

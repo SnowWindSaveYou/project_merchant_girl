@@ -102,7 +102,16 @@ local LAYER_DEFS = {
     { image = "image/parallax_ground_20260408172153.png",  speed = 1.0,  yStart = 0.68, yEnd = 1.0  },
 }
 
-local TRUCK_IMAGE = "image/truck_home_clean.png"
+--- 货车内饰图片：根据 cargo_bay 等级动态选择
+local TRUCK_IMAGE_DEFAULT = "image/edited_truck_home_basic_v3_20260420100643.png"
+local TRUCK_IMAGE = TRUCK_IMAGE_DEFAULT
+
+local function updateTruckImage()
+    if not gameState_ then return end
+    local Modules = require("truck/modules")
+    local eff = Modules.get_effects(gameState_, "cargo_bay")
+    TRUCK_IMAGE = (eff and eff.truck_image) or TRUCK_IMAGE_DEFAULT
+end
 local WHEEL_IMAGE = "image/wheel.png"
 
 local WHEEL_POSITIONS = {
@@ -1102,7 +1111,10 @@ function M.addFeedback(feedback)
     })
 end
 
-function M.setState(state) gameState_ = state end
+function M.setState(state)
+    gameState_ = state
+    updateTruckImage()
+end
 
 function M.setDriving(driving)
     if isDriving_ == driving then return end

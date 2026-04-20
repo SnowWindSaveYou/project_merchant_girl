@@ -115,11 +115,36 @@ function M.create(state, params, r)
         MapPanels.enterOrderRoutePreview(cam)
     end
 
-    -- 教程引导气泡
+    -- 教程引导气泡（支持单条和多步数组格式）
     local tutBubble = nil
     local bubbleCfg = Tutorial.get_bubble_config(state, "map")
     if bubbleCfg then
-        tutBubble = SpeechBubble.createWidget(bubbleCfg)
+        local isMultiStep = bubbleCfg[1] and bubbleCfg[1].portrait
+        if isMultiStep then
+            local steps = bubbleCfg
+            local firstStep = steps[1]
+            local function showRemaining(idx)
+                if idx > #steps then return end
+                local root = UI.GetRoot()
+                if not root then return end
+                SpeechBubble.show(root, {
+                    portrait  = steps[idx].portrait,
+                    speaker   = steps[idx].speaker,
+                    text      = steps[idx].text,
+                    autoHide  = 0,
+                    onDismiss = function() showRemaining(idx + 1) end,
+                })
+            end
+            tutBubble = SpeechBubble.createWidget({
+                portrait  = firstStep.portrait,
+                speaker   = firstStep.speaker,
+                text      = firstStep.text,
+                autoHide  = 0,
+                onDismiss = function() showRemaining(2) end,
+            })
+        else
+            tutBubble = SpeechBubble.createWidget(bubbleCfg)
+        end
     end
 
     return UI.Panel {
@@ -161,6 +186,26 @@ local function handleInput(dt)
         end,
 
         onNodeClick = function(nodeId)
+            -- 探索边界阻止（所有模式统一拦截）
+            if Tutorial.is_node_blocked(state_, nodeId) then
+                local root = UI.GetRoot()
+                if root then
+                    local steps = Tutorial.get_blocked_node_bubbles()
+                    local function showStep(idx)
+                        if idx > #steps then return end
+                        SpeechBubble.show(root, {
+                            portrait  = steps[idx].portrait,
+                            speaker   = steps[idx].speaker,
+                            text      = steps[idx].text,
+                            autoHide  = 0,
+                            onDismiss = function() showStep(idx + 1) end,
+                        })
+                    end
+                    showStep(1)
+                end
+                return
+            end
+
             if mm.state == MapMode.MapState.BROWSE then
                 cam.selected = nodeId
                 MapPanels.openNodeModal(nodeId, cam)
